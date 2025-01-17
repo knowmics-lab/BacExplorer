@@ -1,0 +1,8 @@
+NAME: prova-container
+GENUS: ''
+SPECIES: ''
+TYPE: fasta
+PAIRED: 'no'
+INPUT: /project/user-input/
+IDENTITY: 90
+COVERAGE: 90
