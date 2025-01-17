@@ -21,5 +21,5 @@ contextBridge.exposeInMainWorld('api', {
     saveConfigFile: (yamlData) => ipcRenderer.invoke('save-file', yamlData),
     checkDockerInstalled: () => ipcRenderer.invoke('docker-installed'),
     createEnv: () => ipcRenderer.invoke('create-container'),
-    openExternalLink: (link) => ipcRenderer.invoke('open-external', link)
+    openExternalLink: () => ipcRenderer.invoke('open-external')
 });

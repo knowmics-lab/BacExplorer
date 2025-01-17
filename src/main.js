@@ -117,17 +117,17 @@ const configPath = path.join(app.getPath('userData'), "snakemake");
 const imageName = "priviteragf/bacexplorer:latest";
 const containerName = "snakemakeContainer";
 
-ipcMain.handle('open-external', linkToOpen => {
+ipcMain.handle('open-external', () => {
   let url = "";
-  if(linkToOpen === "docker-install") {
-    if (process.platform === "win32") {
+  const platform = os.platform();
+    if (platform === "win32") {
       url = "https://docs.docker.com/desktop/setup/install/windows-install/";
-    } else if (process.platform === "darwin") {
+    } else if (platform === "darwin") {
       url = "https://docs.docker.com/desktop/setup/install/mac-install/";
-    } else if (process.platform === "linux") {
+    } else if (platform === "linux") {
       url = "https://docs.docker.com/engine/install/ubuntu/";
     }
-  } 
+  console.log("Navigating to: ", url);
   shell.openExternal(url);
 })
 

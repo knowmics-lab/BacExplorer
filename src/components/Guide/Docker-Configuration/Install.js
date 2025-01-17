@@ -13,19 +13,8 @@ export default function Install({link}){
     }
 
     const openLinkExternally = () => {
-        // const platform = os.platform();
-        // let link;
-        // if (platform === "win32") {
-        //     link = "https://docs.docker.com/desktop/setup/install/windows-install/";
-        // } else if (platform === "darwin") {
-        //     link = "https://docs.docker.com/desktop/setup/install/mac-install/";
-        // } else if (platform === "linux") {
-        //     link = "https://docs.docker.com/engine/install/ubuntu/";
-        // }
-        // const link = "https://docs.docker.com/engine/install/";
-        // console.log("Opening: ", link);
-        const link = "docker-install";
-        window.api.openExternalLink(link);
+        // const link = "docker-install";
+        window.api.openExternalLink();
     };
 
     return (
