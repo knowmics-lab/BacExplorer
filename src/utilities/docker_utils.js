@@ -1,5 +1,3 @@
-import { AlertHeading } from 'react-bootstrap';
-
 const fs = require('fs');
 const yaml = require('js-yaml');
 

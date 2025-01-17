@@ -3,23 +3,22 @@ import { Button, Spinner } from "react-bootstrap";
 
 export default function EnvSetup() {
     const [isCreating, setIsCreating] = useState(false);
-    const [created, setCreated] = useState(false);
-    const [error, setError] = useState(false);
+    const [status, setStatus] = useState({ created: false, error: false });
+    const [error, setError] = useState("");
 
     const handleClick = async () => {
+        if (isCreating) return;
         setIsCreating(true);
-        setError(false);
-        setCreated(false);
+        setStatus({ created: false, error: false });
 
         try {
             const response = await window.api.createEnv();
             console.log(response);
-            setError(false);
-            setCreated(true);
+            setStatus({ created: true, error: false });
         } catch (error) {
-            setCreated(false);
             console.error("Error: ", error);
-            setError(true);
+            setStatus({ created: false, error: true });
+            setError(error.message);
         } finally {
             setIsCreating(false);
         }
@@ -29,7 +28,7 @@ export default function EnvSetup() {
         <div className="text-container">
             <h2 className="text-header">2. Environment Setup </h2>
             <div className="text-simple">
-                Once you have Docker installed, <b>execute it</b>.<br/>
+                Once you have Docker installed, <b>run it</b>.<br/>
                 Then click <a className="text-emphasis" onClick={handleClick}>here</a> to setup the environment
                 to perform the analysis.
             </div>
@@ -48,15 +47,15 @@ export default function EnvSetup() {
               <div>This might take a while</div>
               </>
             )}
-            {!isCreating && created && (
+            {!isCreating && status.created && (
                 <div className="text-simple primary">
                 <b>Environment successfully created!</b><br/>
                 You are now ready to launch your analysis.
                 Go to the Settings page.
                 </div>
             )}
-            {!isCreating && error && (
-                <div className="text-simple" style={{color:"red"}}>Something went wrong! :(</div>
+            {!isCreating && status.error && (
+                <div className="text-simple" style={{color:"red"}}>Something went wrong! {error}</div>
             )}
         </div>
     )

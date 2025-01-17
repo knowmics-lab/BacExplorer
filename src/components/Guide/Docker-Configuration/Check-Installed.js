@@ -5,17 +5,15 @@ import Install from "./Install";
 export default function CheckInstalled() {
     const [isInstalled, setIsInstalled] = useState(false);
     const [needsInstalling, setNeedsInstalling] = useState(false);
-    const [dockerLink, setDockerLink] = useState("");
 
     const handleClick = async () => {
         try {
             const response = await window.api.checkDockerInstalled();
             console.log(response);
-            if (response == "Docker is installed") {
+            if (response === "Docker is installed") {
                 setIsInstalled(true);
             } else {
                 setNeedsInstalling(true);
-                setDockerLink(response);
             }
         } catch (error) {
             console.log(error);
@@ -30,7 +28,7 @@ export default function CheckInstalled() {
                 <div className="text-simple"><b>Docker installed! Go on.</b></div>
             )}
             {needsInstalling && (
-            <Install link={dockerLink}/>
+            <Install />
             )}
         </div>
     )

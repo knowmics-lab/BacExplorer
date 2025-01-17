@@ -1,6 +1,7 @@
 import { app, BrowserWindow, dialog, ipcMain, Menu, shell } from 'electron';
 import started from 'electron-squirrel-startup';
 import { spawn, execSync } from 'child_process';
+import os from 'os';
 import fs from 'fs';
 import path from 'path';
 import { checkDockerInstalled, checkDockerRunning } from './utilities/functions.js';
@@ -66,6 +67,24 @@ app.on('ready', () => {
   const menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);
 
+  const userDataPath = app.getPath('userData');
+
+  const targetFolder = path.join(userDataPath, 'snakemake');
+
+  if (!fs.existsSync(targetFolder)) {
+    fs.mkdirSync(targetFolder, { recursive: true });
+    console.log(`Updating userData. Creating folder: ${targetFolder}`);
+  }
+
+  const sourceFolder = path.join(__dirname, 'snakemake');
+
+  try {
+    fsExtra.copySync(sourceFolder, targetFolder);
+    console.log('Files successfully copied!');
+  } catch (err) {
+    console.error('Error while copying:', err);
+  }
+
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
   app.on('activate', () => {
@@ -84,10 +103,7 @@ app.on('window-all-closed', () => {
   }
 });
 
-mainWindow.webContents.setWindowOpenHandler(details => {
-  shell.openExternal(details.url);
-  return { action: deny };
-})
+
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.
@@ -96,14 +112,30 @@ mainWindow.webContents.setWindowOpenHandler(details => {
 //   dialog.showErrorBox("An Error Message", "Demo of an error message");
 // })
 
-const configPath = path.join(__dirname, '../../snakemake/');
+// save config file directly into userData
+const configPath = path.join(app.getPath('userData'), "snakemake");
 const imageName = "priviteragf/bacexplorer:latest";
 const containerName = "snakemakeContainer";
+
+ipcMain.handle('open-external', linkToOpen => {
+  let url = "";
+  if(linkToOpen === "docker-install") {
+    if (process.platform === "win32") {
+      url = "https://docs.docker.com/desktop/setup/install/windows-install/";
+    } else if (process.platform === "darwin") {
+      url = "https://docs.docker.com/desktop/setup/install/mac-install/";
+    } else if (process.platform === "linux") {
+      url = "https://docs.docker.com/engine/install/ubuntu/";
+    }
+  } 
+  shell.openExternal(url);
+})
 
 // docker check
 ipcMain.handle("docker-installed", async function() {
   try {
     const docker = await checkDockerInstalled();
+    console.log("Docker found: ", docker);
     return docker;
   } catch (error) {
     throw (error);
@@ -121,7 +153,9 @@ ipcMain.handle("docker-running", async function() {
 // environment setup
 ipcMain.handle('create-container', async function() {
   try {
-    return await setupContainer(configPath, imageName, containerName);
+    const response = await setupContainer(configPath, imageName, containerName);
+    console.log("In main.js: ", response);
+    return response;
   } catch (error) {
     throw (error);
   }

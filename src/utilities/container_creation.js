@@ -2,17 +2,17 @@
 
 import { execSync } from "child_process";
 import { mapIO } from "./docker_utils";
+import os from "os";
 
 const Docker = require("dockerode");
 const path = require ("path");
 
 let docker;
+const platform = os.platform();
 
-if (process.platform === "win32") {
-    console.log("Platform: win32");
+if (platform === "win32") {
     docker = new Docker({ socketPath: '//./pipe/docker_engine' });
-} else if (process.platform === "linux" || process.platform === "darwin") {
-    console.log("Platform: linux or darwin");
+} else if (platform === "linux" || process.platform === "darwin") {
     docker = new Docker({socketPath: '/var/run/docker.sock'});
 } else {
     console.error("Unsupported platform: ", process.platform);
@@ -38,8 +38,11 @@ export async function setupContainer(configPath, imageName, containerName) {
         // await waitForContainerRunning(containerName);
         // console.log("Container created and started successfully.");
         // await updateContainer(containerName);
+        const message = `Image pulled: ${imageName}. Container successfully created: ${imageName}`;
+        return message;
     } catch (error) {
         console.error("Failed to create and start container: ", error);
+        throw (error);
     }
 }
 

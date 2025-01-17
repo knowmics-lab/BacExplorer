@@ -1,6 +1,7 @@
 import React from "react";
 import { Button } from "react-bootstrap";
 
+
 export default function Install({link}){
     const handleClick = async() => {
         const response = window.api.installDocker();
@@ -11,9 +12,20 @@ export default function Install({link}){
         }
     }
 
-    const openLinkExternally = (link) => {
-        console.log("Opening: ", link);
-        window.open(link, "_blank",);
+    const openLinkExternally = () => {
+        // const platform = os.platform();
+        // let link;
+        // if (platform === "win32") {
+        //     link = "https://docs.docker.com/desktop/setup/install/windows-install/";
+        // } else if (platform === "darwin") {
+        //     link = "https://docs.docker.com/desktop/setup/install/mac-install/";
+        // } else if (platform === "linux") {
+        //     link = "https://docs.docker.com/engine/install/ubuntu/";
+        // }
+        // const link = "https://docs.docker.com/engine/install/";
+        // console.log("Opening: ", link);
+        const link = "docker-install";
+        window.api.openExternalLink(link);
     };
 
     return (
