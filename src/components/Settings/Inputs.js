@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Button, Form, FormGroup } from "react-bootstrap";
+import { Button, Form, FormGroup, Spinner } from "react-bootstrap";
 import GenusSpe from "./Genus-Species";
 import Type from "./Type";
 import FolderSel from "./Select-Folder";
@@ -49,6 +49,10 @@ export default function Inputs(){
 
     const [isAnalysing, setIsAnalysing] = useState(false);
 
+    const [isPreparing, setIsPreparing] = useState(false);
+
+    const [isBlocked, setIsBlocked] = useState(false);
+
     const saveConfig = async () => {
         const yamlData = {
             ...formData,
@@ -70,13 +74,32 @@ export default function Inputs(){
 
     const handleAnalysis = () => {
         setShowAlert(false);
-        window.api.runSnakemake(formData.INPUT);
-        setIsAnalysing(true);
+        window.api.prepareSnakemake(formData.INPUT);
+        setIsPreparing(true);
+        // setIsAnalysing(true);
       }
 
       useEffect(() => {
         window.api.onSnakemakeOutput((data) => {
-            console.log('Received data from Snakemake:', data);
+            console.log('Received data from Snakemake: ', data);
+
+            if (data) {
+                console.log('Data properties:', data);
+            }
+
+            if (data.stderr) {
+                if (data.isError) {
+                    setOutput(`Error: ${data.stderr}`);
+                    setIsBlocked(true);
+                    // if (data.errorCode === 404) {
+                    //     console.error('File not found error detected:', data.message);
+                    //     setOutput(`Error: ${data.message}`);
+                    //     setIsError(true);
+                    // }
+                    return;
+                }
+            }
+
             if (data.stderr) {
                 setOutput(`Error: ${data.stderr}`);
                 if (data.stderr.match(/Error/)) {
@@ -104,13 +127,29 @@ export default function Inputs(){
                 </div>
             )}
 
+            {isPreparing && !isBlocked && (
+
+                <div className='position-fixed top-50 start-50 translate-middle'>
+                    <Button disabled variant="secondary">
+                    <Spinner as="span"
+                    animation="grow"
+                    size="sm"
+                    role="status"
+                    aria-hidden="true"/>Preparing for Snakemake...</Button>
+                </div>
+            )}
+            {isPreparing && isBlocked && (
+                    <Button className = "position-fixed top-50 start-50 translate-middle w-25"disabled variant="danger">
+                        {output}</Button>
+            )}
+
             {isAnalysing && (
                 <div className="position-fixed top-50 start-50 translate-middle z-3 w-75">
                     <AnalysisProg progress={progress} output={output}/>
                 </div>
             )}
 
-            {!isAnalysing && (
+            {!isAnalysing && !isPreparing && (
                 <Form noValidate validated={validated} onSubmit={handleSubmit}>
 
                     <FormGroup className="form-box white py-3">

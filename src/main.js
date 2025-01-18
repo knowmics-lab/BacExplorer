@@ -77,27 +77,67 @@ app.on('ready', () => {
 
   const userDataPath = app.getPath('userData');
 
+  // const appPath = app.getPath()
+
+  // console.log("App path: ", appPath);
+
+  var copyFileOutsideOfElectronAsar = function (sourceInAsarArchive, destOutsideAsarArchive) {
+    if (fs.existsSync(app.getAppPath() + "/" + sourceInAsarArchive)) {
+
+        // file will be copied
+        if (fs.statSync(app.getAppPath() + "/" + sourceInAsarArchive).isFile()) {
+
+            let file = destOutsideAsarArchive; 
+            let dir = path.dirname(file);
+            if (!fs.existsSync(dir)) {
+                fs.mkdirSync(dir, { recursive: true });
+            }
+
+            fs.writeFileSync(file, fs.readFileSync(app.getAppPath() + "/" + sourceInAsarArchive));
+
+        }
+
+        // dir is browsed
+        else if (fs.statSync(app.getAppPath() + "/" + sourceInAsarArchive).isDirectory()) {
+
+            fs.readdirSync(app.getAppPath() + "/" + sourceInAsarArchive).forEach(function (fileOrFolderName) {
+
+                copyFileOutsideOfElectronAsar(sourceInAsarArchive + "/" + fileOrFolderName, destOutsideAsarArchive + "/" + fileOrFolderName);
+            });
+        }
+    }
+
+  }
+
+  
+
   const targetFolder = path.join(userDataPath, 'snakemake');
   console.log("Target folder: ", targetFolder);
-
-  if (!fs.existsSync(targetFolder)) {
-    fs.mkdirSync(targetFolder, { recursive: true });
-    console.log(`Updating userData. Creating folder: ${targetFolder}`);
-  }
 
   const sourceFolder = path.join(__dirname, '../../snakemake');
   console.log("Source folder: ", sourceFolder);
 
-  try {
-    fsExtra.copySync(sourceFolder, targetFolder);
-    console.log('Files successfully copied!');
-    // const sourceOutput = execSync(`dir ${sourceFolder}`);
-    // console.log(`In source folder: ${sourceOutput}`);
-    // const targetOutput = execSync(`dir ${targetFolder}`);
-    // console.log(`In target folder: ${targetOutput}`);
-  } catch (err) {
-    console.error('Error while copying:', err);
-    throw(err);
+  if (process.env.NODE_ENV === 'production' || app.getAppPath().includes('.asar')) {
+    copyFileOutsideOfElectronAsar(targetFolder, sourceFolder);
+  }
+
+  if (process.env.NODE_ENV !== 'production') {
+    if (!fs.existsSync(targetFolder)) {
+      fs.mkdirSync(targetFolder, { recursive: true });
+      console.log(`Updating userData. Creating folder: ${targetFolder}`);
+    }
+  
+    try {
+      fsExtra.copySync(sourceFolder, targetFolder);
+      console.log('Files successfully copied!');
+      // const sourceOutput = execSync(`dir ${sourceFolder}`);
+      // console.log(`In source folder: ${sourceOutput}`);
+      // const targetOutput = execSync(`dir ${targetFolder}`);
+      // console.log(`In target folder: ${targetOutput}`);
+    } catch (err) {
+      console.error('Error while copying:', err);
+      throw(err);
+    }
   }
 
   // On OS X it's common to re-create a window in the app when the
@@ -226,6 +266,22 @@ ipcMain.handle("dialog:select-folder", async function(event){
 ipcMain.on('run-snakemake', async (event, userInput) => {
     const configFile = path.join(configPath, "config.yaml");
     // salva correttamente nella cartella userData
+
+    if (!fs.existsSync(configFile)) {
+      console.error(`Config file not found in: ${configFile}`);
+      event.reply('setting-error', {stderr: `Config file not found: ${configFile}. Unable to proceed.`, code: 404 });
+      return;
+    }
+
+    try {
+      const dirContent = fs.readdirSync(snakefileDir);
+      if(!dirContent.includes('Snakefile')) {
+        console.error(`Snakefile not found in: ${snakefileDir}`);
+        event.reply('setting-error', {stderr: `Snakefile not found in: ${snakefileDir}. Unable to proceed.`, code: 404 });
+      }
+    } catch(error) {
+      event.reply('setting-error', {stderr: error.message, code: 500 });
+    }
     const snakefileDir = path.dirname(configFile);
     console.log("SnakefileDir: ", snakefileDir);
 
@@ -240,33 +296,41 @@ ipcMain.on('run-snakemake', async (event, userInput) => {
     // // console.log("Exited from utilities with value: ", configFileContainer);
 
     console.log('Running Snakemake with config file:', configFile);
-    const command = `docker exec ${containerName} bash -c "
+    
+});
+
+ipcMain.on('launch-analysis', async (event) => {
+  const command = `docker exec ${containerName} bash -c "
     source /opt/conda/etc/profile.d/conda.sh &&
     conda activate bacEnv &&
     snakemake --configfile ${configFileContainer} --force all
     "`;
-  
-    const child = spawn(command, { cwd: snakefileDir, shell: true });
+    try {
+      const child = spawn(command, { cwd: snakefileDir, shell: true });
 
-    // handle snakemake output
+      // handle snakemake output
 
-    child.stdout.on('data', (data) => {
-        console.log(`Snakemake stdout: ${data}`);
-        event.reply('snakemake-output', { stdout: data.toString(), stderr: null });
-    });
+      child.stdout.on('data', (data) => {
+          console.log(`Snakemake stdout: ${data}`);
+          event.reply('snakemake-output', { stdout: data.toString(), stderr: null });
+      });
 
-    child.stderr.on('data', (data) => {
-        console.error(`Snakemake stderr: ${data}`);
-        event.reply('snakemake-output', { stdout: null, stderr: data.toString() });
-    });
+      child.stderr.on('data', (data) => {
+          console.error(`Snakemake stderr: ${data}`);
+          event.reply('snakemake-output', { stdout: null, stderr: data.toString() });
+      });
 
-    child.on('close', (code) => {
-        console.log(`Snakemake process exited with code ${code}`);
-        if (code !== 0) {
-            event.reply('snakemake-output', { stdout: null, stderr: `Snakemake exited with code ${code}` });
-        }
-    });
-});
+      child.on('close', (code) => {
+          console.log(`Snakemake process exited with code ${code}`);
+          if (code !== 0) {
+              event.reply('snakemake-error', { stdout: null, stderr: `Snakemake exited with code ${code}` });
+          }
+      });
+    } catch (error) {
+      throw(error);
+    }
+    
+})
 
 // save config file
 ipcMain.handle('save-file', async (event, yamlData) => {

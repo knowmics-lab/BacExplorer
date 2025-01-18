@@ -20,13 +20,17 @@ contextBridge.exposeInMainWorld('api', {
     openErrorDialog: () => ipcRenderer.send("open-error-dialog"),
     selectFolder: () => ipcRenderer.invoke('dialog:select-folder'),
     onNavigate: (callback) => ipcRenderer.on('navigate', (event, page) => callback(page)),
-    runSnakemake: (userInput) => ipcRenderer.send('run-snakemake', userInput),
+    prepareSnakemake: (userInput) => ipcRenderer.send('run-snakemake', userInput),
     onSnakemakeOutput: (callback) => {
         console.log('Setting up Snakemake output listener in preload...');
         ipcRenderer.on('snakemake-output', (event, data) => {
-            console.log('Received data in preload:', data);
-            callback(data);
+            console.error('Received data in preload:', data);
         });
+
+        ipcRenderer.on('setting-error', (event, data) => {
+            console.error('Error in preparation: ', data.stderr);
+            callback({ isError: true, errorCode: data.code, stderr: data.stderr });
+        })
     },
     saveConfigFile: (yamlData) => ipcRenderer.invoke('save-file', yamlData),
     checkDockerInstalled: () => ipcRenderer.invoke('docker-installed'),
