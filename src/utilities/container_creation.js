@@ -1,6 +1,6 @@
 // utils to create Docker container
 
-import { execSync } from "child_process";
+import { execSync,spawnSync } from "child_process";
 import { ipcMain } from "electron";
 import { mapIO } from "./docker_utils";
 import os from "os";
@@ -148,7 +148,8 @@ async function fetchKrakenDB(resourcesDir, platform ) {
         if(files.length === 1 && files[0] === krakenDB) {
             console.log("File zipped: unzipping...");
             emitProgress("Unzipping...", 51);
-            execSync(`tar -xvzf '${tarFilePath}' -C '${krakenDir}'`, { stdio: 'inherit' });
+            const result = spawnSync('tar', ['-xvzf', tarFilePath, '-C', krakenDir], { stdio: 'inherit' });
+            console.log(result);
             emitProgress("Unzipping Kraken2 DB", 100);
         } else {
             console.log("Skipping unzip");
@@ -159,11 +160,14 @@ async function fetchKrakenDB(resourcesDir, platform ) {
     }
 
     try {
-        const curlCommand = `curl -L ${krakenDBPath} -o ${path.join(krakenDir, krakenDB)}`;
-        const downloadProcess = execSync(curlCommand, { stdio: 'pipe' });
+        const downloadProcess = spawnSync('curl', ['-L', krakenDBPath, '-o', tarFilePath], { stdio: 'inherit' });
+        // const curlCommand = `curl -L ${krakenDBPath} -o ${path.join(krakenDir, krakenDB)}`;
+        // const downloadProcess = execSync(curlCommand, { stdio: 'pipe' });
+        console.log(downloadProcess);
         downloadProcess.stdout.on('data', (data) => {
             // Analizza l'output di curl
             const match = data.toString().match(/(\d+)%/);
+            console.log(match);
             if (match) {
                 emitProgress("Downloading Kraken2 DB", parseInt(match[1]));
             }
@@ -172,7 +176,8 @@ async function fetchKrakenDB(resourcesDir, platform ) {
         
 
         emitProgress("Unzipping Kraken2 DB", 0);
-        execSync(`tar -xvzf '${tarFilePath}' -C '${krakenDir}'`, { stdio: 'inherit' });
+        spawnSync('tar', ['-xvzf', tarFilePath, '-C', krakenDir], { stdio: 'inherit' });
+        // execSync(`tar -xvzf '${tarFilePath}' -C '${krakenDir}'`, { stdio: 'inherit' });
         emitProgress("Unzipping Kraken2 DB", 100);
     } catch(error) {
         throw(error);
@@ -197,7 +202,8 @@ async function fetchVirulenceDB(resourcesDir, platform) {
         if(files.length === 1 && files[0] === vfDB) {
             console.log("File zipped: unzipping...");
             emitProgress("Unzipping...", 51);
-            execSync(`tar -xf '${tarFilePath}' -C '${vfDBDir}'`);
+            // execSync(`tar -xf '${tarFilePath}' -C '${vfDBDir}'`);
+            spawnSync('tar', ['-xf', tarFilePath, '-C', vfDBDir], { stdio: 'inherit' });
             emitProgress("Unzipping Kraken2 DB", 100);
         } else {
             console.log("Skipping unzip");
@@ -209,10 +215,13 @@ async function fetchVirulenceDB(resourcesDir, platform) {
 
     try { //PROBLEMA CON WINDOWS
         // const curlCommand = `curl -L ${vfDBPath} -O ${tarFilePath}`;
-        const curlCommand = execSync(`powershell -Command "Invoke-WebRequest -Uri '${vfDBPath}' -OutFile '${tarFilePath}'"`, { stdio: 'inherit' });
-        const downloadProcess = execSync(curlCommand, { stdio: 'pipe' });
+        // const curlCommand = execSync(`powershell -Command "Invoke-WebRequest -Uri '${vfDBPath}' -OutFile '${tarFilePath}'"`, { stdio: 'inherit' });
+        // const downloadProcess = execSync(curlCommand, { stdio: 'pipe' });
+        const downloadProcess = spawnSync('curl', ['-L', vfDBPath, '-O', tarFilePath]);
+        console.log(downloadProcess);
         downloadProcess.stdout.on('data', (data) => {
             const match = data.toString().match(/(\d+)%/);
+            console.log(match);
             if (match) {
                 emitProgress("Downloading VirulenceFinder DB", parseInt(match[1]));
             }
@@ -220,7 +229,8 @@ async function fetchVirulenceDB(resourcesDir, platform) {
         
         // testare
         emitProgress("Unzipping VirulenceFinder DB", 0);
-        execSync(`tar -xf '${tarFilePath}' -C '${vfDBDir}'`);
+        // execSync(`tar -xf '${tarFilePath}' -C '${vfDBDir}'`);
+        spawnSync('tar', ['-xf', tarFilePath, '-C', vfDBDir], { stdio: 'inherit' });
         emitProgress("Unzipping VirulenceFinder DB", 100);
     } catch(error) {
         throw(error);
