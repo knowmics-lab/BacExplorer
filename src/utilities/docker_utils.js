@@ -12,14 +12,16 @@ const containerInput = "/project/user-input/";
 const containerOutput = path.join(containerInput, "output");
 const containerResPath = "/project/resources";
 const containerSnakefile = "/project/Snakefile";
+const containerSnakemake = "/project/snakemake";
 const volumeName = "bacExplorer-data";
 const volumeMountPath = "/opt/conda/envs/bacEnv/share";
 
 export async function prepareSnakemakeCommand(userInput, containerName, userConfigPath) {
     const container = docker.getContainer(containerName);
+    console.log("Updating config file in container...");
     await updateConfigFile(userConfigPath);
     // await restartIfNeeded(container, containerName);
-    const newContainer = await mapIO(container, containerName, userInput, userConfigPath);
+    // const newContainer = await mapIO(container, containerName, userInput, userConfigPath);
 
     const data = await container.inspect();
 
@@ -34,7 +36,7 @@ export async function prepareSnakemakeCommand(userInput, containerName, userConf
     volumes.forEach(volume => {
         console.log(`Source: ${volume.Source}, Target: ${volume.Target}, Type: ${volume.Type}`);
     });
-    return newContainer;
+    return container;
 }
 
 // change the INPUT field in the config file of the container
@@ -115,7 +117,7 @@ async function mapIO(container, containerName, userInput, userConfigPath) {
                     `${userOutput}:${containerOutput}`,
                     `${userConfigPath}:${containerConfigPath}`,
                     `${userResources}:${containerResPath}`,
-                    `${snakeFile}:${containerSnakefile}`,
+                    `${snakemakeDirectory}:${containerSnakemake}`,
                 ]
             }
         });

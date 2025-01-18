@@ -58,8 +58,7 @@ app.on('ready', () => {
           label: "GitHub",
           click: () => {
             const { shell } = require('electron')
-            //sostituire con repo github di bacExplorer
-            shell.openExternal('https://electronjs.org');
+            shell.openExternal('https://github.com/AdrianaCannata/bacExplorer/tree/main');
           }
         }
       ]
@@ -146,15 +145,16 @@ ipcMain.handle('open-external', () => {
 })
 
 // docker check
-ipcMain.handle("docker-installed", async function() {
+ipcMain.handle("docker-installed", async () => {
   try {
-    const docker = await checkDockerInstalled();
-    console.log("Docker found: ", docker);
-    return docker;
+    const dockerStatus = checkDockerInstalled();
+    console.log("Docker status:", dockerStatus);
+    return dockerStatus;
   } catch (error) {
-    throw (error);
+    console.error("Error checking Docker:", error.message);
+    throw new Error("Failed to check Docker installation.");
   }
-})
+});
 
 ipcMain.handle("docker-running", async function() {
   try {
@@ -238,27 +238,12 @@ ipcMain.on('run-snakemake', async (event, userInput) => {
 
     // console.log("Exited from utilities with value: ", configFileContainer);
 
-    // const amrFinderDb = `docker exec ${containerName} bash -c "
-    // source /opt/conda/etc/profile.d/conda.sh &&
-    // conda activate bacEnv &&
-    // amrfinder -u
-    // "`;
-
-    // console.log("Updating AMRFinder database...");
-    // execSync(amrFinderDb, { stdio: 'inherit' });
-
     const command = `docker exec ${containerName} bash -c "
     source /opt/conda/etc/profile.d/conda.sh &&
     conda activate bacEnv &&
     snakemake --configfile ${configFileContainer} --force all
     "`;
-
-    // const command = `docker exec ${containerName} bash -c "
-    // amrfinder -u &&
-    // snakemake --configfile ${configFileContainer} --force all
-    // "`;
-
-    
+  
     const child = spawn(command, { cwd: snakefileDir, shell: true });
 
     // handle snakemake output

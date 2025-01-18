@@ -42,13 +42,6 @@ export async function setupContainer(imageName, configPath, containerName) {
         await createContainer(imageName, containerName, configPath);
         await startContainer(containerName);   
 
-        // Simuliamo la creazione del container
-        // for (let i = 0; i <= 100; i++) {
-        //     emitProgress('Creating container', i);
-        //     // ipcMain.emit('progress', { status: "Creating container, step ", i });
-        //     await new Promise(resolve => setTimeout(resolve, 50));  // Simula il progresso
-        // }
-
         return 'Container created successfully';
     } catch (error) {
         throw new Error(`Error during container creation: ${error.message}`);
@@ -147,12 +140,7 @@ async function fetchKrakenDB(resourcesDir, platform ) {
         if(files.length === 1 && files[0] === krakenDB) {
             console.log("File zipped: unzipping...");
             emitProgress("Unzipping...", 51);
-            if (platform === "win32") {
-                const sevenZipPath = "C:\\Program Files\\7-Zip\\7z.exe";
-                execSync(`"${sevenZipPath}" x "${tarFilePath}" -o"${krakenDir}"`, { stdio: 'inherit' });            
-            } else if (platform === "linux" || platform === "darwin") {
-                execSync(`tar -xvzf ${tarFilePath} -C ${krakenDir}`, { stdio: 'inherit' });
-            }
+            execSync(`tar -xvzf ${tarFilePath} -C ${krakenDir}`, { stdio: 'inherit' });
             emitProgress("Unzipping Kraken2 DB", 100);
         } else {
             console.log("Skipping unzip");
@@ -176,12 +164,7 @@ async function fetchKrakenDB(resourcesDir, platform ) {
         
 
         emitProgress("Unzipping Kraken2 DB", 0);
-        if (platform === "win32") {
-            const sevenZipPath = "C:\\Program Files\\7-Zip\\7z.exe";
-            execSync(`"${sevenZipPath}" x "${tarFilePath}" -o"${krakenDir}"`, { stdio: 'inherit' });            
-        } else if (platform === "linux" || platform === "darwin") {
-            execSync(`tar -xvzf ${tarFilePath} -C ${krakenDir}`, { stdio: 'inherit' });
-        }
+        execSync(`tar -xvzf ${tarFilePath} -C ${krakenDir}`, { stdio: 'inherit' });
         emitProgress("Unzipping Kraken2 DB", 100);
     } catch(error) {
         throw(error);
@@ -194,27 +177,23 @@ async function fetchVirulenceDB(resourcesDir, platform) {
     const vfDB = "master.zip";
     const vfDBPath = "https://bitbucket.org/genomicepidemiology/virulencefinder_db/get/master.zip";
     const tarFilePath = path.join(vfDBDir, vfDB);
+    // const extractionSubdir = "genomicepidemiology-virulencefinder_db-9638945ea72e";
     if (!fs.existsSync(vfDBDir)) {
         fs.mkdirSync(vfDBDir, { recursive: true });
     }
 
     if(fs.existsSync(tarFilePath)) {
-        console.log(`Kraken database: ${vfDB} found in ${vfDBDir}. Skipping download`);
-        emitProgress("Kraken2DB already exists in folder. Skipping download", 50);
+        console.log(`Virulence finder db: ${vfDB} found in ${vfDBDir}. Skipping download`);
+        emitProgress("Virulence finder db already exists in folder. Skipping download", 50);
         const files = fs.readdirSync(vfDBDir);
         if(files.length === 1 && files[0] === vfDB) {
             console.log("File zipped: unzipping...");
             emitProgress("Unzipping...", 51);
-            if (platform === "win32") {
-                const sevenZipPath = "C:\\Program Files\\7-Zip\\7z.exe";
-                execSync(`"${sevenZipPath}" x "${tarFilePath}" -o"${vfDBDir}"`, { stdio: 'inherit' });            
-            } else if (platform === "linux" || platform === "darwin") {
-                execSync(`tar -xvzf ${tarFilePath} -C ${vfDBDir}`, { stdio: 'inherit' });
-            }
+            execSync(`tar -xf ${tarFilePath} -C ${vfDBDir}`);
             emitProgress("Unzipping Kraken2 DB", 100);
         } else {
             console.log("Skipping unzip");
-            emitProgress("Kraken2DB already unzipped", 100);
+            emitProgress("Virulence finder db already unzipped", 100);
         }
         console.log("Kraken done");
         return;
@@ -232,14 +211,9 @@ async function fetchVirulenceDB(resourcesDir, platform) {
         });
         
         // testare
-        emitProgress("Extracting VirulenceFinder DB", 0);
-        if (platform === "win32") {
-            const sevenZipPath = "C:\\Program Files\\7-Zip\\7z.exe";
-            execSync(`"${sevenZipPath}" x "${tarFilePath}" -o"${vfDBDir}"`, { stdio: 'inherit' });            
-        } else if (platform === "linux" || platform === "darwin") {
-            execSync(`unzip -o ${vfDB} -C ${tarFilePath}`, { stdio: 'inherit' });
-        }
-        emitProgress("Extracting VirulenceFinder DB", 100);
+        emitProgress("Unzipping VirulenceFinder DB", 0);
+        execSync(`tar -xf ${tarFilePath} -C ${vfDBDir}`);
+        emitProgress("Unzipping VirulenceFinder DB", 100);
     } catch(error) {
         throw(error);
     }
@@ -302,151 +276,6 @@ async function startContainer(containerName)
     
 
 
-
-// configPath = global variable in main.js
-
-// export async function setupContainer(configPath, imageName, containerName) {
-//     try {
-//         await pullDockerImage(imageName);
-//         // await createAndStartContainer(imageName, containerName, configPath);
-//         // await waitForContainerRunning(containerName);
-//         // console.log("Container created and started successfully.");
-//         // await updateContainer(containerName);
-//         const message = `Image pulled: ${imageName}. Container successfully created: ${imageName}`;
-//         return message;
-//     } catch (error) {
-//         console.error("Failed to create and start container: ", error);
-//         throw (error);
-//     }
-// }
-
-// const EventEmitter = require('events');
-// const progressEmitter = new EventEmitter();
-
-// export async function pullDockerImage(imageName) {
-//   return new Promise((resolve, reject) => {
-//     docker.pull(imageName, (err, stream) => {
-//       if (err) return reject(err);
-//       docker.modem.followProgress(stream, onFinished, onProgress);
-
-//       function onFinished(err, output) {
-//         if (err) reject(err);
-//         resolve("Image pulled successfully.");
-//       }
-
-//     //   function onProgress(event) {
-//     //     console.log(event);
-//     //   }
-
-//       function onProgress(event) {
-//         // Calcola il progresso dal dato dell'evento (esempio, se è un evento di tipo "status")
-//         if (event.status) {
-//           // Emetti evento di progresso
-//           const progressData = {
-//             stage: `Pulling image: ${event.status}`, // Aggiungi altre informazioni utili se necessario
-//             progress: event.progressDetail ? (event.progressDetail.current / event.progressDetail.total) * 100 : 0
-//           };
-
-//           // Emetti progresso tramite progressEmitter per inviarlo al frontend
-//           progressEmitter.emit('progress', progressData);
-//           ipcMain.emit('progress', progressData);  // Invia l'evento tramite ipcMain
-//         }
-//       }
-    
-//     });
-//   });
-// }
-
-// async function createAndStartContainer(imageName, containerName, configPath) {
-//     try {
-//         const snakemakeDirectory = configPath;
-//         const resourcesDir = path.join(snakemakeDirectory, "/resources");
-
-//         execSync(`mkdir -p ${resourcesDir}`);
-//         progressEmitter.emit('progress', { stage: 'Creating directories', progress: 10 });
-//         ipcMain.emit('progress', { stage: 'Creating directories', progress: 10 });
-
-//         // krakenDB download
-//         const krakenDir = path.join(resourcesDir, "kraken2db");
-//         const krakenDB = "k2_standard_08gb_20240904.tar.gz";
-//         const krakenDBPath = "https://genome-idx.s3.amazonaws.com/kraken/k2_standard_08gb_20240904.tar.gz";
-//         execSync(`mkdir -p ${krakenDir}`);
-//         execSync(`wget ${krakenDBPath} -O ${path.join(krakenDir, krakenDB)} && tar -xvzf ${path.join(krakenDir, krakenDB)} -C ${krakenDir}`, { stdio: 'inherit' });
-//         progressEmitter.emit('progress', { stage: 'Downloading Kraken DB', progress: 40 });
-//         ipcMain.emit('progress', { stage: 'Downloading Kraken DB', progress: 40 });
-
-//         // virulence_finder_DB download
-//         const vfDBDir = path.join(resourcesDir, "virulencefinder_db");
-//         const vfDB = "master.tar.gz";
-//         const vfDBPath = "https://bitbucket.org/genomicepidemiology/virulencefinder_db/get/master.tar.gz";
-//         execSync(`wget ${vfDBPath} -O ${path.join(vfDBDir, vfDB)} && tar -xvzf ${path.join(vfDBDir, vfDB)} -C ${vfDBDir}`, { stdio: 'inherit' });
-//         progressEmitter.emit('progress', { stage: 'Downloading Virulence Finder DB', progress: 70 });
-//         ipcMain.emit('progress', { stage: 'Downloading Virulence Finder DB', progress: 70 });
-
-//         // create volumes for dbs
-//         const amrFinder = "bacExplorer-amrFinder";
-//         await ensureVolume(amrFinder);
-
-//         const databases = "bacExplorer-databases";
-//         await ensureVolume(databases);
-
-//         progressEmitter.emit('progress', { stage: 'Creating volumes', progress: 90 });
-//         ipcMain.emit('progress', { stage: 'Creating volumes', progress: 90 });
-
-//         // Create container (last step)
-//         const container = docker.createContainer({
-//             Image: imageName,
-//             name: containerName,
-//             Cmd: ["/bin/bash", "-c", "while true; do sleep 30; done"],
-//             HostConfig: {
-//                 Binds: [/* your binds */],
-//                 RestartPolicy: { Name: "no" },
-//             }
-//         });
-
-//         await container.start();
-//         progressEmitter.emit('progress', { stage: 'Starting container', progress: 100 });
-//         ipcMain.emit('progress', { stage: 'Starting container', progress: 100 });
-
-//         console.log(`Container ${containerName} started.`);
-//     } catch (error) {
-//         ipcMain.emit('error', error.message);
-//         throw error;
-//     }
-// }
-
-// async function waitForContainerRunning(containerName, maxRetries = 10, delayMs = 2000) {
-//     const container = docker.getContainer(containerName);
-//     for (let i = 0; i < maxRetries; i++) {
-//         const containerInfo = await container.inspect();
-//         if (containerInfo.State.Status === "running") {
-//             console.log(`Container ${containerName} is running.`);
-//             return;
-//         }
-//         console.log(
-//             `Container ${containerName} is ${containerInfo.State.Status}. Retrying in ${delayMs}ms...`
-//         );
-//         await new Promise((resolve) => setTimeout(resolve, delayMs));
-//     }
-//     throw new Error(`Container ${containerName} did not reach running state after ${maxRetries} retries.`);
-// }
-
-// async function ensureVolume(volumeName) {
-//     try {
-//         const volumes = await docker.listVolumes();
-//         const volumeExists = volumes.Volumes.some(volume => volume.Name === volumeName);
-
-//         if (!volumeExists) {
-//             console.log(`Volume ${volumeName} does not exist. Creating...`);
-//             await docker.createVolume({ Name: volumeName });
-//             console.log(`Volume ${volumeName} created successfully.`);
-//         } else {
-//             console.log(`Volume ${volumeName} already exists.`);
-//         }
-//     } catch (error) {
-//         console.error(`Error ensuring volume ${volumeName}:`, error);
-//     }
-// }
 
 // async function updateContainer(containerName) {
 //     try {
