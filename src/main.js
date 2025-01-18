@@ -6,8 +6,9 @@ import fs from 'fs';
 import fsExtra from 'fs-extra';
 import path from 'path';
 import { checkDockerInstalled, checkDockerRunning } from './utilities/functions.js';
-import { setupContainer } from './utilities/container_creation.js';
-import { prepareSnakemakeCommand } from './utilities/docker_utils.js';
+import { setupContainer, prepareSnakemakeCommand } from './utilities/containers.js';
+// per testare su container giocattolo
+// import { prepareSnakemakeCommand } from './utilities/docker_utils.js';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -211,17 +212,6 @@ ipcMain.handle('create-container', async (event) => {
   }
 });
 
-// ipcMain.handle('create-container', async (event, configPath, imageName, containerName) => {
-//   try {
-//       const response = await setupContainer(configPath, imageName, containerName);
-//       console.log("In main.js: ", response);
-//       return response;
-//   } catch (error) {
-//       console.error("Error in creating container: ", error);
-//       throw error;
-//   }
-// });
-
 // select input folder
 ipcMain.handle("dialog:select-folder", async function(event){
   const { canceled, filePaths } = await dialog.showOpenDialog({
@@ -235,18 +225,21 @@ ipcMain.handle("dialog:select-folder", async function(event){
 // launch analysis via snakemake
 ipcMain.on('run-snakemake', async (event, userInput) => {
     const configFile = path.join(configPath, "config.yaml");
-    console.log('Running Snakemake with config file:', configFile);
+    // salva correttamente nella cartella userData
     const snakefileDir = path.dirname(configFile);
+    console.log("SnakefileDir: ", snakefileDir);
 
-    const newContainer = await prepareSnakemakeCommand(userInput, containerName, configFile);
+    const newContainer = await prepareSnakemakeCommand(containerName, userInput, snakefileDir);
+    
     console.log("New container created: ", newContainer);
 
-    const configFileContainer = "/project/config.yaml";
+    // const configFileContainer = "/project/config.yaml";
 
-    // const configFileContainer = await prepareSnakemakeCommand(userInput, containerName, configFile);
+    // // const configFileContainer = await prepareSnakemakeCommand(userInput, containerName, configFile);
 
-    // console.log("Exited from utilities with value: ", configFileContainer);
+    // // console.log("Exited from utilities with value: ", configFileContainer);
 
+    console.log('Running Snakemake with config file:', configFile);
     const command = `docker exec ${containerName} bash -c "
     source /opt/conda/etc/profile.d/conda.sh &&
     conda activate bacEnv &&
