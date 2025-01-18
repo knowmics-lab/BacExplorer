@@ -44,11 +44,18 @@ app.on('ready', () => {
   const template = [
     {
       label: "Guide",
-      click: () => mainWindow.webContents.send('navigate', 'guide')
+      
+      click: () => {
+        console.log('Evento navigate emesso con pagina: guide');
+        mainWindow.webContents.send('navigate', 'guide')
+      }
     },
     {
       label: "Settings",
-      click: () => mainWindow.webContents.send('navigate', 'settings')
+      click: () => {
+        console.log('Evento navigate emesso con pagina: settings');
+        mainWindow.webContents.send('navigate', 'settings')
+      }
     },
     {
       label: "Help",
@@ -70,6 +77,7 @@ app.on('ready', () => {
   const userDataPath = app.getPath('userData');
 
   const targetFolder = path.join(userDataPath, 'snakemake');
+  console.log("Target folder: ", targetFolder);
 
   if (!fs.existsSync(targetFolder)) {
     fs.mkdirSync(targetFolder, { recursive: true });
@@ -77,6 +85,7 @@ app.on('ready', () => {
   }
 
   const sourceFolder = path.join(__dirname, '../../snakemake');
+  console.log("Source folder: ", sourceFolder);
 
   try {
     fsExtra.copySync(sourceFolder, targetFolder);

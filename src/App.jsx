@@ -10,6 +10,7 @@ export default function App() {
 
     useEffect(() => {
         window.api.onNavigate(page => {
+            console.log("Page: ", page);
             setCurrentPage(page);
         })
 
@@ -23,7 +24,7 @@ export default function App() {
                 errorButton.removeEventListener('click', window.api.openErrorDialog);
             }
         };
-    }, [])
+    }, [currentPage])
 
     const renderContent = () => {
         switch(currentPage) {

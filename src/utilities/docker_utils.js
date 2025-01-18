@@ -19,7 +19,17 @@ const volumeMountPath = "/opt/conda/envs/bacEnv/share";
 export async function prepareSnakemakeCommand(userInput, containerName, userConfigPath) {
     const container = docker.getContainer(containerName);
     console.log("Updating config file in container...");
+    // update del config file nel container funziona correttamente.
+    // IDEA: creare un volume con la cartella di input data dallo user, fermare il container, montare il volume e avviarlo di nuovo
+    // a container riavviato, eseguire snakemake
+    // se il container è sempre lo stesso, si possono eseguire all'interno i comandi per amrfinder e l'update dei database
     await updateConfigFile(userConfigPath);
+
+    //steps:
+    // 1. stop container
+    // 2. update "Binds" in hostconfig.json
+    // 3. update config.v2.json
+
     // await restartIfNeeded(container, containerName);
     // const newContainer = await mapIO(container, containerName, userInput, userConfigPath);
 

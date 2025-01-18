@@ -43,10 +43,18 @@ import './index.jsx';
 // window.api.openErrorDialog?.();
 // window.api.selectFolder?.();
 
-// // Aggiungi un listener per la navigazione
-// window.api.onNavigate((page) => {
-//     console.log('Navigating to: ', page);
-// });
+// let currentPage = 'guide';
+
+// window.api.onNavigate((event, page) => {
+//     if (currentPage !== page) {
+//       currentPage = page;
+//       console.log(`Navigo verso la pagina: ${page}`);
+//       // Qui puoi aggiornare il DOM o eseguire la navigazione
+//       document.getElementById('content').innerText = `Pagina corrente: ${page}`;
+//     } else {
+//       console.log(`Sei già sulla pagina ${page}`);
+//     }
+//   });
 
 // // Aggiungi un listener per Snakemake output
 // window.api.onSnakemakeOutput((data) => {
