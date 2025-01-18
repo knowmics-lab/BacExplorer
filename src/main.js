@@ -3,6 +3,7 @@ import started from 'electron-squirrel-startup';
 import { spawn, execSync } from 'child_process';
 import os from 'os';
 import fs from 'fs';
+import fsExtra from 'fs-extra';
 import path from 'path';
 import { checkDockerInstalled, checkDockerRunning } from './utilities/functions.js';
 import { setupContainer } from './utilities/container_creation.js';
@@ -76,13 +77,18 @@ app.on('ready', () => {
     console.log(`Updating userData. Creating folder: ${targetFolder}`);
   }
 
-  const sourceFolder = path.join(__dirname, 'snakemake');
+  const sourceFolder = path.join(__dirname, '../../snakemake');
 
   try {
     fsExtra.copySync(sourceFolder, targetFolder);
     console.log('Files successfully copied!');
+    // const sourceOutput = execSync(`dir ${sourceFolder}`);
+    // console.log(`In source folder: ${sourceOutput}`);
+    // const targetOutput = execSync(`dir ${targetFolder}`);
+    // console.log(`In target folder: ${targetOutput}`);
   } catch (err) {
     console.error('Error while copying:', err);
+    throw(err);
   }
 
   // On OS X it's common to re-create a window in the app when the
@@ -116,6 +122,14 @@ app.on('window-all-closed', () => {
 const configPath = path.join(app.getPath('userData'), "snakemake");
 const imageName = "priviteragf/bacexplorer:latest";
 const containerName = "snakemakeContainer";
+
+// ipcMain.on('progress', (event, data) => {
+//   const mainWindow = BrowserWindow.getAllWindows()[0];
+//   if (mainWindow) {
+//       console.log("in main.js: ", data);
+//       mainWindow.webContents.send('progress', data);
+//   }
+// });
 
 ipcMain.handle('open-external', () => {
   let url = "";
@@ -151,15 +165,53 @@ ipcMain.handle("docker-running", async function() {
 })
 
 // environment setup
-ipcMain.handle('create-container', async function() {
+// ipcMain.handle('create-container', async function() {
+//   try {
+//     const response = await setupContainer(configPath, imageName, containerName);
+//     console.log("In main.js: ", response);
+//     return response;
+//   } catch (error) {
+//     throw (error);
+//   }
+// })
+
+// ipcMain.handle('check-image', async (event) => {
+//   try {
+//     const response = await pullDockerImage(imageName);
+//     console.log(response);
+//     return response;
+//   } catch (error) {
+//     console.error(error);
+//     throw(error);
+//   }
+// })
+
+ipcMain.handle('create-container', async (event) => {
   try {
-    const response = await setupContainer(configPath, imageName, containerName);
-    console.log("In main.js: ", response);
-    return response;
+    console.log(`Creating container with parameters: \nIMAGE NAME: ${imageName}\tFOLDER TO MOUNT: ${configPath}\tCONTAINER NAME: ${containerName}`);
+      const result = await setupContainer(imageName, configPath, containerName);
+      console.log("Result:", result);
+      return result;
   } catch (error) {
-    throw (error);
+    let message = error.message;
+    if(error.message.includes("connect ENOENT"))
+    {
+      message = "Run Docker first!"
+    }
+      throw new Error(`Error creating container: ${message}`);
   }
-})
+});
+
+// ipcMain.handle('create-container', async (event, configPath, imageName, containerName) => {
+//   try {
+//       const response = await setupContainer(configPath, imageName, containerName);
+//       console.log("In main.js: ", response);
+//       return response;
+//   } catch (error) {
+//       console.error("Error in creating container: ", error);
+//       throw error;
+//   }
+// });
 
 // select input folder
 ipcMain.handle("dialog:select-folder", async function(event){
