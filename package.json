@@ -16,7 +16,6 @@
     "publish": "electron-forge publish",
     "lint": "echo \"No linting configured\""
   },
-  
   "build": {
     "appId": "com.bacexplorer.app",
     "productName": "BacExplorer",
@@ -117,6 +116,7 @@
     "bootstrap": "^5.3.3",
     "dockerode": "^4.0.3",
     "electron-squirrel-startup": "^1.0.1",
+    "fs-extra": "^11.3.0",
     "js-yaml": "^4.1.0",
     "react": "^19.0.0",
     "react-bootstrap": "^2.10.7",

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, Menu, shell } from 'electron';
+import { app, BrowserWindow, screen, dialog, ipcMain, Menu, shell } from 'electron';
 import started from 'electron-squirrel-startup';
 import { spawn, execSync } from 'child_process';
 import os from 'os';
@@ -16,6 +16,125 @@ if (started) {
 }
 
 let mainWindow;
+
+const createWindowsMenu = () => {
+  return [
+    {
+      label: "Guide",
+      click: () => {
+        navigate('guide');
+      }
+    },
+    {
+      label: "Settings",
+      click: () => {
+        navigate('settings');
+      }
+    },
+    {
+      label: "Help",
+      submenu:
+        [
+          {
+            label: "GitHub",
+            click: () => {
+              const { shell } = require('electron')
+              shell.openExternal('https://github.com/AdrianaCannata/bacExplorer/tree/main');
+            }
+          }
+        ]
+    }
+  ];
+};
+
+const createDarwinMenu = () => {
+  const subMenuAbout = {
+    label: 'BacExplorer',
+    submenu: [
+      {
+        label: 'About BacExplorer',
+        selector: 'orderFrontStandardAboutPanel:',
+      },
+      { type: 'separator' },
+      { label: 'Services', submenu: [] },
+      { type: 'separator' },
+      {
+        label: 'Hide ElectronReact',
+        accelerator: 'Command+H',
+        selector: 'hide:',
+      },
+      {
+        label: 'Hide Others',
+        accelerator: 'Command+Shift+H',
+        selector: 'hideOtherApplications:',
+      },
+      { label: 'Show All', selector: 'unhideAllApplications:' },
+      { type: 'separator' },
+      {
+        label: 'Quit',
+        accelerator: 'Command+Q',
+        click: () => {
+          app.quit();
+        },
+      },
+    ],
+  };
+  const subMenuFile = {
+    label: 'File',
+    submenu: [
+      { label: 'Settings', accelerator: 'CmdOrCtrl+,', click: () => navigate('settings') },
+    ],
+  };
+  const subMenuEdit = {
+    label: 'Edit',
+    submenu: [
+      { label: 'Undo', accelerator: 'Command+Z', selector: 'undo:' },
+      { label: 'Redo', accelerator: 'Shift+Command+Z', selector: 'redo:' },
+      { type: 'separator' },
+      { label: 'Cut', accelerator: 'Command+X', selector: 'cut:' },
+      { label: 'Copy', accelerator: 'Command+C', selector: 'copy:' },
+      { label: 'Paste', accelerator: 'Command+V', selector: 'paste:' },
+      {
+        label: 'Select All',
+        accelerator: 'Command+A',
+        selector: 'selectAll:',
+      },
+    ],
+  };
+  const subMenuWindow = {
+    label: 'Window',
+    submenu: [
+      {
+        label: 'Minimize',
+        accelerator: 'Command+M',
+        selector: 'performMiniaturize:',
+      },
+      { label: 'Close', accelerator: 'Command+W', selector: 'performClose:' },
+      { type: 'separator' },
+      { label: 'Bring All to Front', selector: 'arrangeInFront:' },
+    ],
+  };
+  const subMenuHelp = {
+    label: 'Help',
+    submenu: [
+      {
+        label: 'Guide',
+        click: () => {
+          navigate('guide');
+        }
+      },
+      {
+        label: "GitHub",
+        click: () => {
+          const { shell } = require('electron')
+          shell.openExternal('https://github.com/AdrianaCannata/bacExplorer/tree/main');
+        }
+      }
+    ],
+  };
+
+  return [subMenuAbout, subMenuFile, subMenuEdit, subMenuWindow, subMenuHelp];
+}
 
 const createWindow = () => {
   // Create the browser window.
@@ -43,36 +162,7 @@ app.on('ready', () => {
   createWindow();
 
   // configure the menu
-  const template = [
-    {
-      label: "Guide",
-      
-      click: () => {
-        //console.log('Evento navigate emesso con pagina: guide');
-        navigate('guide');
-        //mainWindow.webContents.send('navigate', 'guide')
-      }
-    },
-    {
-      label: "Settings",
-      click: () => {
-        navigate('settings');
-      }
-    },
-    {
-      label: "Help",
-      submenu:
-      [
-        {
-          label: "GitHub",
-          click: () => {
-            const { shell } = require('electron')
-            shell.openExternal('https://github.com/AdrianaCannata/bacExplorer/tree/main');
-          }
-        }
-      ]
-    }
-  ]
+  const template = process.platform === 'darwin' ? createDarwinMenu() : createWindowsMenu();
   const menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);
 
