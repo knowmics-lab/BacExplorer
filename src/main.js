@@ -406,6 +406,7 @@ ipcMain.on('run-snakemake', async (event, userInput) => {
       return;
     }
 
+    const snakefileDir = path.dirname(configFile);
     try {
       const dirContent = fs.readdirSync(snakefileDir);
       if(!dirContent.includes('Snakefile')) {
@@ -415,7 +416,6 @@ ipcMain.on('run-snakemake', async (event, userInput) => {
     } catch(error) {
       event.reply('setting-error', {stderr: error.message, code: 500 });
     }
-    const snakefileDir = path.dirname(configFile);
     console.log("SnakefileDir: ", snakefileDir);
 
     const newContainer = await prepareSnakemakeCommand(containerName, userInput, snakefileDir);
