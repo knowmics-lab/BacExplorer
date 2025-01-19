@@ -37,3 +37,13 @@ Please ensure to run Docker before you start setting the environment, otherwise 
 -- SCREENSHOT DEL SETTING DEI PARAMETRI --
 
 4) Report page
+
+### Test
+
+## FASTQ
+To test BacExplorer with fastq samples it is possible to donwload:
+*Klebsiella pnaumoniae* samples from https://www.ncbi.nlm.nih.gov/bioproject/PRJNA1125320
+*Staphylococcus aureus* sample from https://www.ncbi.nlm.nih.gov/bioproject/PRJNA912391
+
+## FASTA
+Fasta samples to test BacExplorer can be found in "test_data" folder in this repository.
