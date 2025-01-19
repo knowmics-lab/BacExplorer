@@ -19,7 +19,7 @@ contextBridge.exposeInMainWorld('api', {
     },
     openErrorDialog: () => ipcRenderer.send("open-error-dialog"),
     selectFolder: () => ipcRenderer.invoke('dialog:select-folder'),
-    onNavigate: (callback) => ipcRenderer.on('navigate', (event, page) => callback(page)),
+    onNavigate: (callback) => { console.log("Navighiamo dal preload"); ipcRenderer.on('navigate', (event, page) => callback(page))},
     prepareSnakemake: (userInput) => ipcRenderer.send('run-snakemake', userInput),
     onSnakemakeOutput: (callback) => {
         console.log('Setting up Snakemake output listener in preload...');

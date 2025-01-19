@@ -5,11 +5,74 @@
   "description": "A tool for bacterial analysis",
   "main": ".webpack/main",
   "scripts": {
+    "clean": "rimraf ./out",
     "start": "electron-forge start",
-    "package": "electron-forge package",
-    "make": "electron-forge make",
+    "package": "npm run clean && electron-forge package",
+    "make": "npm run clean && electron-forge make",
+    "builder-package": "npm run clean && electron-builder --dir",
+    "build": "concurrently \"npm run build:main\" \"npm run build:renderer\"",
+    "build:main": "cross-env NODE_ENV=production webpack --config ./configs/webpack.main.config.js",
+    "build:renderer": "cross-env NODE_ENV=production webpack --config ./configs/webpack.renderer.config.js",
     "publish": "electron-forge publish",
     "lint": "echo \"No linting configured\""
+  },
+  
+  "build": {
+    "appId": "com.bacexplorer.app",
+    "productName": "BacExplorer",
+    "directories": {
+      "buildResources": "snakemake",
+      "output": "release"
+    },
+    "files": [
+      "**/*",
+      "!**/*.map"
+    ],
+    "extraResources": [
+      {
+        "from": "./snakemake",
+        "to": "resources/snakemake"
+      }
+    ],
+    "mac": {
+      "target": [
+        "zip"
+      ],
+      "type": "distribution",
+      "hardenedRuntime": true,
+      "entitlements": "assets/entitlements.mac.plist",
+      "entitlementsInherit": "assets/entitlements.mac.plist",
+      "gatekeeperAssess": false
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb",
+        "rpm",
+        "tar.gz",
+        "pacman"
+      ],
+      "category": "ComputerScience"
+    }
   },
   "devDependencies": {
     "@babel/core": "^7.26.0",
@@ -26,17 +89,23 @@
     "@vercel/webpack-asset-relocator-loader": "^1.7.3",
     "autoprefixer": "^10.4.20",
     "babel-loader": "^9.2.1",
+    "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3",
     "css-loader": "^6.11.0",
     "electron": "33.3.1",
+    "electron-builder": "^25.1.8",
     "file-loader": "^6.2.0",
     "file-saver": "^2.0.5",
     "html-loader": "^5.1.0",
     "node-loader": "^2.1.0",
+    "node-polyfill-webpack-plugin": "^4.1.0",
     "postcss": "^8.4.49",
     "postcss-loader": "^4.2.0",
+    "rimraf": "^6.0.1",
     "sass": "^1.83.1",
     "sass-loader": "^10.1.1",
-    "style-loader": "^3.3.4"
+    "style-loader": "^3.3.4",
+    "webpack-cli": "^6.0.1"
   },
   "keywords": [],
   "author": {

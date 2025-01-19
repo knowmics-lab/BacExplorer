@@ -1,5 +1,8 @@
 const { FusesPlugin } = require('@electron-forge/plugin-fuses');
 const { FuseV1Options, FuseVersion } = require('@electron/fuses');
+const fs = require('fs');
+const path = require('path');
+const { prePackage } = require('./hooks');
 
 module.exports = {
   packagerConfig: {
@@ -25,6 +28,31 @@ module.exports = {
     //   config: {},
     // },
   ],
+  hooks: "require:hooks.js",
+  // hooks: {
+  //   prePackage: async (forgeConfig, options) => {
+  //     console.log("Running beforePack hook");
+  //     const copyFileOutsideOfElectronAsar = function (sourcePath, destPath) {
+
+  //       if (fs.existsSync(sourcePath)) {
+  //           const dir = path.dirname(destPath);
+  //           if (!fs.existsSync(dir)) {
+  //               fs.mkdirSync(dir, { recursive: true });
+  //           }
+
+  //           fs.copyFileSync(sourcePath, destPath);
+  //           // console.log(`File copiato con successo da ${sourcePath} a ${destPath}`);
+  //       }   
+  //   };
+
+  //   //destPath è la cartella resources, al di fuori di app.asar
+  //   const sourcePath = path.join(__dirname, 'snakemake');
+  //   const destPath = path.join(options.dir, 'resources', 'snakemake');
+
+  //   copyFileOutsideOfElectronAsar(sourcePath, destPath);
+  //   }
+
+  // },
   plugins: [
     {
       name: '@electron-forge/plugin-auto-unpack-natives',

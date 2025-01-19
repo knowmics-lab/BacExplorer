@@ -81,64 +81,92 @@ app.on('ready', () => {
 
   // console.log("App path: ", appPath);
 
-  var copyFileOutsideOfElectronAsar = function (sourceInAsarArchive, destOutsideAsarArchive) {
-    if (fs.existsSync(app.getAppPath() + "/" + sourceInAsarArchive)) {
+  // var copyFileOutsideOfElectronAsar = function (sourceInAsarArchive, destOutsideAsarArchive) {
+  //   console.log("In function to extract asar...");
+  //   if (fs.existsSync(path.join(app.getAppPath(), sourceInAsarArchive))) {
 
-        // file will be copied
-        if (fs.statSync(app.getAppPath() + "/" + sourceInAsarArchive).isFile()) {
+  //       // file will be copied
+  //       // if (fs.statSync(app.getAppPath() + "/" + sourceInAsarArchive).isFile()) {
+  //       if (fs.statSync(path.join(app.getAppPath(), sourceInAsarArchive)).isFile()) {
+  //           let file = destOutsideAsarArchive; 
+  //           let dir = path.dirname(file);
+  //           if (!fs.existsSync(dir)) {
+  //               fs.mkdirSync(dir, { recursive: true });
+  //           }
 
-            let file = destOutsideAsarArchive; 
-            let dir = path.dirname(file);
-            if (!fs.existsSync(dir)) {
-                fs.mkdirSync(dir, { recursive: true });
-            }
+  //           //fs.writeFileSync(file, fs.readFileSync(app.getAppPath() + "/" + sourceInAsarArchive));
+  //           fs.writeFileSync(file, fs.readFileSync(path.join(app.getAppPath(), sourceInAsarArchive)));
 
-            fs.writeFileSync(file, fs.readFileSync(app.getAppPath() + "/" + sourceInAsarArchive));
+  //       }
 
-        }
+  //       // dir is browsed
+  //       // else if (fs.statSync(app.getAppPath() + "/" + sourceInAsarArchive).isDirectory()) {
+  //       else if (fs.statSync(path.join(app.getAppPath(), sourceInAsarArchive)).isDirectory()) {
 
-        // dir is browsed
-        else if (fs.statSync(app.getAppPath() + "/" + sourceInAsarArchive).isDirectory()) {
+  //           // fs.readdirSync(app.getAppPath() + "/" + sourceInAsarArchive).forEach(function (fileOrFolderName) {
+  //           fs.readdirSync(path.join(app.getAppPath(), sourceInAsarArchive)).forEach(function (fileOrFolderName) {
+  //             console.log("Copying...", fileOrFolderName);
+  //             copyFileOutsideOfElectronAsar(path.join(sourceInAsarArchive, fileOrFolderName), path.join(destOutsideAsarArchive, fileOrFolderName));  
+  //             // copyFileOutsideOfElectronAsar(sourceInAsarArchive + "/" + fileOrFolderName, destOutsideAsarArchive + "/" + fileOrFolderName);
+  //           });
+  //       }
+  //   }
 
-            fs.readdirSync(app.getAppPath() + "/" + sourceInAsarArchive).forEach(function (fileOrFolderName) {
-
-                copyFileOutsideOfElectronAsar(sourceInAsarArchive + "/" + fileOrFolderName, destOutsideAsarArchive + "/" + fileOrFolderName);
-            });
-        }
-    }
-
-  }
+  // }
 
   
-
   const targetFolder = path.join(userDataPath, 'snakemake');
+  let sourceFolder = "";
+  if (process.env.NODE_ENV === 'production') {
+    sourceFolder = path.join(process.resourcesPath, 'snakemake');
+  } else {
+    sourceFolder = path.join(__dirname, '../../snakemake');
+  }
+  
   console.log("Target folder: ", targetFolder);
-
-  const sourceFolder = path.join(__dirname, '../../snakemake');
   console.log("Source folder: ", sourceFolder);
 
-  if (process.env.NODE_ENV === 'production' || app.getAppPath().includes('.asar')) {
-    copyFileOutsideOfElectronAsar(targetFolder, sourceFolder);
+  if (!fs.existsSync(targetFolder)) {
+    fs.mkdirSync(targetFolder, { recursive: true });
+    console.log(`Updating userData. Creating folder: ${targetFolder}`);
   }
 
-  if (process.env.NODE_ENV !== 'production') {
-    if (!fs.existsSync(targetFolder)) {
-      fs.mkdirSync(targetFolder, { recursive: true });
-      console.log(`Updating userData. Creating folder: ${targetFolder}`);
-    }
-  
-    try {
-      fsExtra.copySync(sourceFolder, targetFolder);
-      console.log('Files successfully copied!');
-      // const sourceOutput = execSync(`dir ${sourceFolder}`);
-      // console.log(`In source folder: ${sourceOutput}`);
-      // const targetOutput = execSync(`dir ${targetFolder}`);
-      // console.log(`In target folder: ${targetOutput}`);
-    } catch (err) {
-      console.error('Error while copying:', err);
-      throw(err);
-    }
+  try {
+    fsExtra.copySync(sourceFolder, targetFolder);
+    console.log('Files successfully copied!');
+    // const sourceOutput = execSync(`dir ${sourceFolder}`);
+    // console.log(`In source folder: ${sourceOutput}`);
+    // const targetOutput = execSync(`dir ${targetFolder}`);
+    // console.log(`In target folder: ${targetOutput}`);
+  } catch (err) {
+    console.error('Error while copying:', err);
+    throw(err);
   }
+  
+ 
+
+  // if (process.env.NODE_ENV === 'production' || app.getAppPath().includes('.asar')) {
+  //   copyFileOutsideOfElectronAsar(sourceFolder, targetFolder);
+  // }
+
+  // if (process.env.NODE_ENV !== 'production') {
+  //   if (!fs.existsSync(targetFolder)) {
+  //     fs.mkdirSync(targetFolder, { recursive: true });
+  //     console.log(`Updating userData. Creating folder: ${targetFolder}`);
+  //   }
+  
+  //   try {
+  //     fsExtra.copySync(sourceFolder, targetFolder);
+  //     console.log('Files successfully copied!');
+  //     // const sourceOutput = execSync(`dir ${sourceFolder}`);
+  //     // console.log(`In source folder: ${sourceOutput}`);
+  //     // const targetOutput = execSync(`dir ${targetFolder}`);
+  //     // console.log(`In target folder: ${targetOutput}`);
+  //   } catch (err) {
+  //     console.error('Error while copying:', err);
+  //     throw(err);
+  //   }
+  // }
 
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.

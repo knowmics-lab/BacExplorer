@@ -375,7 +375,7 @@ async function mapIO(containerName, userInput, userConfigPath) {
             await docker.createContainer({
                 Image: containerInfo.Config.Image, // Usa l'immagine del container originale
                 name: containerName,
-                Cmd: ["/bin/bash", "-c", `mkdir -p ${containerInput} && mkdir -p ${containerOutput} && mkdir -p ${containerConfigPath} $$ \
+                Cmd: ["/bin/bash", "-c", `mkdir -p ${containerInput} && mkdir -p ${containerOutput} && mkdir -p ${containerConfigPath} && \
                     while true; do sleep 30; done`],
                 HostConfig: {
                     Binds: [
