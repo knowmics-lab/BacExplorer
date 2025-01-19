@@ -316,7 +316,7 @@ ipcMain.handle('open-external', () => {
 // docker check
 ipcMain.handle("docker-installed", async () => {
   try {
-    const dockerStatus = checkDockerInstalled();
+    const dockerStatus = await checkDockerInstalled();
     console.log("Docker status:", dockerStatus);
     return dockerStatus;
   } catch (error) {
