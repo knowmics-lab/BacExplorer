@@ -19,9 +19,10 @@ let mainWindow;
 
 const createWindow = () => {
   // Create the browser window.
+  const { width, height } = screen.getPrimaryDisplay().workAreaSize;
   mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: width,
+    height: height,
     webPreferences: {
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
     },
@@ -47,15 +48,15 @@ app.on('ready', () => {
       label: "Guide",
       
       click: () => {
-        console.log('Evento navigate emesso con pagina: guide');
-        mainWindow.webContents.send('navigate', 'guide')
+        //console.log('Evento navigate emesso con pagina: guide');
+        navigate('guide');
+        //mainWindow.webContents.send('navigate', 'guide')
       }
     },
     {
       label: "Settings",
       click: () => {
-        console.log('Evento navigate emesso con pagina: settings');
-        mainWindow.webContents.send('navigate', 'settings')
+        navigate('settings');
       }
     },
     {
@@ -264,6 +265,20 @@ ipcMain.handle("docker-running", async function() {
 //   }
 // })
 
+function navigate(page) {
+  console.log("From main process: navigating to", page);
+  if (mainWindow && mainWindow.webContents) {
+      mainWindow.webContents.send('navigate', page);
+  } else {
+      console.error('mainWindow o webContents non disponibile');
+  }
+}
+
+ipcMain.handle('navigate', (event, page) => {
+  navigate(page);
+});
+
+
 ipcMain.handle('create-container', async (event) => {
   try {
     console.log(`Creating container with parameters: \nIMAGE NAME: ${imageName}\tFOLDER TO MOUNT: ${configPath}\tCONTAINER NAME: ${containerName}`);
@@ -316,12 +331,6 @@ ipcMain.on('run-snakemake', async (event, userInput) => {
     const newContainer = await prepareSnakemakeCommand(containerName, userInput, snakefileDir);
     
     console.log("New container created: ", newContainer);
-
-    // const configFileContainer = "/project/config.yaml";
-
-    // // const configFileContainer = await prepareSnakemakeCommand(userInput, containerName, configFile);
-
-    // // console.log("Exited from utilities with value: ", configFileContainer);
 
     console.log('Running Snakemake with config file:', configFile);
     

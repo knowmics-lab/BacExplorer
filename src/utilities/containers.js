@@ -330,7 +330,7 @@ export async function prepareSnakemakeCommand(containerName, userInput, userConf
         });
         return newContainer;    
     } catch(error) {
-        console.error("Error in preparing execution: ", error);
+        console.error("Error in cloning container: ", error);
         throw(error);
     }
     
@@ -342,10 +342,6 @@ async function mapIO(containerName, userInput, userConfigPath) {
     const containerInput = "/project/user-input";
     const containerOutput = path.join(containerInput, "output");
     const containerConfigPath = "/project/snakemake";
-    // non serve più, si monta direttamente userData
-    // const snakemakeDirectory = path.dirname(userConfigPath);
-    // const userResources = path.join(snakemakeDirectory, "/resources");
-    // const snakeFile = path.join(snakemakeDirectory, "/Snakefile");
 
     const container = docker.getContainer(containerName);
     

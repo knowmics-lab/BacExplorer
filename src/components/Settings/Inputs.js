@@ -139,8 +139,8 @@ export default function Inputs(){
                 </div>
             )}
             {isPreparing && isBlocked && (
-                    <Button className = "position-fixed top-50 start-50 translate-middle w-25"disabled variant="danger">
-                        {output}</Button>
+                <Button className = "position-fixed top-50 start-50 translate-middle w-25"disabled variant="danger">
+                    {output}</Button>
             )}
 
             {isAnalysing && (

@@ -28,7 +28,7 @@ export default function NavGuide() {
           </Dropdown.Menu>
       </Dropdown>
       <hr className='line' style={{border:"dotted"}}/>
-      <NavLink onClick={() => navigate('settings')}>Analysis</NavLink>
+      <NavLink onClick={() => navigate("settings")}>Analysis</NavLink>
 
     </Nav>
   );

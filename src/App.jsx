@@ -8,23 +8,33 @@ import DockerConfig from './components/Guide/Docker-Configuration/Docker-Config.
 export default function App() {
     const [currentPage, setCurrentPage] = useState('guide');
 
+    console.log("Ciao da app");
+
     useEffect(() => {
-        window.api.onNavigate(page => {
-            console.log("Page: ", page);
-            setCurrentPage(page);
-        })
-
-        const errorButton = document.getElementById('ErrorBtn');
-        if (errorButton) {
-            errorButton.addEventListener('click', window.api.openErrorDialog);
-        }
-
-        return () => {
-            if (errorButton) {
-                errorButton.removeEventListener('click', window.api.openErrorDialog);
+        const handleNavigate = (event) => {
+            console.log("Navigazione ricevuta in App.jsx:");
+            console.log("Event:", event); // Questo dovrebbe essere l'oggetto evento IPC
+            // console.log("Page:", page);   // Questo deve essere 'settings', 'guide', ecc.
+    
+            if (event) {
+                setCurrentPage(event);
+            } else {
+                console.error("Errore: Page è undefined!");
             }
         };
+    
+        // Ascolta il messaggio dal main process
+        window.api.on('navigate', handleNavigate);
+
+        // Cleanup dell'evento per evitare listener multipli
+        return () => {
+            window.api.off('navigate', handleNavigate);
+        };
     }, [currentPage])
+
+    useEffect(() => {
+        console.log("Stato corrente aggiornato:", currentPage);
+    }, [currentPage]);
 
     const renderContent = () => {
         switch(currentPage) {

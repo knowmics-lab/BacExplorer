@@ -8,10 +8,16 @@ import { contextBridge, ipcRenderer } from 'electron';
 
 contextBridge.exposeInMainWorld('api', {
     on: (channel, callback) => {
-        const validChannels = ['progress', 'error'];
+        const validChannels = ['progress', 'error', 'navigate'];
         if (validChannels.includes(channel)) {
-            ipcRenderer.on(channel, (event, data) => callback(data)); // Passa `data` direttamente
+            ipcRenderer.on(channel, (event, data) => callback(data));
             // console.log("From preload: Progress...", data.progress);
+        }
+    },
+    off: (channel, callback) => {
+        const validChannels = ['navigate'];
+        if (validChannels.includes(channel)) {
+            ipcRenderer.removeListener(channel, callback);
         }
     },
     removeAllListeners: () => {
@@ -19,7 +25,14 @@ contextBridge.exposeInMainWorld('api', {
     },
     openErrorDialog: () => ipcRenderer.send("open-error-dialog"),
     selectFolder: () => ipcRenderer.invoke('dialog:select-folder'),
-    onNavigate: (callback) => { console.log("Navighiamo dal preload"); ipcRenderer.on('navigate', (event, page) => callback(page))},
+    onNavigate: (page) => {
+        console.log("Navighiamo dal preload con la pagina:", page);
+        if (typeof page === 'string') {
+            ipcRenderer.invoke('navigate', page); // Invia solo stringhe
+        } else {
+            console.error("Valore di 'page' non valido:", page);
+        }
+    },
     prepareSnakemake: (userInput) => ipcRenderer.send('run-snakemake', userInput),
     onSnakemakeOutput: (callback) => {
         console.log('Setting up Snakemake output listener in preload...');
