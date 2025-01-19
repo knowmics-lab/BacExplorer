@@ -28,10 +28,7 @@
       "!**/*.map"
     ],
     "extraResources": [
-      {
-        "from": "./snakemake",
-        "to": "resources/snakemake"
-      }
+      "./snakemake"
     ],
     "mac": {
       "target": [
