@@ -69,7 +69,17 @@ Fasta samples to test BacExplorer can be found in "test_data" folder in this rep
 
 ### Software and Database
 - ABRicate - https://github.com/tseemann/abricate
+- AMRfinder+ - https://github.com/ncbi/amr
+- MLST - https://github.com/tseemann/mlst
+- VirulenceFinder - https://bitbucket.org/genomicepidemiology/virulencefinder/src/master/
+- Kleborate - https://github.com/klebgenomics/Kleborate
+- AgrVATE - https://github.com/VishnuRaghuram94/AgrVATE
+- sscmec - https://github.com/rpetit3/sccmec
+- spaTyper - https://github.com/HCGB-IGTP/spaTyper
+- hicap -https://github.com/scwatts/hicap
+- LisSero - https://github.com/MDU-PHL/LisSero
 
 ### Citation 
+- BacExplorer
 
 
