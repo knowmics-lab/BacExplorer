@@ -57,29 +57,39 @@ Please ensure to run Docker before you start setting the environment, otherwise 
 
 
 
-### Test
+## Test
 
-## FASTQ
+### FASTQ
 To test BacExplorer with fastq samples it is possible to donwload:
 - *Klebsiella pnaumoniae* samples from https://www.ncbi.nlm.nih.gov/bioproject/PRJNA1125320 and from https://www.ncbi.nlm.nih.gov/bioproject/PRJNA1193841
 - *Staphylococcus aureus* sample from https://www.ncbi.nlm.nih.gov/bioproject/PRJNA912391
 
-## FASTA
+### FASTA
 Fasta samples to test BacExplorer can be found in "test_data" folder in this repository.
 
-### Software and Database
+## Software and Database
 - ABRicate - https://github.com/tseemann/abricate
 - AMRfinder+ - https://github.com/ncbi/amr
 - MLST - https://github.com/tseemann/mlst
 - VirulenceFinder - https://bitbucket.org/genomicepidemiology/virulencefinder/src/master/
 - Kleborate - https://github.com/klebgenomics/Kleborate
+- ECTyper - https://github.com/phac-nml/ecoli_serotyping
 - AgrVATE - https://github.com/VishnuRaghuram94/AgrVATE
 - sscmec - https://github.com/rpetit3/sccmec
 - spaTyper - https://github.com/HCGB-IGTP/spaTyper
+- emmtyper - https://github.com/MDU-PHL/emmtyper
+- pbptyper - https://github.com/rpetit3/pbptyper
+- ShigaTyper - https://github.com/CFSAN-Biostatistics/shigatyper
 - hicap -https://github.com/scwatts/hicap
 - LisSero - https://github.com/MDU-PHL/LisSero
 
-### Citation 
+- CARD - https://card.mcmaster.ca/
+- Megares - https://db.meglab.org/
+- Arg-annot
+- VFDB - https://www.mgc.ac.cn/VFs/main.htm
+- PlasmidFinder - https://bitbucket.org/genomicepidemiology/plasmidfinder_db/src/master/
+- 
+## Citation 
 - BacExplorer
 
 
