@@ -68,9 +68,13 @@ To test BacExplorer with fastq samples it is possible to donwload:
 Fasta samples to test BacExplorer can be found in "test_data" folder in this repository.
 
 ## Software and Database
+# Software
+- TrimGalore - https://github.com/FelixKrueger/TrimGalore
+- SPAdes - https://github.com/ablab/spades
+- Kraken2 - https://github.com/DerrickWood/kraken2
+- MLST - https://github.com/tseemann/mlst
 - ABRicate - https://github.com/tseemann/abricate
 - AMRfinder+ - https://github.com/ncbi/amr
-- MLST - https://github.com/tseemann/mlst
 - VirulenceFinder - https://bitbucket.org/genomicepidemiology/virulencefinder/src/master/
 - Kleborate - https://github.com/klebgenomics/Kleborate
 - ECTyper - https://github.com/phac-nml/ecoli_serotyping
@@ -81,15 +85,17 @@ Fasta samples to test BacExplorer can be found in "test_data" folder in this rep
 - pbptyper - https://github.com/rpetit3/pbptyper
 - ShigaTyper - https://github.com/CFSAN-Biostatistics/shigatyper
 - hicap -https://github.com/scwatts/hicap
+- legsta - https://github.com/tseemann/legsta
 - LisSero - https://github.com/MDU-PHL/LisSero
-
+# Database
 - CARD - https://card.mcmaster.ca/
 - Megares - https://db.meglab.org/
-- Arg-annot
+- Arg-annot - https://www.mediterranee-infection.com/acces-ressources/base-de-donnees/arg-annot-2/
 - VFDB - https://www.mgc.ac.cn/VFs/main.htm
 - PlasmidFinder - https://bitbucket.org/genomicepidemiology/plasmidfinder_db/src/master/
-- 
+- PubMLST - https://pubmlst.org/
+  
 ## Citation 
-- BacExplorer
+- BacExplorer - Privitera GF, Cannata AA, Campanile F, Alaimo S, Bongiorno D, Pulvirenti A. BacExplorer (2025). Available at [https://github.com/gretep/BacExplorer](https://github.com/AdrianaCannata/BacExplorer)
 
 
