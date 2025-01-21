@@ -2,6 +2,11 @@
 
 Welcome to BacExplorer, a bacterial analysis tool with an user-friendly GUI.
 
+![BACEXPLORER](https://github.com/user-attachments/assets/694f612f-8645-45bf-85c2-5ec00efdc1a6)
+
+
+BacExplorer is a software system for the analysis of Microbial data. Its aim is to annotate Bacterial genome with information about Antimicrobial resistance, virulence factor, plasmids, serotypings and so on.
+
 This tool performs bacterial analysis with the following softwares:
 ...list softwares.
 
