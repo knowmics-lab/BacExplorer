@@ -426,11 +426,14 @@ ipcMain.on('run-snakemake', async (event, userInput) => {
     
 });
 
-ipcMain.on('launch-analysis', async (event) => {
+ipcMain.handle('launch-analysis', async (event) => {
+  const snakefileDir = '/project/snakemake';
+  const containerConfigPath = path.join(snakefileDir, 'config.yaml');
+
   const command = `docker exec ${containerName} bash -c "
     source /opt/conda/etc/profile.d/conda.sh &&
     conda activate bacEnv &&
-    snakemake --configfile ${configFileContainer} --force all
+    snakemake --configfile ${containerConfigPath} --force all
     "`;
     try {
       const child = spawn(command, { cwd: snakefileDir, shell: true });

@@ -72,11 +72,19 @@ export default function Inputs () {
     }
   };
 
-  const handleAnalysis = () => {
+  const handleAnalysis = async () => {
     setShowAlert(false);
-    window.api.prepareSnakemake(formData.INPUT);
     setIsPreparing(true);
-    // setIsAnalysing(true);
+    try {
+      await window.api.prepareSnakemake(formData.INPUT);
+      setIsPreparing(false);
+      setIsAnalysing(true);
+      await window.api.launchAnalysis();
+    } catch(error) {
+      console.error("Error while preparing analysis: ", error);
+      setIsPreparing(false);
+      setIsBlocked(true);
+    }
   };
 
   useEffect(() => {

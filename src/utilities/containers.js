@@ -30,6 +30,8 @@ docker.ping((err, data) => {
 });
 
 const containerSnakemake = '/project/snakemake';
+const containerInput = '/project/user-input';
+const containerOutput = path.join(containerInput, 'output');
 const containerConfigPath = path.join(containerSnakemake, 'config.yaml');
 const containerResPath = path.join(containerSnakemake, 'resources');
 
@@ -316,10 +318,11 @@ async function updateConfigFile (configFilePath) {
   }
 }
 
-export async function prepareSnakemakeCommand (containerName, userInput, userConfigPath) {
+export async function prepareSnakemakeCommand (containerName, userInput, snakefileDir) {
   const container = docker.getContainer(containerName);
   try {
     // await restartIfNeeded(container, containerName);
+    const userConfigPath = path.join(snakefileDir, "config.yaml");
     await updateConfigFile(userConfigPath);
     const newContainer = await mapIO(containerName, userInput, userConfigPath);
 
@@ -347,8 +350,6 @@ export async function prepareSnakemakeCommand (containerName, userInput, userCon
 
 async function mapIO (containerName, userInput, userConfigPath) {
   const userOutput = path.join(userInput, 'output');
-  const containerInput = '/project/user-input';
-  const containerOutput = path.join(containerInput, 'output');
   const containerConfigPath = '/project/snakemake';
 
   const container = docker.getContainer(containerName);
@@ -360,7 +361,6 @@ async function mapIO (containerName, userInput, userConfigPath) {
   console.log(`Working on: (name) ${containerName} container ${container}`);
 
   try {
-    // Fermare il container se è in esecuzione
     const containerInfo = await container.inspect();
     if (containerInfo.State.Status === 'running') {
       console.log(`Stopping container ${containerName}...`);
@@ -368,22 +368,22 @@ async function mapIO (containerName, userInput, userConfigPath) {
       console.log(`Container ${containerName} stopped.`);
     }
 
-    // Eliminare il container esistente
     console.log(`Removing container ${containerName}...`);
     await container.remove();
     console.log(`Container ${containerName} removed.`);
 
-    // Ricreare il container con i nuovi volumi
     console.log(`Recreating container ${containerName} with updated volumes...`);
     try {
       await docker.createContainer({
-        Image: containerInfo.Config.Image, // Usa l'immagine del container originale
+        Image: containerInfo.Config.Image,
         name: containerName,
         Cmd: [
           '/bin/bash',
           '-c',
-          `mkdir -p ${containerInput} && mkdir -p ${containerOutput} && mkdir -p ${containerConfigPath} && \
-                    while true; do sleep 30; done`],
+          `mkdir -p ${containerInput} && \
+          mkdir -p ${containerOutput} && \
+          mkdir -p ${containerConfigPath} && \
+          while true; do sleep 30; done`],
         HostConfig: {
           Binds: [
             `${userInput}:${containerInput}`,
@@ -394,9 +394,10 @@ async function mapIO (containerName, userInput, userConfigPath) {
       });
 
     } catch (error) {
-      throw (error);
+      console.error('Error while cloning container: ', error);
+      throw('Error while cloning container: ', error.message);
     }
-    // Avviare il nuovo container
+
     const newContainer = docker.getContainer(containerName);
     await newContainer.start();
 
@@ -405,6 +406,7 @@ async function mapIO (containerName, userInput, userConfigPath) {
 
   } catch (error) {
     console.error('Error while dynamic binding of volumes: ', error);
+    throw('Error while dynamic binding of volumes: ', error.message);
   }
 }
 

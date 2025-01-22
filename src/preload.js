@@ -34,6 +34,7 @@ contextBridge.exposeInMainWorld('api', {
         }
     },
     prepareSnakemake: (userInput) => ipcRenderer.send('run-snakemake', userInput),
+    launchAnalysis: () => ipcRenderer.invoke('launch-analysis'),
     onSnakemakeOutput: (callback) => {
         console.log('Setting up Snakemake output listener in preload...');
         ipcRenderer.on('snakemake-output', (event, data) => {

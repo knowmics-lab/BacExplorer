@@ -8,14 +8,9 @@ import DockerConfig from './components/Guide/Docker-Configuration/Docker-Config.
 export default function App() {
     const [currentPage, setCurrentPage] = useState('guide');
 
-    console.log("Ciao da app");
 
     useEffect(() => {
-        const handleNavigate = (event) => {
-            console.log("Navigazione ricevuta in App.jsx:");
-            console.log("Event:", event); // Questo dovrebbe essere l'oggetto evento IPC
-            // console.log("Page:", page);   // Questo deve essere 'settings', 'guide', ecc.
-    
+        const handleNavigate = (event) => {    
             if (event) {
                 setCurrentPage(event);
             } else {
@@ -23,17 +18,14 @@ export default function App() {
             }
         };
     
-        // Ascolta il messaggio dal main process
         window.api.on('navigate', handleNavigate);
 
-        // Cleanup dell'evento per evitare listener multipli
         return () => {
             window.api.off('navigate', handleNavigate);
         };
     }, [currentPage])
 
     useEffect(() => {
-        console.log("Stato corrente aggiornato:", currentPage);
     }, [currentPage]);
 
     const renderContent = () => {
@@ -47,15 +39,11 @@ export default function App() {
             case 'report':
                 // return <Report />;
             default:
-                // return <DockerConfig />;
                 return <Guide />;
         }
     }
 
     return(
-        // <div class='custom-container'>
-        //     {renderContent()}
-        // </div> 
         <>{renderContent()}</>     
     )
 }
