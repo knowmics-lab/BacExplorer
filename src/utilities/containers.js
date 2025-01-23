@@ -5,6 +5,7 @@ import { spawn, spawnSync } from 'child_process';
 import os                   from 'os';
 import fs                   from 'fs-extra';
 import { BrowserWindow }    from 'electron';
+import NodeStream           from 'stream';
 
 const yaml = require('js-yaml');
 const Docker = require('dockerode');
@@ -135,7 +136,7 @@ function processCurlOutput (data, statusMessage) {
   if (match) {
     emitProgress(statusMessage, parseInt(match[1]));
   } else {
-     // we are on linux/mac, get the last line of the output
+    // we are on linux/mac, get the last line of the output
     const lines = data.toString().split('\r');
     const lastLine = lines[lines.length - 1];
     if (lastLine) {
@@ -322,7 +323,7 @@ export async function prepareSnakemakeCommand (containerName, userInput, snakefi
   const container = docker.getContainer(containerName);
   try {
     // await restartIfNeeded(container, containerName);
-    const userConfigPath = path.join(snakefileDir, "config.yaml");
+    const userConfigPath = path.join(snakefileDir, 'config.yaml');
     await updateConfigFile(userConfigPath);
     const newContainer = await mapIO(containerName, userInput, userConfigPath);
 
@@ -380,22 +381,23 @@ async function mapIO (containerName, userInput, userConfigPath) {
         Cmd: [
           '/bin/bash',
           '-c',
-          `mkdir -p ${containerInput} && \
-          mkdir -p ${containerOutput} && \
-          mkdir -p ${containerConfigPath} && \
-          while true; do sleep 30; done`],
+          `while true; do sleep 3650d; done`],
+        Volumes: {
+          [`${containerInput}`]: {},
+          [`${containerOutput}`]: {},
+          [`${containerConfigPath}`]: {},
+        },
         HostConfig: {
           Binds: [
             `${userInput}:${containerInput}`,
             `${userOutput}:${containerOutput}`,
-            `${userConfigPath}:${containerConfigPath}`, //in userConfigPath passo userData/snakemake
+            `${path.dirname(userConfigPath)}:${containerConfigPath}`, //in userConfigPath passo userData/snakemake
           ],
         },
       });
-
     } catch (error) {
       console.error('Error while cloning container: ', error);
-      throw('Error while cloning container: ', error.message);
+      throw ('Error while cloning container: ', error.message);
     }
 
     const newContainer = docker.getContainer(containerName);
@@ -406,8 +408,137 @@ async function mapIO (containerName, userInput, userConfigPath) {
 
   } catch (error) {
     console.error('Error while dynamic binding of volumes: ', error);
-    throw('Error while dynamic binding of volumes: ', error.message);
+    throw ('Error while dynamic binding of volumes: ', error.message);
   }
+}
+
+function liveDemuxStream (stream, onStdout, onStderr, onEnd, checkRunning, timeoutRunning) {
+  timeoutRunning = timeoutRunning || 30000;
+  let nextDataType = null;
+  let nextDataLength = -1;
+  let buffer = Buffer.from('');
+  let ended = false;
+
+  const bufferSlice = (end) => {
+    const out = buffer.subarray(0, end);
+    buffer = Buffer.from(buffer.subarray(end, buffer.length));
+    return out;
+  };
+  const processData = (data) => {
+    if (data) {
+      buffer = Buffer.concat([buffer, data]);
+    }
+    if (nextDataType) {
+      if (buffer.length >= nextDataLength) {
+        const content = bufferSlice(nextDataLength);
+        if (onStdout && nextDataType === 1) {
+          onStdout(Buffer.from(content));
+        } else if (onStderr && nextDataType !== 1) {
+          onStderr(Buffer.from(content));
+        }
+        nextDataType = null;
+        processData();
+      }
+    } else if (buffer.length >= 8) {
+      const header = bufferSlice(8);
+      nextDataType = header.readUInt8(0);
+      nextDataLength = header.readUInt32BE(4);
+      processData();
+    }
+  };
+
+  stream.on('data', processData).on('end', () => {
+    if (!ended && onEnd) {
+      onEnd();
+      ended = true;
+    }
+  });
+  if (checkRunning) {
+    const fnRunning = async () => {
+      if (ended) return;
+      if (await checkRunning()) {
+        setTimeout(fnRunning, timeoutRunning);
+      } else if (!ended && onEnd) {
+        onEnd();
+        ended = true;
+      }
+    };
+    setTimeout(fnRunning, timeoutRunning);
+  }
+}
+
+async function demuxStream (stream, onStdout, onStderr, onEnd, checkRunning, timeoutRunning) {
+  timeoutRunning = timeoutRunning || 30000;
+  return new Promise((resolve) => {
+    liveDemuxStream(
+      stream,
+      (content) => {
+        onStdout && onStdout(content.toString());
+      },
+      (content) => {
+        onStderr && onStderr(content.toString());
+      },
+      () => {
+        onEnd && onEnd();
+        resolve();
+      },
+      checkRunning,
+      timeoutRunning,
+    );
+  });
+}
+
+export async function runAnalysis (containerName, reply, onError) {
+  const snakefileDir = '/project/snakemake';
+  const containerConfigPath = path.join(snakefileDir, 'config.yaml');
+  const container = docker.getContainer(containerName);
+  const exec = await container.exec({
+    Cmd: ['bash', '-c', `source /opt/conda/etc/profile.d/conda.sh && conda activate bacEnv && snakemake --configfile ${containerConfigPath} --force all`],
+    AttachStdout: true,
+    AttachStderr: true,
+    AttachStdin: true,
+    WorkingDir: snakefileDir,
+  });
+  const stream = await exec.start({ hijack: true, stdin: true });
+  await demuxStream(
+    stream,
+    (data) => {
+      console.log(`Snakemake stdout: ${data}`);
+      reply({ stdout: data.toString(), stderr: null });
+    },
+    (data) => {
+      console.error(`Snakemake stderr: ${data}`);
+      reply({ stdout: null, stderr: data.toString() });
+    },
+    () => {
+      (async () => {
+        const d = await exec.inspect();
+        const code = (d) ? d.ExitCode : null;
+        console.log(`Snakemake process exited with code ${code}`);
+        if (code !== 0) {
+          onError({ stdout: null, stderr: `Snakemake exited with code ${code}` });
+        }
+      })().catch(console.error);
+    },
+    async () => {
+      const d = await exec.inspect();
+      return !!(d && d.Running);
+    }
+  );
+  return;
+
+  const command = `docker exec ${containerName} bash -c "
+
+    "`;
+  try {
+    const child = spawn(command, { cwd: snakefileDir, shell: true });
+
+    // handle snakemake output
+
+  } catch (error) {
+    throw (error);
+  }
+
 }
 
 // // async function updateContainer(containerName) {

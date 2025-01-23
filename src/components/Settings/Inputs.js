@@ -79,7 +79,7 @@ export default function Inputs () {
       await window.api.prepareSnakemake(formData.INPUT);
       setIsPreparing(false);
       setIsAnalysing(true);
-      await window.api.launchAnalysis();
+      window.api.launchAnalysis();
     } catch(error) {
       console.error("Error while preparing analysis: ", error);
       setIsPreparing(false);

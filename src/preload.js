@@ -33,8 +33,8 @@ contextBridge.exposeInMainWorld('api', {
             console.error("Valore di 'page' non valido:", page);
         }
     },
-    prepareSnakemake: (userInput) => ipcRenderer.send('run-snakemake', userInput),
-    launchAnalysis: () => ipcRenderer.invoke('launch-analysis'),
+    prepareSnakemake: async (userInput) => ipcRenderer.invoke('run-snakemake', userInput),
+    launchAnalysis: async () => ipcRenderer.send('launch-analysis'),
     onSnakemakeOutput: (callback) => {
         console.log('Setting up Snakemake output listener in preload...');
         ipcRenderer.on('snakemake-output', (event, data) => {
