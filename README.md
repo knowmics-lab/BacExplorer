@@ -5,14 +5,10 @@ Welcome to BacExplorer, a bacterial analysis tool with an user-friendly GUI.
 ![BACEXPLORER](https://github.com/user-attachments/assets/694f612f-8645-45bf-85c2-5ec00efdc1a6)
 
 
-BacExplorer is a software system for the analysis of Microbial data. Its aim is to annotate Bacterial genome with information about Antimicrobial resistance, virulence factor, plasmids, serotypings and so on.
+BacExplorer is a software system for the analysis of Microbial data. Its aim is to annotate Bacterial genome with information about Antimicrobial resistance, virulence factor, plasmids, serotypings and so on. The analysis is developed with the workflow management system Snakemake.
+BacExplorer permits to analyze both raw fastq data and fasta.
 
-This tool performs bacterial analysis with the following softwares:
-...list softwares.
-
-The analysis is developed with the workflow management system Snakemake.
-
-Please reade the following guide for a correct installation and usage.
+Please read the following guide for a correct installation and usage.
 
 ## SYSTEM REQUIREMENTS:
 ### Installation:
@@ -29,24 +25,55 @@ FASTA: ...
 FASTQ: ...
 
 ## INSTALLATION
-A UNIX environment is required so that Snakemake will be able to perform.
-This is ensured with the usage of Docker, so tool can be executed on Linux, macOS and Windows.
+An UNIX environment is required so that Snakemake will be able to perform. This is ensured with the usage of Docker, so the tool can be executed on Linux, macOS and Windows.
 If your system doesn't have Docker, please install it for your platform from here: https://www.docker.com/.
 You can decide to install Docker later, since we provide the download link for your platform inside the application too.
 The installation of Docker is the only manual step for the usage of BacExplorer: everything else is automatized.
-Please ensure to run Docker before you start setting the environment, otherwise the app will not be able to run.
+**Please ensure to run Docker before you start setting the environment, otherwise the app will not be able to run.**
 
 
 ![immagine](https://github.com/user-attachments/assets/80b90d15-599f-4321-bda5-a6685b1445ad)
 
 
-
 ## USAGE
-1) Inputs
-2) Output organization
-3) Parameters setting
+1) **Input**  
+The user should put his input files in a specific folder, where the output are going to be saved. FASTQ file format need to be ...
+Fasta file extension should be
+2) **Parameters setting**  
+The user need to set the parameter for the analysis:
+- The analysis name, this will also be the name of the HTML report;
+- If all the samples belongs to the same Genus and Species, it is possible to specify them and the kraken2 taxonomy analysis will be skipped.
+- Identity and Coverage value for the filtering of AMR and virulence factor results. Default parameter is 90% for both.
+- The folder with the data to be analyzed.
 
--- SCREENSHOT DEL SETTING DEI PARAMETRI --
+![immagine](https://github.com/user-attachments/assets/5f11dff9-9d8d-4ecc-90f6-0512cdc39dc3)
+
+3) Output organization
+Inside the input folder the system will create an output folder with several subfolders:
+- abricate
+- abricate_ecoli
+- agrvate
+- amrfinder
+- ectyper
+- emmtyper
+- fasta - *only in fastq analysis*
+- file
+- hicap
+- kleborate
+- kleborate_escherichia
+- kraken2
+- legsta
+- lissero
+- mlst
+- pbptyper
+- sccmec
+- shigatyper
+- spatyper
+- trim - *only in fastq analysis*
+- virulencefinder
+- Report.html
+
+
 
 4) Report page
 
