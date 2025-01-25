@@ -1,11 +1,9 @@
 // utils to create Docker container
 
 import { spawn, spawnSync } from 'child_process';
-// import { mapIO } from "./docker_utils";
 import os                   from 'os';
 import fs                   from 'fs-extra';
 import { BrowserWindow }    from 'electron';
-import NodeStream           from 'stream';
 
 const yaml = require('js-yaml');
 const Docker = require('dockerode');
@@ -30,11 +28,12 @@ docker.ping((err, data) => {
   }
 });
 
-const containerSnakemake = '/project/snakemake';
-const containerInput = '/project/user-input';
-const containerOutput = path.join(containerInput, 'output');
+const containerProject = "/project";
+const containerSnakemake = "/project/snakemake/";
+const containerInput = "/project/user-input/";
+const containerOutput = "/project/user-input/output/";
 const containerConfigPath = path.join(containerSnakemake, 'config.yaml');
-const containerResPath = path.join(containerSnakemake, 'resources');
+const containerResPath = "/project/snakemake/resources/";
 
 export async function setupContainer (imageName, configPath, containerName) {
   // Esegui tutte le operazioni in sequenza
@@ -43,6 +42,10 @@ export async function setupContainer (imageName, configPath, containerName) {
     await downloadDatabases(configPath);
     await createContainer(imageName, containerName, configPath);
     await startContainer(containerName);
+
+    // add updateContainer to create volumes with updated dbs
+
+    await updateContainer(containerName);
 
     return 'Container created successfully';
   } catch (error) {
@@ -127,6 +130,7 @@ async function downloadDatabases (configPath) {
     emitProgress('Completed step 2/4', 100);
 
   } catch (error) {
+    // TODO: handle this error in renderer
     throw (error);
   }
 }
@@ -168,6 +172,14 @@ async function downloadFile (source, destination, statusMessage) {
     });
   });
 }
+
+// function unzipFile(platform, filePath, destPath) {
+//   if(platform === "win32") {
+//     spawnSync('tar', ['-xf', filePath, '-C', destPath], { stdio: 'inherit' });
+//   } else if (platform === "linux" || platform === "darwin") {
+//     spawnSync('unzip', [filePath, '-d', destPath], { stdio: 'inherit' });
+//   }
+// }
 
 // download kraken db
 async function fetchKrakenDB (resourcesDir, platform) {
@@ -214,10 +226,9 @@ async function fetchKrakenDB (resourcesDir, platform) {
 // download virulence_finder db
 async function fetchVirulenceDB (resourcesDir, platform) {
   const vfDBDir = path.join(resourcesDir, 'virulencefinder_db');
-  const vfDB = 'master.zip';
-  const vfDBPath = 'https://bitbucket.org/genomicepidemiology/virulencefinder_db/get/master.zip';
+  const vfDB = 'master.tar.gz';
+  const vfDBPath = 'https://bitbucket.org/genomicepidemiology/virulencefinder_db/get/master.tar.gz';
   const tarFilePath = path.join(vfDBDir, vfDB);
-  // const extractionSubdir = "genomicepidemiology-virulencefinder_db-9638945ea72e";
   try {
     if (!fs.existsSync(vfDBDir)) {
       fs.mkdirSync(vfDBDir, { recursive: true });
@@ -230,32 +241,36 @@ async function fetchVirulenceDB (resourcesDir, platform) {
       if (files.length === 1 && files[0] === vfDB) {
         console.log('File zipped: unzipping...');
         emitProgress('Unzipping...', 51);
-        // execSync(`tar -xf '${tarFilePath}' -C '${vfDBDir}'`);
-        spawnSync('tar', ['-xf', tarFilePath, '-C', vfDBDir], { stdio: 'inherit' });
-        emitProgress('Unzipping Kraken2 DB', 100);
+        //unzipFile(platform, tarFilePath, vfDBDir);
+        spawnSync('tar', ['-xvf', tarFilePath, '-C', vfDBDir, '--strip-components', '1'], { stdio: 'inherit' });
+        emitProgress('Unzipping Virulence Finder DB', 100);
       } else {
         console.log('Skipping unzip');
         emitProgress('Virulence finder db already unzipped', 100);
       }
-      console.log('Kraken done');
+      console.log('Virulence finder done');
       return;
     } else {
       await downloadFile(vfDBPath, tarFilePath, 'Downloading VirulenceFinder DB');
-      // testare
       emitProgress('Unzipping VirulenceFinder DB', 0);
-      // execSync(`tar -xf '${tarFilePath}' -C '${vfDBDir}'`);
-      spawnSync('tar', ['-xf', tarFilePath, '-C', vfDBDir], { stdio: 'inherit' });
+      spawnSync('tar', ['-xvf', tarFilePath, '-C', vfDBDir, '--strip-components', '1'], { stdio: 'inherit' });
+      // unzipFile(platform, tarFilePath, vfDBDir);
       emitProgress('Unzipping VirulenceFinder DB', 100);
     }
-
   } catch (error) {
     throw (error);
   }
 }
 
 // function to create container
-async function createContainer (imageName, containerName, configPath) {
+async function createContainer (imageName, containerName, snakemakePath) {
   emitProgress(`Step 3: Creating container ${containerName}...`, 0);
+  const toolsPath = path.join(snakemakePath, "tools");
+  const vfUSerPath = path.join(snakemakePath, "resources", "virulencefinder_db");
+  const containerVfPath = "/project/snakemake/resources/virulencefinder_db";
+  // const amrfinderHostPath = path.join(containerResPath, "amrfinder");
+
+  // const amrfinderVolume = '/opt/conda/envs/bacEnv/share/amrfinderplus/data/2024-07-22.1/';
 
   try {
     const containers = await docker.listContainers({ all: true });
@@ -272,16 +287,39 @@ async function createContainer (imageName, containerName, configPath) {
     await docker.createContainer({
       Image: imageName,
       name: containerName,
-      Cmd: ['/bin/bash', '-c', 'while true; do sleep 30; done'],
+      Cmd: ['/bin/bash', '-c', `while true; do sleep 30; done`],
+      Volumes: {
+        [`${containerVfPath}`]: {},
+      },
+      // Volumes: {
+      //   [`${containerProject}`]: {},
+      //   [`${amrfinderVolume}`]: {},
+      // },
       HostConfig: {
-        // userData/snakemake
-        Binds: [`${configPath}:${containerSnakemake}`],
+        // Binds: [
+        //   `${toolsPath}:${containerProject}`,
+        //   `${amrfinderHostPath}:${amrfinderVolume}`,
+        // ],
+        Binds: [
+          `${vfUSerPath}:${containerVfPath}`,
+        ],
         RestartPolicy: { Name: 'no' },
       },
     });
     const container = docker.getContainer(containerName);
     const containerInfo = await container.inspect();
-    console.log(`Container ${container} created: ${containerInfo}`);
+    console.log(`Container ${containerName} created`);
+    const volumes = containerInfo.Mounts;
+
+    // Se non ci sono volumi, segnaliamo che non ci sono
+    if (!volumes || volumes.length === 0) {
+      console.log('No volumes mounted on this container.');
+      return;
+    }
+
+    volumes.forEach(volume => {
+      console.log(`Source: ${volume.Source}, Target: ${volume.Target}, Type: ${volume.Type}`);
+    });
     emitProgress('Completed step 3/4: Container created', 100);
   } catch (error) {
     throw (error);
@@ -351,7 +389,7 @@ export async function prepareSnakemakeCommand (containerName, userInput, snakefi
 
 async function mapIO (containerName, userInput, userConfigPath) {
   const userOutput = path.join(userInput, 'output');
-  const containerConfigPath = '/project/snakemake';
+  const containerConfigPath = ('/project/snakemake/');
 
   const container = docker.getContainer(containerName);
 
@@ -488,9 +526,52 @@ async function demuxStream (stream, onStdout, onStderr, onEnd, checkRunning, tim
   });
 }
 
+
+async function updateContainer(containerName) {
+  // download amrFinder and update abricate and mlst.
+  // create volumes with paths to copy into the cloned container
+
+  const container = docker.getContainer(containerName);
+  const exec = await container.exec({
+    Cmd: ['bash', '-c', `source /opt/conda/etc/profile.d/conda.sh &&
+      conda activate bacEnv &&
+      python /project/resources/virulencefinder_db/INSTALL.py`],
+    AttachStdout: true,
+    AttachStderr: true,
+    AttachStdin: true,
+  });
+  const stream = await exec.start({ hijack: true, stdin: true });
+  await demuxStream(
+    stream,
+    (data) => {
+      console.log(`Stdout: ${data}`);
+      reply({ stdout: data.toString(), stderr: null });
+    },
+    (data) => {
+      console.error(`Stderr: ${data}`);
+      reply({ stdout: null, stderr: data.toString() });
+    },
+    () => {
+      (async () => {
+        const d = await exec.inspect();
+        const code = (d) ? d.ExitCode : null;
+        console.log(`Process exited with code: ${code}`);
+        if (code !== 0) {
+          onError({ stdout: null, stderr: `Process exited with code: ${code}` });
+        }
+      })().catch(console.error);
+    },
+    async () => {
+      const d = await exec.inspect();
+      return !!(d && d.Running);
+    }
+  );
+  return;  
+}
+
 export async function runAnalysis (containerName, reply, onError) {
   const snakefileDir = '/project/snakemake';
-  const containerConfigPath = path.join(snakefileDir, 'config.yaml');
+  const containerConfigPath = '/project/snakemake/config.yaml';
   const container = docker.getContainer(containerName);
   const exec = await container.exec({
     Cmd: ['bash', '-c', `source /opt/conda/etc/profile.d/conda.sh && conda activate bacEnv && snakemake --configfile ${containerConfigPath} --force all`],
@@ -526,19 +607,55 @@ export async function runAnalysis (containerName, reply, onError) {
     }
   );
   return;
+}
 
-  const command = `docker exec ${containerName} bash -c "
-
-    "`;
-  try {
-    const child = spawn(command, { cwd: snakefileDir, shell: true });
-
-    // handle snakemake output
-
-  } catch (error) {
-    throw (error);
-  }
-
+export async function produceReport(containerName, reply, onError) {
+  const scriptDir = '/project/snakemake/scripts';
+  const containerConfigPath = '/project/snakemake/config.yaml';
+  const report = 'project/snakemake/scripts/report.Rmd';
+  const config = yaml.load(fs.readFileSync(containerConfigPath, 'utf8'));
+  const analysisName = config.NAME;
+  const identity = config.IDENTITY;
+  const coverage = config.COVERAGE;
+  const reportFile = `project/user-input/output/${analysisName}_report.html`;
+  const container = docker.getContainer(containerName);
+  
+  const exec = await container.exec({
+    Cmd: ['bash', '-c', `Rscript -e "rmarkdown::render('${report}', output_file='${reportFile}',
+        output_dir = '${containerOutput}', params=list(path_output='${containerOutput}',
+        identity=${identity}, coverage=${coverage}))"`],
+    AttachStdout: true,
+    AttachStderr: true,
+    AttachStdin: true,
+    WorkingDir: scriptDir,
+  });
+  const stream = await exec.start({ hijack: true, stdin: true });
+  await demuxStream(
+    stream,
+    (data) => {
+      console.log(`Report stdout: ${data}`);
+      reply({ stdout: data.toString(), stderr: null });
+    },
+    (data) => {
+      console.error(`Report stderr: ${data}`);
+      reply({ stdout: null, stderr: data.toString() });
+    },
+    () => {
+      (async () => {
+        const d = await exec.inspect();
+        const code = (d) ? d.ExitCode : null;
+        console.log(`Report exited with code ${code}`);
+        if (code !== 0) {
+          onError({ stdout: null, stderr: `Report exited with code ${code}` });
+        }
+      })().catch(console.error);
+    },
+    async () => {
+      const d = await exec.inspect();
+      return !!(d && d.Running);
+    }
+  );
+  return;
 }
 
 // // async function updateContainer(containerName) {

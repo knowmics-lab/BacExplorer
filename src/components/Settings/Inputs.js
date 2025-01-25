@@ -41,7 +41,9 @@ export default function Inputs () {
 
   const [configFile, setConfigFile] = useState();
 
-  const [output, setOutput] = useState();
+  // const [output, setOutput] = useState({error: false, message: ""});
+
+  const [prepOutput, setPrepOutput] = useState({error: false, message: ""});
 
   const [showAlert, setShowAlert] = useState(false);
 
@@ -87,42 +89,51 @@ export default function Inputs () {
     }
   };
 
+  // useEffect(() => {
+  //   window.api.onSnakemakeOutput((data) => {
+  //     // console.log('Received data from Snakemake: ', data);
+
+  //     if (data) {
+  //       console.log('Data properties:', data);
+  //     }
+
+  //     if(data.isError) {
+  //       setOutput({error: true, message: `Stderr: ${data.stderr}`});
+  //       setIsBlocked(true);
+  //     } else {
+  //       if (data.stderr) {
+  //         console.log("Data.stderr: ", data.stderr);
+  //         if (data.stderr.match(/WorkflowError/)) {
+  //           setOutput({error: true, message: `Stderr: ${data.stderr}`});
+  //         }
+  //         if (data.stderr.match(/Finished job/)) {
+  //           setOutput({error: false, message: `Stderr: ${data.stderr}`}); 
+  //         }
+  //         const progressMatch = data.stderr.match(/(\d+)%/);
+  //         if (progressMatch) {
+  //           console.log("Progress match: ", progressMatch);
+  //           console.log("Progress match[1]: ", progressMatch[1]);
+  //           if (progressMatch[1]) {
+  //             const percentage = parseInt(progressMatch[1], 10);
+  //             setProgress(percentage);
+  //           }
+  //         }
+  //       }
+  //       else if (data.stdout) {
+  //         console.log("Data.stdout: ", data.stdout);
+  //         setOutput({error: false, message: `Stdout: ${data.stdout}`});
+  //       }   
+  //     }  
+  //   });
+  // }, []);
+
   useEffect(() => {
     window.api.onSnakemakeOutput((data) => {
       console.log('Received data from Snakemake: ', data);
 
-      if (data) {
-        console.log('Data properties:', data);
-      }
-
-      if (data.stderr) {
-        if (data.isError) {
-          setOutput(`Error: ${data.stderr}`);
-          setIsBlocked(true);
-          // if (data.errorCode === 404) {
-          //     console.error('File not found error detected:', data.message);
-          //     setOutput(`Error: ${data.message}`);
-          //     setIsError(true);
-          // }
-          return;
-        }
-      }
-
-      if (data.stderr) {
-        setOutput(`Error: ${data.stderr}`);
-        if (data.stderr.match(/Error/)) {
-          setOutput(`Error: ${data.stderr}`);
-        }
-        if (data.stderr.match(/Finished job/)) {
-          setOutput(`Output: ${data.stderr}`);
-        }
-        const progressMatch = data.stderr.match(/(\d+)%/);
-        if (progressMatch && progressMatch[1]) {
-          const percentage = parseInt(progressMatch[1], 10);
-          setProgress(percentage);
-        }
-      } else {
-        setOutput(`Output: ${data.stdout}`);
+      if(data.isError) {
+        setPrepOutput({error: true, message: `Stderr: ${data.stderr}`});
+        setIsBlocked(true);
       }
     });
   }, []);
@@ -148,12 +159,13 @@ export default function Inputs () {
       )}
       {isPreparing && isBlocked && (
         <Button className="position-fixed top-50 start-50 translate-middle w-25" disabled variant="danger">
-          {output}</Button>
+          {prepOutput.message}</Button>
       )}
 
       {isAnalysing && (
         <div className="position-fixed top-50 start-50 translate-middle z-3 w-75">
-          <AnalysisProg progress={progress} output={output}/>
+          {/* <AnalysisProg progress={progress} setProgress={setProgress} message={output.message} error={output.error}/> */}
+          <AnalysisProg progress={progress} setProgress={setProgress}/>
         </div>
       )}
 

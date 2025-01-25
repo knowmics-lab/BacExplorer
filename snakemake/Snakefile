@@ -19,8 +19,9 @@ SPECIES = config["SPECIES"]
 PATH_PROJECT = config["INPUT"]
 PATH_OUTPUT = os.path.join(PATH_PROJECT, "output")
 PATH_SCRIPT = workflow.basedir
-PATH_VIRULENCE_DB = os.path.join(PATH_SCRIPT, "resources/virulencefinder_db")
+PATH_VIRULENCE_DB = os.path.join(PATH_SCRIPT, "resources/virulencefinder_db/")
 PATH_KRAKEN_DB = os.path.join(PATH_SCRIPT, "resources/kraken2db")
+# define PATH_HICAP
 
 SAMPLES = [os.path.splitext(os.path.basename(f))[0] for f in glob.glob(f"{PATH_PROJECT}/*.fasta")]
 
@@ -63,7 +64,7 @@ def update_databases():
         raise
 
 # Esegui l'aggiornamento dei database prima di tutto il resto
-update_databases()
+# update_databases()
 
 if type == "fastq":
     os.makedirs(os.path.join(PATH_PROJECT, "fastq"), exist_ok=True)

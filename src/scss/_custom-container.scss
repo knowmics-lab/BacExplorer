@@ -80,6 +80,21 @@ h2 {
     // color: black;
 }
 
+.scrollable-modal .modal-dialog {
+    max-width: 500px;
+  }
+  
+.scrollable-modal .modal-content {
+    height: 400px;
+    overflow: hidden;
+}
+
+.scrollable-modal .modal-body {
+    height: calc(100% - 56px - 56px);
+    overflow-y: auto;
+}
+  
+
 .text-header {
     color: $primary;
     text-decoration: solid;

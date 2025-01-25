@@ -1,12 +1,12 @@
 import { app, BrowserWindow, screen, dialog, ipcMain, Menu, shell } from 'electron';
 import started                                                      from 'electron-squirrel-startup';
-import { spawn, execSync }                                          from 'child_process';
+import { spawn, execSync, exec }                                          from 'child_process';
 import os                                                           from 'os';
 import fs                                                           from 'fs';
 import fsExtra                                                      from 'fs-extra';
 import path                                                         from 'path';
 import { checkDockerInstalled, checkDockerRunning }                 from './utilities/functions.js';
-import { setupContainer, prepareSnakemakeCommand, runAnalysis }     from './utilities/containers.js';
+import { setupContainer, prepareSnakemakeCommand, runAnalysis, produceReport }     from './utilities/containers.js';
 // per testare su container giocattolo
 // import { prepareSnakemakeCommand } from './utilities/docker_utils.js';
 
@@ -429,6 +429,17 @@ ipcMain.on('launch-analysis', async (event) => {
   );
 });
 
+// launch the report
+// take coverage and identity from config file
+// launch report into the container (activate bacEnv before)
+// send output to renderer (it will take the percentage to update the progress bar)
+ipcMain.on('launch-report', async (event) => {
+  await produceReport(containerName,
+    data => event.reply('report-output', data),
+    data => event.reply('report-error', data),
+  );
+})
+
 // save config file
 ipcMain.handle('save-file', async (event, yamlData) => {
   const configFile = path.join(configPath, 'config.yaml');
@@ -441,3 +452,5 @@ ipcMain.handle('save-file', async (event, yamlData) => {
     return { success: false, error: err.message };
   }
 });
+
+
