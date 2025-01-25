@@ -2,8 +2,8 @@
 
 import { spawn, spawnSync } from 'child_process';
 import os                   from 'os';
-import fs                   from 'fs-extra';
-import { BrowserWindow }    from 'electron';
+import fs                     from 'fs-extra';
+import { app, BrowserWindow } from 'electron';
 
 const yaml = require('js-yaml');
 const Docker = require('dockerode');
@@ -535,7 +535,8 @@ async function updateContainer(containerName) {
   const exec = await container.exec({
     Cmd: ['bash', '-c', `source /opt/conda/etc/profile.d/conda.sh &&
       conda activate bacEnv &&
-      python /project/resources/virulencefinder_db/INSTALL.py`],
+      cd /project/snakemake/resources/virulencefinder_db && 
+      python /project/snakemake/resources/virulencefinder_db/INSTALL.py`],
     AttachStdout: true,
     AttachStderr: true,
     AttachStdin: true,
@@ -545,11 +546,11 @@ async function updateContainer(containerName) {
     stream,
     (data) => {
       console.log(`Stdout: ${data}`);
-      reply({ stdout: data.toString(), stderr: null });
+      //reply({ stdout: data.toString(), stderr: null });
     },
     (data) => {
       console.error(`Stderr: ${data}`);
-      reply({ stdout: null, stderr: data.toString() });
+      //reply({ stdout: null, stderr: data.toString() });
     },
     () => {
       (async () => {
@@ -557,7 +558,7 @@ async function updateContainer(containerName) {
         const code = (d) ? d.ExitCode : null;
         console.log(`Process exited with code: ${code}`);
         if (code !== 0) {
-          onError({ stdout: null, stderr: `Process exited with code: ${code}` });
+          //onError({ stdout: null, stderr: `Process exited with code: ${code}` });
         }
       })().catch(console.error);
     },
@@ -609,11 +610,11 @@ export async function runAnalysis (containerName, reply, onError) {
   return;
 }
 
-export async function produceReport(containerName, reply, onError) {
+export async function produceReport(containerName, reply, onError, localConfigDir) {
+  const localConfigPath = path.join(localConfigDir, 'config.yaml')
   const scriptDir = '/project/snakemake/scripts';
-  const containerConfigPath = '/project/snakemake/config.yaml';
-  const report = 'project/snakemake/scripts/report.Rmd';
-  const config = yaml.load(fs.readFileSync(containerConfigPath, 'utf8'));
+  const report = '/project/snakemake/scripts/report.Rmd';
+  const config = yaml.load(fs.readFileSync(localConfigPath, 'utf8'), {});
   const analysisName = config.NAME;
   const identity = config.IDENTITY;
   const coverage = config.COVERAGE;
@@ -621,7 +622,7 @@ export async function produceReport(containerName, reply, onError) {
   const container = docker.getContainer(containerName);
   
   const exec = await container.exec({
-    Cmd: ['bash', '-c', `Rscript -e "rmarkdown::render('${report}', output_file='${reportFile}',
+    Cmd: ['bash', '-c', `source /opt/conda/etc/profile.d/conda.sh && conda activate bacEnv && Rscript -e "rmarkdown::render('${report}', output_file='${reportFile}',
         output_dir = '${containerOutput}', params=list(path_output='${containerOutput}',
         identity=${identity}, coverage=${coverage}))"`],
     AttachStdout: true,

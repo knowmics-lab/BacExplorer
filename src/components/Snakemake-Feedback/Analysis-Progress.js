@@ -29,7 +29,7 @@ export default function AnalysisProg({progress, setProgress}) {
                     setFinished(true);
                     //setProgress(100);
                     console.log("ANALYSIS COMPLETED. Producing report...");
-                    window.api.produceReport();
+                    window.api.launchReport();
                 }
                 else {
                     setOutput(`Stderr: ${data.stderr}`);

@@ -445,6 +445,7 @@ ipcMain.on('launch-report', async (event) => {
   await produceReport(containerName,
     data => event.reply('report-output', data),
     data => event.reply('report-error', data),
+    configPath,
   );
 })
 

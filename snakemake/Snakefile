@@ -64,7 +64,7 @@ def update_databases():
         raise
 
 # Esegui l'aggiornamento dei database prima di tutto il resto
-# update_databases()
+update_databases()
 
 if type == "fastq":
     os.makedirs(os.path.join(PATH_PROJECT, "fastq"), exist_ok=True)
