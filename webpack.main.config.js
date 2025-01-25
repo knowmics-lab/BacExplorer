@@ -8,4 +8,10 @@ module.exports = {
   module: {
     rules: require('./webpack.rules'),
   },
+  devServer: {
+    client: {
+      overlay: true, // Mostra errori e avvisi nell'overlay
+      logging: 'verbose', // Maggiori dettagli nei log
+    },
+  },
 };
