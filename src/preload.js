@@ -82,4 +82,5 @@ contextBridge.exposeInMainWorld('api', {
         console.log(html);
         return html;
     },
+    createTempHtmlFile: (htmlContent) => ipcRenderer.invoke("createTempHtmlFile", htmlContent),
 });

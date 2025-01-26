@@ -1,6 +1,6 @@
 import React from "react";
 import logo from './logo.png';
-import { Container, Stack, Col, Button } from "react-bootstrap";
+import { Stack, Col, Button } from "react-bootstrap";
 
 export default function Home() {
     const navigate = (page) =>{
@@ -32,7 +32,7 @@ export default function Home() {
             </Stack>
 
             {/* test report without launching analysis */}
-            {/* <Button onClick={() => navigate('report')}>Go to Report</Button> */}
+            <Button onClick={() => navigate('report')}>Go to Report</Button>
             
         </div>
     )

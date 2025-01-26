@@ -411,6 +411,8 @@ function saveUserInput(configFile) {
   const originalConfig = yaml.load(fs.readFileSync(configFile, 'utf8'));
   originalConfigInput = originalConfig.INPUT;
   userAnalysisName = originalConfig.NAME;
+  console.log("Analysis name: ", userAnalysisName);
+  console.log("Input folder: ", originalConfigInput);
 }
 
 // launch analysis via snakemake
@@ -424,7 +426,7 @@ ipcMain.handle('run-snakemake', async (event, userInput) => {
     return;
   }
 
-  saveUserInput(configFile);
+  // saveUserInput(configFile);
 
   const snakefileDir = path.dirname(configFile);
   try {
@@ -517,6 +519,10 @@ ipcMain.handle('save-file', async (event, yamlData) => {
   try {
     fs.writeFileSync(configFile, yamlData, 'utf8');
     console.log('File saved as:', configFile);
+
+    //FOR TEST ONLY
+    saveUserInput(configFile);
+
     return { success: true, filePath: configFile };
   } catch (err) {
     console.error('Error during file saving:', err);
@@ -536,4 +542,18 @@ ipcMain.handle('pick-rep-dir', async(event) => {
 
 ipcMain.handle ('readHTML', async(event, filePath) => {
   return fs.readFileSync(filePath, 'utf8');
-}) 
+})
+
+ipcMain.handle("createTempHtmlFile", async (_, htmlContent) => {
+  try {
+    const tempDir = os.tmpdir();
+    const tempFilePath = path.join(tempDir, `report-${Date.now()}.html`);
+
+    await fs.promises.writeFile(tempFilePath, htmlContent, "utf8");
+
+    return tempFilePath;
+  } catch (error) {
+    console.error("Error creating temp HTML file:", error);
+    throw error;
+  }
+});
