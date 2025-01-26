@@ -14,7 +14,9 @@ export default function Report(){
     useEffect(() => {
         const fetchReport = async () => {
         const reportPath = await window.api.pickReportDir(); // Ottieni il percorso del file HTML
+        console.log("report path is: ", reportPath);
         const content = await window.api.readHtmlFile(reportPath); // Leggi il contenuto del file
+        console.log("html content: ", content);
         setHtmlContent(content); // Aggiorna lo stato
         };
 

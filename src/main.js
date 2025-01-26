@@ -472,14 +472,20 @@ ipcMain.handle('validate-folder', async (event, inputFolder, type) => {
   const response = {success: false, message: ""};
   try {
     const files = fs.readdirSync(inputFolder);
+    // if (fs.existsSync(path.join(inputFolder, "output"))) {
+
+    // }
     let invalidFiles = [];
-    if (type === "Fasta") {
+    if (type === "fasta" || type === "Fasta") {
       invalidFiles = files.filter(file => path.extname(file).toLowerCase() !== `.${type}`);
-    } else if (type === "Fastq") {
-      invalidFiles = files.filter(file => path.extname(file).toLowerCase() !== ".fq.gz"
-      && path.extname(file).toLowerCase() !== ".fastq.gz");
+    } else if (type === "fastq" || type === "Fastq") {
+      invalidFiles = files.filter(file => 
+        !file.toLowerCase().endsWith(".fq.gz") &&
+        !file.toLowerCase().endsWith(".fastq.gz")
+      );
     }
-     
+    console.log("Invalid files: ", invalidFiles); 
+
     if (invalidFiles.length > 0) {
       const message = "Input files format does not match specified type";
       response.success = false;

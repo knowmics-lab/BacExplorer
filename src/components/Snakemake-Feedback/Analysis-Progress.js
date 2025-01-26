@@ -1,6 +1,6 @@
 import React from "react";
 import { useState, useEffect } from "react";
-import { ProgressBar, Modal } from "react-bootstrap";
+import { ProgressBar, Modal, Button } from "react-bootstrap";
 
 export default function AnalysisProg({progress, setProgress}) {
     const [output, setOutput] = useState("");
@@ -23,18 +23,18 @@ export default function AnalysisProg({progress, setProgress}) {
             if (data.stderr) {
                 console.log("Data.stderr: ", data.stderr);
                 if (data.stderr.match(/WorkflowError/) || data.stderr.match(/IncompleteFilesException/)) {
-                    setError({error: true, message: `Stderr: ${data.stderr}`});
+                    setError({error: true, message: `Error: ${data.stderr}`});
 
                     console.log("STOPPED EXECUTION");
                     return;
                 }
                 if (data.stderr.match(/Finished job/)) {
-                    setOutput(`Stderr: ${data.stderr}`);
+                    setOutput(`${data.stderr}`);
                     console.log("ANALYSIS COMPLETED. Producing report...");
                     window.api.launchReport();
                 }
                 else {
-                    setOutput(`Stderr: ${data.stderr}`);
+                    setOutput(`${data.stderr}`);
                 }
                 const progressMatch = data.stderr.match(/(\d+)%/);
                 if (progressMatch) {
@@ -48,7 +48,7 @@ export default function AnalysisProg({progress, setProgress}) {
             }
             else if (data.stdout) {
                 console.log("Data.stdout: ", data.stdout);
-                setOutput(`Stdout: ${data.stdout}`);
+                setOutput(`${data.stdout}`);
             }  
         });
 
@@ -61,6 +61,7 @@ export default function AnalysisProg({progress, setProgress}) {
                 console.log("Data.stderr: ", data.stderr);
                 if (data.stderr.match(/Execution halted/)) {
                     console.log("STOPPED EXECUTION");
+                    setError({error: true, message: `Error: ${data.stderr}`});
                 }
                 if (data.stderr.match(/output file/)) {
                     console.log("REPORT PRODUCED");
@@ -78,7 +79,7 @@ export default function AnalysisProg({progress, setProgress}) {
             }
             else if (data.stdout) {
                 console.log("Data.stdout: ", data.stdout);
-                setOutput(`Stdout: ${data.stdout}`);
+                setOutput(`${data.stdout}`);
             }
         });
 
@@ -120,7 +121,7 @@ export default function AnalysisProg({progress, setProgress}) {
                     </Modal.Header>
             
                     <Modal.Body className="modal-primary">
-                        <p>{reportCreated ? "Your output files and report have been produced." : ""}</p>
+                        <p>{reportCreated ? "Your output files and report have been produced." : "Producing report..."}</p>
                     </Modal.Body>
                 </Modal.Dialog>
                 </div>
