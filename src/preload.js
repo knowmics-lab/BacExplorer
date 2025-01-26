@@ -61,9 +61,26 @@ contextBridge.exposeInMainWorld('api', {
             }
         });
     },
-    saveConfigFile: (yamlData) => ipcRenderer.invoke('save-file', yamlData),
+    validateInputFolder: async (inputFolder, type) => {const response = await ipcRenderer.invoke('validate-folder', inputFolder, type);
+        console.log("From preload: ", response);
+        return response;
+    },
+    saveConfigFile: async (yamlData) => {
+        const response = await ipcRenderer.invoke('save-file', yamlData);
+        return response;
+    },
     checkDockerInstalled: () => ipcRenderer.invoke('docker-installed'),
     pullImage: () => ipcRenderer.invoke('check-image'),
     createEnv: () => ipcRenderer.invoke('create-container'),
-    openExternalLink: () => ipcRenderer.invoke('open-external')
+    openExternalLink: () => ipcRenderer.invoke('open-external'),
+    pickReportDir: async () => {
+        const dir = await ipcRenderer.invoke('pick-rep-dir');
+        console.log(dir);
+        return dir;
+    },
+    readHtmlFile: async (filePath) => {
+        const html = await ipcRenderer.invoke('readHTML', filePath);
+        console.log(html);
+        return html;
+    },
 });

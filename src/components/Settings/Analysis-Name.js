@@ -13,7 +13,7 @@ export default function AnalysisName({formData, setFormData}){
     return(
         <>
             <h1 className="text-header">Name your analysis</h1>
-            <Form.Control className="z-0" required type="text" placeholder="My Analysis" value={formData.NAME} onChange={handleNameChange}/>
+            <Form.Control className="z-0" type="text" placeholder="My Analysis" value={formData.NAME} onChange={handleNameChange}/>
             <FormControl.Feedback className="z-0" type='invalid'>Analysis Name is required</FormControl.Feedback>
         </> 
     )

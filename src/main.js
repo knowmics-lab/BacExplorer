@@ -5,6 +5,7 @@ import os                                                           from 'os';
 import fs                                                           from 'fs';
 import fsExtra                                                      from 'fs-extra';
 import path                                                         from 'path';
+import yaml from 'js-yaml';
 import { checkDockerInstalled, checkDockerRunning }                 from './utilities/functions.js';
 import { setupContainer, prepareSnakemakeCommand, runAnalysis, produceReport }     from './utilities/containers.js';
 // per testare su container giocattolo
@@ -28,17 +29,23 @@ let mainWindow;
 const createWindowsMenu = () => {
   return [
     {
-      label: 'Guide',
+      label: 'Home',
       click: () => {
-        navigate('guide');
+        navigate('home');
       },
     },
-    {
-      label: 'Settings',
-      click: () => {
-        navigate('settings');
-      },
-    },
+    // {
+    //   label: 'Guide',
+    //   click: () => {
+    //     navigate('guide');
+    //   },
+    // },
+    // {
+    //   label: 'Settings',
+    //   click: () => {
+    //     navigate('settings');
+    //   },
+    // },
     {
       label: 'Help',
       submenu:
@@ -126,9 +133,9 @@ const createDarwinMenu = () => {
     label: 'Help',
     submenu: [
       {
-        label: 'Guide',
+        label: 'Home',
         click: () => {
-          navigate('guide');
+          navigate('home');
         },
       },
       {
@@ -397,6 +404,15 @@ ipcMain.handle('dialog:select-folder', async function (event) {
   return canceled ? null : filePaths;
 });
 
+const originalConfigInput = "";
+const userAnalysisName = "";
+
+function saveUserInput(configFile) {
+  const originalConfig = yaml.load(fs.readFileSync(configFile, 'utf8'));
+  originalConfigInput = originalConfig.INPUT;
+  userAnalysisName = originalConfig.NAME;
+}
+
 // launch analysis via snakemake
 ipcMain.handle('run-snakemake', async (event, userInput) => {
   const configFile = path.join(configPath, 'config.yaml');
@@ -407,6 +423,8 @@ ipcMain.handle('run-snakemake', async (event, userInput) => {
     event.reply('setting-error', { stderr: `Config file not found: ${configFile}. Unable to proceed.`, code: 404 });
     return;
   }
+
+  saveUserInput(configFile);
 
   const snakefileDir = path.dirname(configFile);
   try {
@@ -449,6 +467,32 @@ ipcMain.on('launch-report', async (event) => {
   );
 })
 
+// validate input folder
+ipcMain.handle('validate-folder', async (event, inputFolder, type) => {
+  const response = {success: false, message: ""};
+  try {
+    const files = fs.readdirSync(inputFolder);
+    const invalidFiles = files.filter(file => path.extname(file).toLowerCase() !== `.${type}`);
+
+    if (invalidFiles.length > 0) {
+      const message = "Input files format does not match specified type";
+      response.success = false;
+      response.message = message;
+      console.error(response);
+      return response;
+    }
+    
+    response.success = true;
+    response.message = "Ok";
+    return response;
+  } catch(error) {
+    console.error("Error: ", error);
+    response.success = false;
+    response.message = error.message;
+    return response;
+  }
+})
+
 // save config file
 ipcMain.handle('save-file', async (event, yamlData) => {
   const configFile = path.join(configPath, 'config.yaml');
@@ -462,4 +506,16 @@ ipcMain.handle('save-file', async (event, yamlData) => {
   }
 });
 
+// pick report dir
+ipcMain.handle('pick-rep-dir', async(event) => {
+  // const configFilePath = path.join(configPath, "config.yaml");
+  // const config = yaml.load(fs.readFileSync(configFilePath, 'utf8'));
+  const analysisName = userAnalysisName;
+  const inputFolder = originalConfigInput;
+  const reportPath = path.join(inputFolder, "output", `${analysisName}_report.html`);
+  return reportPath;
+})
 
+ipcMain.handle ('readHTML', async(event, filePath) => {
+  return fs.readFileSync(filePath, 'utf8');
+}) 

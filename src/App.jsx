@@ -4,9 +4,10 @@ import Inputs from './components/Settings/Inputs.js';
 import Report from './components/Report.js';
 import "./renderer.js";
 import DockerConfig from './components/Guide/Docker-Configuration/Docker-Config.js';
+import Home from './components/HomePage/Home.js';
 
 export default function App() {
-    const [currentPage, setCurrentPage] = useState('guide');
+    const [currentPage, setCurrentPage] = useState('home');
 
 
     useEffect(() => {
@@ -30,6 +31,8 @@ export default function App() {
 
     const renderContent = () => {
         switch(currentPage) {
+            case 'home':
+                return <Home />;
             case 'guide':
                 return <Guide />;
             case 'config':
@@ -37,9 +40,9 @@ export default function App() {
             case 'settings':
                 return <Inputs />;
             case 'report':
-                // return <Report />;
+                return <Report />;
             default:
-                return <Guide />;
+                return <Home />;
         }
     }
 

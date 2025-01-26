@@ -10,6 +10,10 @@
     background-color: inherit;
 }
 
+.home {
+    height: 100%;
+}
+
 .container {
     display: grid;
     grid-template-columns: 250px 1fr;
@@ -35,10 +39,19 @@
     grid-template-rows: repeat(3, auto); /* 3 righe, ognuna con altezza automatica */
     gap: 20px;
 }
-  
+
+ 
 .row {
     background-color: #FDFDFD;
     padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Aggiungi ombre per un effetto visivo */
+}
+
+.custom-col {
+    background-color: #FDFDFD;
+    padding: 30px;
+    margin:20px;
     border-radius: 8px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Aggiungi ombre per un effetto visivo */
 }
@@ -102,6 +115,11 @@ h2 {
 
 .text-emphasis {
     text-decoration: underline;
+    color: $secondary;
+}
+
+.text-secondary {
+    font-size: 18px;
     color: $secondary;
 }
 

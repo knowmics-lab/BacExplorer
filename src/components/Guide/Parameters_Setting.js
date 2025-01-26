@@ -10,7 +10,6 @@ export default function ParamsSet(){
                     specify them. Otherwise leave blank: the tool will use mlst for classification; if it fails, it will execute kraken2. </span></li>
                     <li><span className='text-simple'><b>Type:</b> specify if your input is <i>.fasta</i> or <i>.fastq</i>.
                     In case of <i>.fastq</i> files, specify if paired or unpaired.
-                    TOGLI UNDERLINE
                     <span className='text-emphasis' style={{textDecoration:"none"}}> Please make sure to provide your <i>.fastq</i> files in the following format: <b>SAMPLE_NAME.fastq.gz</b> or <b>SAMPLE_NAME.fq.gz</b>.</span></span></li>
                     <li><span className='text-simple'><b>Report parameters:</b> set your chosen values of Identity and Coverage to filter results in the report.
                     Default values are Identity: 90% and Coverage: 90%.</span></li>

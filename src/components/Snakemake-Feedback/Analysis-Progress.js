@@ -5,8 +5,12 @@ import { ProgressBar, Modal } from "react-bootstrap";
 export default function AnalysisProg({progress, setProgress}) {
     const [output, setOutput] = useState("");
     const [error, setError] = useState({error: false, message: ""});
-    const [finished, setFinished] = useState(false);
-    
+    const [reportCreated, setReportCreated] = useState(false);
+
+    const navigate = (page) =>{
+        console.log(`Navigando verso ${page}`);
+        window.api.onNavigate(page);
+      }
 
     useEffect(() => {
         window.api.onSnakemakeOutput((data) => {
@@ -26,8 +30,6 @@ export default function AnalysisProg({progress, setProgress}) {
                 }
                 if (data.stderr.match(/Finished job/)) {
                     setOutput(`Stderr: ${data.stderr}`);
-                    setFinished(true);
-                    //setProgress(100);
                     console.log("ANALYSIS COMPLETED. Producing report...");
                     window.api.launchReport();
                 }
@@ -62,6 +64,7 @@ export default function AnalysisProg({progress, setProgress}) {
                 }
                 if (data.stderr.match(/output file/)) {
                     console.log("REPORT PRODUCED");
+                    setReportCreated(true);
                 }
                 const progressMatch = data.stderr.match(/(\d+)%/);
                 if (progressMatch) {
@@ -113,15 +116,20 @@ export default function AnalysisProg({progress, setProgress}) {
                 <div className="modal show" style={{ display: 'block', position: 'initial' }}>
                 <Modal.Dialog className="modal-primary">
                     <Modal.Header className="modal-primary">
-                        <Modal.Title>Analysis Successful!</Modal.Title>
+                        <Modal.Title>{!reportCreated ? "Analysis Successful!" : "Workflow completed!"}</Modal.Title>
                     </Modal.Header>
             
                     <Modal.Body className="modal-primary">
-                        <p>Your output files and report have been produced.</p>
+                        <p>{reportCreated ? "Your output files and report have been produced." : ""}</p>
                     </Modal.Body>
                 </Modal.Dialog>
                 </div>
             )}
+
+            {reportCreated && (
+                <Button variant="secondary" onClick={() => navigate("report")}>Go to report</Button>
+            )}
+
         </div>
         </>
     )

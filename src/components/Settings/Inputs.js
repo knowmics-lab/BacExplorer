@@ -7,6 +7,7 @@ import ReportParams                         from './Report-Params';
 import AnalysisName                         from './Analysis-Name';
 import ParametersAlert                      from './Parameters-Alert';
 import AnalysisProg                         from '../Snakemake-Feedback/Analysis-Progress';
+import InvalidFolderAlert from './Invalid-Folder-Alert';
 
 export default function Inputs () {
   const [formData, setFormData] = useState({
@@ -21,7 +22,17 @@ export default function Inputs () {
   });
 
   const [validated, setValidated] = useState(false);
-
+  const [isConfig, setIsConfig] = useState(false);
+  const [configFile, setConfigFile] = useState();
+  const [isInvalidFolder, setIsInvalidFolder] = useState(false);
+  const [validateFolderMessage, setValidateFolderMessage] = useState("");
+  const [prepOutput, setPrepOutput] = useState({error: false, message: ""});
+  const [showAlert, setShowAlert] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [isAnalysing, setIsAnalysing] = useState(false);
+  const [isPreparing, setIsPreparing] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
+  
   const handleSubmit = async (event) => {
     const form = event.currentTarget;
     event.preventDefault();
@@ -31,46 +42,52 @@ export default function Inputs () {
     } else {
       if (form.checkValidity() === false) {
         event.stopPropagation();
+      } else {
+        await saveConfig();
       }
-      await saveConfig();
     }
     setValidated(true);
   };
 
-  const [isConfig, setIsConfig] = useState(false);
-
-  const [configFile, setConfigFile] = useState();
-
-  // const [output, setOutput] = useState({error: false, message: ""});
-
-  const [prepOutput, setPrepOutput] = useState({error: false, message: ""});
-
-  const [showAlert, setShowAlert] = useState(false);
-
-  const [progress, setProgress] = useState(0);
-
-  const [isAnalysing, setIsAnalysing] = useState(false);
-
-  const [isPreparing, setIsPreparing] = useState(false);
-
-  const [isBlocked, setIsBlocked] = useState(false);
-
   const saveConfig = async () => {
+    const date = new Date();
+    const defaultName = "test_default_" +
+      String(date.getDate()).padStart(2, "0") + "_" +
+      String(date.getMonth() + 1).padStart(2, "0") + "_" + date.getFullYear();
+
+    if (formData.NAME === "") {
+      setFormData({
+        ...formData,
+        NAME: defaultName,
+      });
+    }
+    
     const yamlData = {
       ...formData,
+      NAME: formData.NAME === '' ? defaultName : formData.NAME, 
       PAIRED: formData.PAIRED === 'yes' ? 'yes' : 'no',
       IDENTITY: parseInt(formData.IDENTITY),
       COVERAGE: parseInt(formData.COVERAGE),
     };
-    const yamlString = JSON.stringify(yamlData, null, 2);
-    const response = await window.api.saveConfigFile(yamlString);
-    if (response.success) {
-      console.log('Config file saved at:', response.filePath);
-      setIsConfig(true);
-      setConfigFile(response.filePath);
-      setShowAlert(true);
+
+    const validatedFolder = await window.api.validateInputFolder(yamlData.INPUT, yamlData.TYPE);
+    console.log("validated folder response: ", validatedFolder);
+    console.log(validatedFolder.success);
+    if (!validatedFolder.success) {
+      // throw alert
+      setIsInvalidFolder(true);
+      setValidateFolderMessage(validatedFolder.message);
     } else {
-      console.error('Failed to save config file:', response.error || 'Unknown error');
+      const yamlString = JSON.stringify(yamlData, null, 2);
+      const response = await window.api.saveConfigFile(yamlString);
+      if (response.success) {
+        console.log('Config file saved at:', response.filePath);
+        setIsConfig(true);
+        setConfigFile(response.filePath);
+        setShowAlert(true);
+      } else {
+        console.error('Failed to save config file:', response.error || 'Unknown error');
+      }
     }
   };
 
@@ -89,44 +106,6 @@ export default function Inputs () {
     }
   };
 
-  // useEffect(() => {
-  //   window.api.onSnakemakeOutput((data) => {
-  //     // console.log('Received data from Snakemake: ', data);
-
-  //     if (data) {
-  //       console.log('Data properties:', data);
-  //     }
-
-  //     if(data.isError) {
-  //       setOutput({error: true, message: `Stderr: ${data.stderr}`});
-  //       setIsBlocked(true);
-  //     } else {
-  //       if (data.stderr) {
-  //         console.log("Data.stderr: ", data.stderr);
-  //         if (data.stderr.match(/WorkflowError/)) {
-  //           setOutput({error: true, message: `Stderr: ${data.stderr}`});
-  //         }
-  //         if (data.stderr.match(/Finished job/)) {
-  //           setOutput({error: false, message: `Stderr: ${data.stderr}`}); 
-  //         }
-  //         const progressMatch = data.stderr.match(/(\d+)%/);
-  //         if (progressMatch) {
-  //           console.log("Progress match: ", progressMatch);
-  //           console.log("Progress match[1]: ", progressMatch[1]);
-  //           if (progressMatch[1]) {
-  //             const percentage = parseInt(progressMatch[1], 10);
-  //             setProgress(percentage);
-  //           }
-  //         }
-  //       }
-  //       else if (data.stdout) {
-  //         console.log("Data.stdout: ", data.stdout);
-  //         setOutput({error: false, message: `Stdout: ${data.stdout}`});
-  //       }   
-  //     }  
-  //   });
-  // }, []);
-
   useEffect(() => {
     window.api.onSnakemakeOutput((data) => {
       console.log('Received data from Snakemake: ', data);
@@ -143,6 +122,12 @@ export default function Inputs () {
       {showAlert && (
         <div className="position-fixed top-50 start-50 translate-middle z-3 w-50">
           <ParametersAlert formData={formData} setShowAlert={setShowAlert} onButtonClick={handleAnalysis}/>
+        </div>
+      )}
+
+      {isInvalidFolder && (
+        <div className="position-fixed top-50 start-50 translate-middle z-3 w-50">
+          <InvalidFolderAlert setShowAlert={setIsInvalidFolder} message={validateFolderMessage}/>
         </div>
       )}
 
