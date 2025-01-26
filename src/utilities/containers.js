@@ -575,7 +575,7 @@ export async function runAnalysis (containerName, reply, onError) {
   const containerConfigPath = '/project/snakemake/config.yaml';
   const container = docker.getContainer(containerName);
   const exec = await container.exec({
-    Cmd: ['bash', '-c', `source /opt/conda/etc/profile.d/conda.sh && conda activate bacEnv && snakemake --configfile ${containerConfigPath} --force all`],
+    Cmd: ['bash', '-c', `source /opt/conda/etc/profile.d/conda.sh && conda activate bacEnv && snakemake --cores 1 --configfile ${containerConfigPath} --force all`],
     AttachStdout: true,
     AttachStderr: true,
     AttachStdin: true,

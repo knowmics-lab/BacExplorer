@@ -472,9 +472,6 @@ ipcMain.handle('validate-folder', async (event, inputFolder, type) => {
   const response = {success: false, message: ""};
   try {
     const files = fs.readdirSync(inputFolder);
-    // if (fs.existsSync(path.join(inputFolder, "output"))) {
-
-    // }
     let invalidFiles = [];
     if (type === "fasta" || type === "Fasta") {
       invalidFiles = files.filter(file => path.extname(file).toLowerCase() !== `.${type}`);
@@ -484,13 +481,22 @@ ipcMain.handle('validate-folder', async (event, inputFolder, type) => {
         !file.toLowerCase().endsWith(".fastq.gz")
       );
     }
-    console.log("Invalid files: ", invalidFiles); 
+    console.log("Invalid files: ", invalidFiles);
+
+    const outputFolder = "output";
 
     if (invalidFiles.length > 0) {
-      const message = "Input files format does not match specified type";
-      response.success = false;
-      response.message = message;
-      console.error(response);
+      if (invalidFiles.includes(outputFolder)) {
+        const message = "Output folders already exists: files will be overwritten";
+        response.success = true;
+        response.message = message;
+        console.error(response);
+      } else {
+        const message = "Input files format does not match specified type";
+        response.success = false;
+        response.message = message;
+        console.error(response);
+      }
       return response;
     }
     
