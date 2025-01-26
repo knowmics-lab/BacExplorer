@@ -404,8 +404,8 @@ ipcMain.handle('dialog:select-folder', async function (event) {
   return canceled ? null : filePaths;
 });
 
-const originalConfigInput = "";
-const userAnalysisName = "";
+let originalConfigInput = "";
+let userAnalysisName = "";
 
 function saveUserInput(configFile) {
   const originalConfig = yaml.load(fs.readFileSync(configFile, 'utf8'));
@@ -472,8 +472,14 @@ ipcMain.handle('validate-folder', async (event, inputFolder, type) => {
   const response = {success: false, message: ""};
   try {
     const files = fs.readdirSync(inputFolder);
-    const invalidFiles = files.filter(file => path.extname(file).toLowerCase() !== `.${type}`);
-
+    let invalidFiles = [];
+    if (type === "Fasta") {
+      invalidFiles = files.filter(file => path.extname(file).toLowerCase() !== `.${type}`);
+    } else if (type === "Fastq") {
+      invalidFiles = files.filter(file => path.extname(file).toLowerCase() !== ".fq.gz"
+      && path.extname(file).toLowerCase() !== ".fastq.gz");
+    }
+     
     if (invalidFiles.length > 0) {
       const message = "Input files format does not match specified type";
       response.success = false;

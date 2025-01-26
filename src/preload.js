@@ -24,9 +24,8 @@ contextBridge.exposeInMainWorld('api', {
     openErrorDialog: () => ipcRenderer.send("open-error-dialog"),
     selectFolder: () => ipcRenderer.invoke('dialog:select-folder'),
     onNavigate: (page) => {
-        console.log("Navighiamo dal preload con la pagina:", page);
         if (typeof page === 'string') {
-            ipcRenderer.invoke('navigate', page); // Invia solo stringhe
+            ipcRenderer.invoke('navigate', page);
         } else {
             console.error("Valore di 'page' non valido:", page);
         }
