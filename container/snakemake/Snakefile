@@ -1,0 +1,55 @@
+import os
+import glob
+import shutil
+import psutil
+import pandas as pd
+
+configfile: "config.yaml"
+
+shell.executable("/usr/bin/bash")
+
+type = config["TYPE"]
+IDENTITY = config["IDENTITY"]
+COVERAGE = config["COVERAGE"]
+ANALYSIS_NAME = config["NAME"]
+GENUS = config["GENUS"]
+SPECIES = config["SPECIES"]
+
+#PATH_PROJECT is the input folder provided by the user
+PATH_PROJECT = config["INPUT"]
+PATH_OUTPUT = os.path.join(PATH_PROJECT, "output")
+PATH_SCRIPT = workflow.basedir
+PATH_VIRULENCE_DB = os.path.join(PATH_SCRIPT, "resources/virulencefinder_db")
+PATH_KRAKEN_DB = os.path.join(PATH_SCRIPT, "resources/kraken2db")
+
+SAMPLES = [os.path.splitext(os.path.basename(f))[0] for f in glob.glob(f"{PATH_PROJECT}/*.fasta")]
+
+DIRS_LIST = ["abricate", "abricate_ecoli", "agrvate", "amrfinder", "ectyper", "emmtyper", "hicap", "kleborate",
+"kleborate_escherichia", "kraken2", "legsta", "lissero", "mlst", "pbptyper", "shigatyper", "spatyper", "sccmec",
+"virulencefinder", "trim"]
+
+if not os.path.exists(PATH_PROJECT):
+    raise ValueError(f"Il percorso {PATH_PROJECT} non esiste!")
+
+print(f"PATH_SCRIPT: {PATH_SCRIPT}")
+print(f"PATH_PROJECT: {PATH_PROJECT}")
+print(f"PATH_OUTPUT: {PATH_OUTPUT}")
+print(f"SAMPLES: {SAMPLES}")
+
+os.makedirs(PATH_OUTPUT, exist_ok=True)
+
+for d in DIRS_LIST:
+    os.makedirs(os.path.join(PATH_OUTPUT, d), exist_ok=True)
+    done_file = os.path.join(PATH_OUTPUT, d, '.done')
+    with open(done_file, 'w') as f:
+        f.write("Done\n")
+
+
+if type == "fastq":
+    os.makedirs(os.path.join(PATH_PROJECT, "fastq"), exist_ok=True)
+    include: "fastq_analysis.smk"
+    include: "fasta_analysis.smk"
+elif type == "fasta":
+    include: "fasta_analysis.smk"
+else:
+    raise ValueError(f"Type: {type} not supported")

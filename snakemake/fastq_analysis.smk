@@ -6,7 +6,7 @@ from snakemake import shell
 #                              |- TrimGalore | sccmec | ecc.
 
 FASTQ_DIR = os.path.join(PATH_PROJECT, "fastq")
-PATH_TRIMGALORE = os.path.join(PATH_SCRIPT, "scripts/TrimGalore-master")
+PATH_TRIMGALORE = os.path.join(PATH_SCRIPT, "tools/TrimGalore-master")
 
 for file in os.listdir(PATH_PROJECT):
     if file.endswith(".gz"):

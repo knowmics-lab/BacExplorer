@@ -4,8 +4,6 @@
 console.log('Preload script loaded successfully!');
 import { contextBridge, ipcRenderer } from 'electron';
 
-// dockerImage = "";
-
 contextBridge.exposeInMainWorld('api', {
     on: (channel, callback) => {
         const validChannels = ['progress', 'error', 'navigate'];
@@ -33,17 +31,35 @@ contextBridge.exposeInMainWorld('api', {
             console.error("Valore di 'page' non valido:", page);
         }
     },
-    prepareSnakemake: (userInput) => ipcRenderer.send('run-snakemake', userInput),
+    prepareSnakemake: async (userInput) => ipcRenderer.invoke('run-snakemake', userInput),
+    launchAnalysis: async () => ipcRenderer.send('launch-analysis'),
     onSnakemakeOutput: (callback) => {
-        console.log('Setting up Snakemake output listener in preload...');
         ipcRenderer.on('snakemake-output', (event, data) => {
             console.error('Received data in preload:', data);
+            if(data.stdout) {
+                callback({ stdout: data.stdout, stderr: null });
+            } else if (data.stderr) {
+                callback({ stdout: null, stderr: data.stderr });
+            }
+            
         });
 
         ipcRenderer.on('setting-error', (event, data) => {
             console.error('Error in preparation: ', data.stderr);
             callback({ isError: true, errorCode: data.code, stderr: data.stderr });
         })
+    },
+    launchReport: async () => ipcRenderer.send('launch-report'),
+    onReportOutput: (callback) => {
+        console.log("Setting up report listener in preload...");
+        ipcRenderer.on('report-output', (event, data) => {
+            console.error('Received in preload: ', data);
+            if(data.stdout) {
+                callback({ stdout: data.stdout, stderr: null });
+            } else if (data.stderr) {
+                callback({ stdout: null, stderr: data.stderr });
+            }
+        });
     },
     saveConfigFile: (yamlData) => ipcRenderer.invoke('save-file', yamlData),
     checkDockerInstalled: () => ipcRenderer.invoke('docker-installed'),

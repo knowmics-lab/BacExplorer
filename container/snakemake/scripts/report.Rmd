@@ -1,0 +1,1285 @@
+---
+title: "Report"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_collapsed: true
+    toc_depth: 4
+    theme: lumen
+  pdf_document:
+    toc: true
+    toc_depth: '3'
+params:
+    path_output: NULL
+    identity: NULL
+    coverage: NULL
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr) 
+library(kableExtra)
+library(ComplexHeatmap)
+library(circlize)
+library(downloadthis)
+library(DT)
+library(openxlsx)
+
+#for Rstudio testing
+# path_output <- "/Users/gretu/Documents/Annotazioni_batteriche/software_batteri/test2/output/"
+# identity <- 90
+# coverage <- 90
+
+path_output <- params$path_output
+identity <- params$identity
+coverage <- params$coverage
+path_excel <- paste0(path_output, "/file")
+
+dir.create(file.path(path_excel), showWarnings = FALSE)
+knitr::opts_chunk$set(fig.width=23, fig.height=15) 
+
+```
+
+![](logo.png)
+
+
+#### Analysis performed on `r format(Sys.time(), '%d/%m/%y')`
+
+
+### Report sections {.sidebar #index}
+* #### [Taxonomic Classification](#tax)
+* #### [Multi-Locus Sequence Typing (MLST)](#mlst)
+* #### [Antimicrobial Resistance](#resistance)
+* #### [Antimicrobial Resistance Heatmaps](#resistanceplot)
+* #### [Virulence Factors](#virulence)
+* #### [Virulence Factors Heatmaps](#virulenceplot)
+* #### [Plasmids](#plasm)
+* #### [Escherichia](#esche)
+* #### [Klebsiella](#klebsielle)
+* #### [Streptococcus pyogenes](#Strepto)
+* #### [Haemophilus influenzae](#hinfluenzae)
+* #### [Shigella](#shig)
+* #### [Staphylococcus](#Staph)
+* #### [Streptococcus pneumoniae](#pbp)
+* #### [Listeria monocytogenes](#lis)
+* #### [Legionella pneumophila](#leg)
+* #### [Citations](#Cite)
+
+<br>
+
+## Taxonomic Classification {#tax}
+
+### Kraken2
+
+```{r kraken2, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+options(knitr.table.format = "html")
+args=commandArgs(trailingOnly = TRUE)
+
+try({
+  kraken2 <- list.files(path=paste0(path_output, "/kraken2/"), pattern="_kraken2.txt", full.names=TRUE, recursive=FALSE)
+
+  kraken2_function <- function(i){
+    kr <- read.csv(i, sep= "\t", header=FALSE)
+    nm <- gsub("_kraken2.txt", "", basename(i))
+    
+    if (any(kr$V1 == "Check MLST output")) {
+      krak <- data.frame("Sample"= nm, "Family"=NA, "Genus"=NA, "Species"=NA)
+    } else {
+    f <- which(kr$V4 == "F")[1]
+    g <- which(kr$V4 == "G")[1]
+    s <- which(kr$V4 == "S")[1]
+    krak <- data.frame("Sample"= nm, "Family"=paste0(kr$V6[f]," (", kr$V1[f],"%)"), 
+                 "Genus"=paste0(kr$V6[g]," (", kr$V1[g],"%)"), 
+                 "Species"=paste0(kr$V6[s]," (", kr$V1[s],"%)"))
+    }
+    
+    return(krak)
+  }
+  kraken2_tab <- as.data.frame(do.call(rbind, lapply(kraken2, kraken2_function)))
+  kraken2_tab <- na.omit(kraken2_tab)
+  
+  write.xlsx(kraken2_tab, file=paste0(path_excel, "/Taxonomy_table.xlsx"),   sheetName = "Kraken2", col.names = TRUE, row.names = FALSE)
+  
+    DT::datatable(kraken2_tab, rownames = FALSE)
+  
+}, silent = TRUE)
+```
+
+## Multi-Locus Sequence Typing (MLST) {#mlst}
+
+```{r MLST, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+##MLST information
+options(knitr.table.format = "html")
+args=commandArgs(trailingOnly = TRUE)
+try({
+  mlst <- list.files(path=paste0(path_output, "/mlst/"), full.names=TRUE, recursive=FALSE)
+
+  mlst_function <- function(i){
+    sm <- read.csv(i, sep= "\t", header=FALSE)
+    if(dim(sm)[2] > 3){
+      sm$V1 <- basename(tools::file_path_sans_ext(sm$V1))
+      if(dim(sm)[2] == 9){
+        sm$V10 <- NA
+      }
+      names(sm) <- c("Sample", "Organism", "ST", "1", "2", "3", "4", "5", "6", "7")
+      return(sm)
+    }
+  }
+  mlst_tab <- as.data.frame(do.call(rbind,lapply(mlst, mlst_function)))
+  mlst_tab <- mlst_tab[!sapply(mlst_tab,is.null)]
+  print(kable(mlst_tab) %>%
+    kable_styling(bootstrap_options = c("striped", "hover","responsive")))
+  
+  write.xlsx(mlst_tab, file=paste0(path_excel, "/MLST_table.xlsx"),   sheetName = "MLST", col.names = TRUE, row.names = FALSE)
+  
+}, silent = TRUE)
+```
+
+## Antimicrobial Resistance {.tabset .tabset-fade .tabset-pills #resistance}
+
+### AMRfinder plus {.tabset}
+
+```{r AMRfinder+, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+amrfinder_db <- list.files(path=paste0(path_output, "/amrfinder/"), full.names=TRUE, recursive=FALSE)
+
+   amrfinder_db_function <- function(i){
+     amr <- read.csv(i, sep= "\t")
+     if(dim(amr)[1] > 0){
+      amr$sample <- basename(tools::file_path_sans_ext(i))
+      amr <- amr[,c(23, 6, 7, 11, 12, 16, 17, 14, 15, 18, 2:5,  19:22, 1, 8:10)]
+      names(amr) <- c("Sample", "Gene", "Sequence Name", "Antibiotic class", "Antibiotic subclass", "Coverage", "Identity", "Target Length", "Reference Length", "Alignment Length", "Contig", "Start", "Stop", "Strand", "Accession", "Clostest sequence name", "HMM ID", "HMM Description", "Protein identifier", "Scope", "Element type", "Element Subtype")
+      amr$Sample <- gsub("_amrfinder", "", amr$Sample)
+      amr$Strand[amr$Strand == "+"] <- "$+$"
+      amr$Strand[amr$Strand == "-"] <- "$-$"
+      amr <- amr[amr$Coverage >= coverage & amr$Identity >= identity, ]
+      amr <- amr[order(amr$Gene),]
+      return(amr)
+     }
+   }
+   amr_tab <- lapply(amrfinder_db, amrfinder_db_function)
+   amr_tab <- amr_tab[!sapply(amr_tab,is.null)]
+   amr_tab <- amr_tab[sapply(amr_tab, nrow)>0]
+
+  for (i in 1:length(amr_tab)) {
+      cat("####", as.data.frame(amr_tab[i])$Sample[1], "<br>", "\n")
+    print(kable(as.data.frame(amr_tab[i]), row.names = FALSE) %>%
+      kable_styling(bootstrap_options = c("striped", "hover","responsive"),
+                    fixed_thead = T) %>%
+         scroll_box(width = "100%", height = "330px"))
+    cat("\n", "<br>", "\n\n")
+  }
+
+   amr_tab1 <- as.data.frame(do.call(rbind, lapply(amrfinder_db, amrfinder_db_function)))
+   wb <- createWorkbook()
+   addWorksheet(wb, "AMRfinder")
+   writeData(wb, sheet = "AMRfinder", amr_tab1) 
+
+  
+```
+
+### NCBI {.tabset}
+
+```{r ncbi antibiotic resistance, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+ abricate_ncbi <- list.files(path=paste0(path_output, "/abricate/"), pattern = "ncbi", full.names=TRUE, recursive=TRUE)
+
+   abricate_ncbi_function <- function(i){
+     sma <- read.csv(i, sep= "\t")
+     if(dim(sma)[1] > 0){
+     sma$X.FILE <- basename(tools::file_path_sans_ext(sma$X.FILE))
+     sma$COVERAGE_MAP <- NULL
+     sma <- sma[,c(1, 6, 14, 9, 10, 2:5, 7:8, 11:13)]
+     sma$DATABASE <- NULL
+     names(sma) <- c("Sample", "Gene", "Resistance", "Coverage", "Identity",   "Sequence", "Start", "End", "Strand", "N Coverage", "Gaps", "Accession", "Product")
+     sma$Strand[sma$Strand == "+"] <- "$+$"
+     sma$Strand[sma$Strand == "-"] <- "$-$"
+     sma <- sma[sma$Coverage >= coverage & sma$Identity >= identity, ]
+     sma <- sma[order(sma$Gene),]
+     return(sma)
+     }
+   }
+
+  ncbi_tab <- lapply(abricate_ncbi, abricate_ncbi_function)
+  ncbi_tab <- ncbi_tab[!sapply(ncbi_tab,is.null)]
+  ncbi_tab <- ncbi_tab[sapply(ncbi_tab, nrow)>0]
+
+  for (i in 1:length(ncbi_tab)) {
+      cat("####", as.data.frame(ncbi_tab[i])$Sample[1], "<br>", "\n")
+    print(kable(as.data.frame(ncbi_tab[i]), row.names = FALSE) %>%
+      kable_styling(bootstrap_options = c("striped", "hover","responsive"),
+                    fixed_thead = T) %>%
+         scroll_box(width = "100%", height = "300px"))
+    cat("\n", "<br>", "\n\n")
+  }
+
+  ncbi_tab1 <- as.data.frame(do.call(rbind, lapply(abricate_ncbi, abricate_ncbi_function)))
+  addWorksheet(wb, "NCBI")
+   writeData(wb, sheet = "NCBI", ncbi_tab1) 
+
+```
+
+
+### Megares  {.tabset}
+
+```{r Megares, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+ abricate_mega <- list.files(path=paste0(path_output, "/abricate/"), pattern = "megares", full.names=TRUE, recursive=TRUE)
+
+   abricate_mega_function <- function(i){
+     mega <- read.csv(i, sep= "\t")
+     if(dim(mega)[1] > 0){
+     mega$X.FILE <- basename(tools::file_path_sans_ext(mega$X.FILE))
+     mega$COVERAGE_MAP <- NULL
+     mega$DATABASE <- NULL
+     mega <- mega[,c(1, 6, 12, 9, 10, 2:5, 7:8, 11, 13)]
+     mega$PRODUCT <- sub(':[^:]*$', '', mega$PRODUCT)
+     names(mega) <- c("Sample", "Gene", "Product", "Coverage", "Identity", "Sequence", "Start", "End", "Strand", "N Coverage", "Gaps", "Accession", "Resistance")
+     mega$Strand[mega$Strand == "+"] <- "$+$"
+     mega$Strand[mega$Strand == "-"] <- "$-$"
+     mega <- mega[mega$Coverage >= coverage & mega$Identity >= identity, ]
+     mega <- mega[order(mega$Gene),]
+     return(mega)
+     }
+   }
+  mega_tab <- lapply(abricate_mega, abricate_mega_function)
+  mega_tab <- mega_tab[!sapply(mega_tab,is.null)]
+  mega_tab <- mega_tab[sapply(mega_tab, nrow)>0]
+
+  for (i in 1:length(mega_tab)) {
+      cat("####", as.data.frame(mega_tab[i])$Sample[1], "<br>", "\n")
+    print(kable(as.data.frame(mega_tab[i]), row.names = FALSE) %>%
+      kable_styling(bootstrap_options = c("striped", "hover","responsive"),
+                    fixed_thead = T) %>%
+         scroll_box(width = "100%", height = "300px"))
+    cat("\n", "<br>", "\n\n")
+  }
+
+  mega_tab1 <- as.data.frame(do.call(rbind, lapply(abricate_mega, abricate_mega_function)))
+  addWorksheet(wb, "Megares")
+   writeData(wb, sheet = "Megares", mega_tab1) 
+```
+
+### ResFinder {.tabset}
+
+```{r Resfinder, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+ abricate_resfinder <- list.files(path=paste0(path_output, "/abricate/"), pattern = "resfinder", full.names=TRUE, recursive=TRUE)
+
+   abricate_resfinder_function <- function(i){
+     rsf <- read.csv(i, sep= "\t")
+     if(dim(rsf)[1] > 0){
+     rsf$X.FILE <- basename(tools::file_path_sans_ext(rsf$X.FILE))
+     rsf$COVERAGE_MAP <- NULL
+     rsf <- rsf[,c(1, 6, 14, 9, 10, 2:5, 7:8, 11:13)]
+     rsf$DATABASE <- NULL
+     names(rsf) <- c("Sample", "Gene", "Resistance", "Coverage", "Identity",   "Sequence", "Start", "End", "Strand", "N Coverage", "Gaps", "Accession", "Product")
+     rsf$Strand[rsf$Strand == "+"] <- "$+$"
+     rsf$Strand[rsf$Strand == "-"] <- "$-$"
+     rsf <- rsf[rsf$Coverage >= coverage & rsf$Identity >= identity, ]
+     rsf <- rsf[order(rsf$Gene),]
+     return(rsf)
+     }
+   }
+
+  res_tab <- lapply(abricate_resfinder, abricate_resfinder_function)
+  res_tab <- res_tab[!sapply(res_tab,is.null)]
+  res_tab <- res_tab[sapply(res_tab, nrow)>0]
+
+  for (i in 1:length(res_tab)) {
+      cat("####", as.data.frame(res_tab[i])$Sample[1], "<br>", "\n")
+    print(kable(as.data.frame(res_tab[i]), row.names = FALSE) %>%
+      kable_styling(bootstrap_options = c("striped", "hover","responsive"),
+                    fixed_thead = T) %>%
+         scroll_box(width = "100%", height = "300px"))
+    cat("\n", "<br>", "\n\n")
+  }
+
+  res_tab1 <- as.data.frame(do.call(rbind, lapply(abricate_resfinder, abricate_resfinder_function)))
+  addWorksheet(wb, "ResFinder")
+  writeData(wb, sheet = "ResFinder", res_tab1) 
+ 
+
+```
+
+### CARD {.tabset}
+
+```{r Card, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+ abricate_card <- list.files(path=paste0(path_output, "/abricate/"), pattern = "card", full.names=TRUE, recursive=TRUE)
+
+   abricate_card_function <- function(i){
+     cd <- read.csv(i, sep= "\t")
+     if(dim(cd)[1] > 0){
+     cd$X.FILE <- basename(tools::file_path_sans_ext(cd$X.FILE))
+     cd$COVERAGE_MAP <- NULL
+     cd <- cd[,c(1, 6, 14, 9, 10, 2:5, 7:8, 11:13)]
+     cd$DATABASE <- NULL
+     names(cd) <- c("Sample", "Gene", "Resistance", "Coverage", "Identity",   "Sequence", "Start", "End", "Strand", "N Coverage", "Gaps", "Accession", "Product")
+     cd$Strand[cd$Strand == "+"] <- "$+$"
+     cd$Strand[cd$Strand == "-"] <- "$-$"
+     cd <- cd[cd$Coverage >= coverage & cd$Identity >= identity, ]
+     cd <- cd[order(cd$Gene),]
+     return(cd)
+     }
+   }
+
+  card_tab <- lapply(abricate_card, abricate_card_function)
+  card_tab <- card_tab[!sapply(card_tab,is.null)]
+  card_tab <- card_tab[sapply(card_tab, nrow)>0]
+  
+
+  for (i in 1:length(card_tab)) {
+      cat("####", as.data.frame(card_tab[i])$Sample[1], "<br>", "\n")
+    print(kable(as.data.frame(card_tab[i]), row.names = FALSE) %>%
+      kable_styling(bootstrap_options = c("striped", "hover","responsive"),
+                    fixed_thead = T) %>%
+         scroll_box(width = "100%", height = "300px"))
+    cat("\n", "<br>", "\n\n")
+  }
+
+  card_tab1 <- as.data.frame(do.call(rbind, lapply(abricate_card, abricate_card_function)))
+  addWorksheet(wb, "CARD")
+  writeData(wb, sheet = "CARD", card_tab1) 
+
+```
+
+### arg-annot {.tabset}
+
+```{r argannot, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+ abricate_argannot <- list.files(path=paste0(path_output, "/abricate/"), pattern = "argannot", full.names=TRUE, recursive=TRUE)
+
+   abricate_argannot_function <- function(i){
+     aga <- read.csv(i, sep= "\t")
+     if(dim(aga)[1] > 0){
+     aga$X.FILE <- basename(tools::file_path_sans_ext(aga$X.FILE))
+     aga$COVERAGE_MAP <- NULL
+     aga <- aga[,c(1, 6, 14, 9, 10, 2:5, 7:8, 11:13)]
+     aga$DATABASE <- NULL
+     names(aga) <- c("Sample", "Gene", "Resistance", "Coverage", "Identity", "Sequence", "Start", "End", "Strand", "N Coverage", "Gaps", "Accession", "Product")
+     aga$Strand[aga$Strand == "+"] <- "$+$"
+     aga$Strand[aga$Strand == "-"] <- "$-$"
+     aga <- aga[aga$Coverage >= coverage & aga$Identity >= identity, ]
+     aga <- aga[order(aga$Gene),]
+     return(aga)
+     }
+   }
+
+  aga_tab <- lapply(abricate_argannot, abricate_argannot_function)
+  aga_tab <- aga_tab[!sapply(aga_tab,is.null)]
+  aga_tab <- aga_tab[sapply(aga_tab, nrow)>0]
+
+  for (i in 1:length(aga_tab)){
+      cat("####", as.data.frame(aga_tab[i])$Sample[1], "<br>", "\n")
+    print(kable(as.data.frame(aga_tab[i]), row.names = FALSE) %>%
+      kable_styling(bootstrap_options = c("striped", "hover","responsive"),
+                    fixed_thead = T) %>%
+         scroll_box(width = "100%", height = "300px"))
+    cat("\n", "<br>", "\n\n")
+  }
+
+  aga_tab1 <- as.data.frame(do.call(rbind, lapply(abricate_argannot, abricate_argannot_function)))
+  addWorksheet(wb, "argannot")
+   writeData(wb, sheet = "argannot", aga_tab1) 
+   saveWorkbook(wb, file=paste0(path_excel, "/Antimicrobial_resistance_table.xlsx"), overwrite = TRUE)
+
+```
+
+
+## Antimicrobial Resistance Heatmaps {.tabset .tabset-fade .tabset-pills #resistanceplot}
+
+### AMRfinder plus
+```{r AMRfinder plot, echo=FALSE, message=FALSE, warning=FALSE, results='asis', fig.align='center'}
+ amrfinder <- list.files(path=paste0(path_output, "/amrfinder/"), full.names=TRUE, recursive=FALSE)
+
+   amrfinder_function <- function(i){
+     amr <- read.csv(i, sep= "\t")
+     if(dim(amr)[1] > 0){
+      amr$sample <- basename(tools::file_path_sans_ext(i))
+      amr <- amr[,c(23, 6, 7, 11, 12, 16, 17, 14, 15, 18, 2:5, 19:22, 1, 8:10)]
+      names(amr) <- c("Sample", "Gene", "Sequence Name", "Antibiotic class", "Antibiotic subclass", "Coverage", "Identity", "Target Length", "Reference Length", "Alignment Length", "Contig", "Start", "Stop", "Strand", "Accession", "Clostest sequence name", "HMM ID", "HMM Description", "Protein identifier", "Scope", "Element type", "Element Subtype")
+      amr$Sample <- gsub("_amrfinder", "", amr$Sample)
+      amr <- amr[amr$Coverage >= coverage & amr$Identity >= identity, ]
+      return(amr)
+     }
+   }
+  amr_tab <- as.data.frame(do.call(rbind, lapply(amrfinder, amrfinder_function)))
+  amr_tab <- amr_tab[!sapply(amr_tab,is.null)]
+
+amr <- amr_tab[c(1,2)]
+amr$Presence <- 1
+
+amr1 <- reshape(amr, timevar = "Gene", idvar = "Sample", direction = "wide")
+amr1[is.na(amr1)] <- 0
+colnames(amr1) <- gsub("Presence.", "", colnames(amr1))
+rownames(amr1) <- amr1$Sample
+amr1$Sample <- NULL
+col_fun = colorRamp2(c(0, 1), c("white", "red"))
+d <- Heatmap(amr1, col = col_fun, rect_gp = gpar(col = "black", lwd = 2),
+        column_title = "Antibiotic Resistance Genes", cluster_columns = FALSE,  column_title_gp = gpar(fontsize=25),
+        row_names_side = "left", row_dend_side = "right", column_names_rot = 90,
+        show_heatmap_legend = FALSE, row_names_gp = gpar(fontsize = 20), column_names_gp = gpar(fontsize=15))
+plot(d)
+
+
+
+```
+
+### NCBI
+
+```{r ncbi plot, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+ abricate_ncbi <- list.files(path=paste0(path_output, "/abricate/"), pattern = "ncbi", full.names=TRUE, recursive=TRUE)
+
+   abricate_ncbi_function <- function(i){
+     sma <- read.csv(i, sep= "\t")
+     sma$X.FILE <- basename(tools::file_path_sans_ext(sma$X.FILE))
+     sma$COVERAGE_MAP <- NULL
+     sma <- sma[,c(1, 6, 14, 9, 10, 2:5, 7:8, 11:13)]
+     sma$DATABASE <- NULL
+     names(sma) <- c("Sample", "Gene", "Resistance", "Coverage", "Identity",   "Sequence", "Start", "End", "Strand", "N Coverage", "Gaps", "Accession", "Product")
+     sma <- sma[sma$Coverage >= coverage & sma$Identity >= identity, ]
+     return(sma)
+   }
+   ncbi_tab <- as.data.frame(do.call(rbind, lapply(abricate_ncbi, abricate_ncbi_function)))
+
+ncbi <- ncbi_tab[c(1,2)]
+ncbi$Presence <- 1
+
+ncbi1 <- reshape(ncbi, timevar = "Gene", idvar = "Sample", direction = "wide")
+ncbi1[is.na(ncbi1)] <- 0
+colnames(ncbi1) <- gsub("Presence.", "", colnames(ncbi1))
+rownames(ncbi1) <- ncbi1$Sample
+ncbi1$Sample <- NULL
+col_fun = colorRamp2(c(0, 1), c("white", "red"))
+d <- Heatmap(ncbi1, col = col_fun, rect_gp = gpar(col = "black", lwd = 2),
+        column_title = "Antibiotic Resistance Genes", cluster_columns = FALSE,  column_title_gp = gpar(fontsize=25),
+        row_names_side = "left", row_dend_side = "right", column_names_rot = 90, 
+        show_heatmap_legend = FALSE, row_names_gp = gpar(fontsize = 20), column_names_gp = gpar(fontsize=15))
+plot(d)
+
+
+```
+
+
+### Megares
+
+```{r Megares plot, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+ abricate_mega <- list.files(path=paste0(path_output, "/abricate/"), pattern = "megares", full.names=TRUE, recursive=TRUE)
+
+   abricate_mega_function <- function(i){
+     mega <- read.csv(i, sep= "\t")
+     mega$X.FILE <- basename(tools::file_path_sans_ext(mega$X.FILE))
+     mega$COVERAGE_MAP <- NULL
+     mega$DATABASE <- NULL
+     mega <- mega[,c(1, 6, 12, 9, 10, 2:5, 7:8, 11, 13)]
+     mega$PRODUCT <- sub(':[^:]*$', '', mega$PRODUCT)
+     names(mega) <- c("Sample", "Gene", "Product", "Coverage", "Identity", "Sequence", "Start", "End", "Strand", "N Coverage", "Gaps", "Accession", "Resistance")
+     mega <- mega[mega$Coverage >= coverage & mega$Identity >= identity, ]
+     return(mega)
+   }
+  mega_tab <- as.data.frame(do.call(rbind, lapply(abricate_mega, abricate_mega_function)))
+
+mega <- mega_tab[c(1,2)]
+mega$Presence <- 1
+
+mega1 <- reshape(mega, timevar = "Gene", idvar = "Sample", direction = "wide")
+mega1[is.na(mega1)] <- 0
+colnames(mega1) <- gsub("Presence.", "", colnames(mega1))
+rownames(mega1) <- mega1$Sample
+mega1$Sample <- NULL
+col_fun = colorRamp2(c(0, 1), c("white", "red"))
+d <- Heatmap(mega1, col = col_fun, rect_gp = gpar(col = "black", lwd = 2),
+        column_title = "Antibiotic Resistance Genes", cluster_columns = FALSE,  column_title_gp = gpar(fontsize=25),
+        row_names_side = "left", row_dend_side = "right", column_names_rot = 90,
+        show_heatmap_legend = FALSE, row_names_gp = gpar(fontsize = 20), column_names_gp = gpar(fontsize=15))
+plot(d)
+
+```
+
+### ResFinder
+
+```{r resfinder plot, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+ abricate_resfinder <- list.files(path=paste0(path_output, "/abricate/"), pattern = "resfinder", full.names=TRUE, recursive=TRUE)
+
+   abricate_resfinder_function <- function(i){
+     rsf <- read.csv(i, sep= "\t")
+     rsf$X.FILE <- basename(tools::file_path_sans_ext(rsf$X.FILE))
+     rsf$COVERAGE_MAP <- NULL
+     rsf <- rsf[,c(1, 6, 14, 9, 10, 2:5, 7:8, 11:13)]
+     rsf$DATABASE <- NULL
+     names(rsf) <- c("Sample", "Gene", "Resistance", "Coverage", "Identity",   "Sequence", "Start", "End", "Strand", "N Coverage", "Gaps", "Accession", "Product")
+     rsf <- rsf[rsf$Coverage >= coverage & rsf$Identity >= identity, ]
+     return(rsf)
+   }
+  resfinder_tab <- as.data.frame(do.call(rbind, lapply(abricate_resfinder, abricate_resfinder_function)))
+
+resfinder <- resfinder_tab[c(1,2)]
+resfinder$Presence <- 1
+
+resfinder1 <- reshape(resfinder, timevar = "Gene", idvar = "Sample", direction = "wide")
+resfinder1[is.na(resfinder1)] <- 0
+colnames(resfinder1) <- gsub("Presence.", "", colnames(resfinder1))
+rownames(resfinder1) <- resfinder1$Sample
+resfinder1$Sample <- NULL
+col_fun = colorRamp2(c(0, 1), c("white", "red"))
+d <- Heatmap(resfinder1, col = col_fun, rect_gp = gpar(col = "black", lwd = 2),
+        column_title = "Antibiotic Resistance Genes", cluster_columns = FALSE,  column_title_gp = gpar(fontsize=25),
+        row_names_side = "left", row_dend_side = "right", column_names_rot = 90,
+        show_heatmap_legend = FALSE, row_names_gp = gpar(fontsize = 20), column_names_gp = gpar(fontsize=15))
+plot(d)
+
+```
+
+### CARD
+
+```{r CARD plot, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+ abricate_card <- list.files(path=paste0(path_output, "/abricate/"), pattern = "card", full.names=TRUE, recursive=TRUE)
+
+   abricate_card_function <- function(i){
+     card <- read.csv(i, sep= "\t")
+     card$X.FILE <- basename(tools::file_path_sans_ext(card$X.FILE))
+     card$COVERAGE_MAP <- NULL
+     card$DATABASE <- NULL
+     card <- card[,c(1, 6, 12, 9, 10, 2:5, 7:8, 11, 13)]
+     card$PRODUCT <- sub(':[^:]*$', '', card$PRODUCT)
+     names(card) <- c("Sample", "Gene", "Product", "Coverage", "Identity", "Sequence", "Start", "End", "Strand", "N Coverage", "Gaps", "Accession", "Resistance")
+     card <- card[card$Coverage >= coverage & card$Identity >= identity, ]
+     return(card)
+   }
+  card_tab <- as.data.frame(do.call(rbind, lapply(abricate_card, abricate_card_function)))
+
+card <- card_tab[c(1,2)]
+card$Presence <- 1
+
+card1 <- reshape(card, timevar = "Gene", idvar = "Sample", direction = "wide")
+card1[is.na(card1)] <- 0
+colnames(card1) <- gsub("Presence.", "", colnames(card1))
+rownames(card1) <- card1$Sample
+card1$Sample <- NULL
+col_fun = colorRamp2(c(0, 1), c("white", "red"))
+d <- Heatmap(card1, col = col_fun, rect_gp = gpar(col = "black", lwd = 2),
+        column_title = "Antibiotic Resistance Genes", cluster_columns = FALSE,  column_title_gp = gpar(fontsize=25),
+        row_names_side = "left", row_dend_side = "right", column_names_rot = 90,
+        show_heatmap_legend = FALSE, row_names_gp = gpar(fontsize = 20), column_names_gp = gpar(fontsize=15))
+plot(d)
+
+```
+
+### arg-annot
+
+```{r arg-annot plot, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+ abricate_arg <- list.files(path=paste0(path_output, "/abricate/"), pattern = "argannot", full.names=TRUE, recursive=TRUE)
+
+   abricate_arg_function <- function(i){
+     rsf <- read.csv(i, sep= "\t")
+     rsf$X.FILE <- basename(tools::file_path_sans_ext(rsf$X.FILE))
+     rsf$COVERAGE_MAP <- NULL
+     rsf <- rsf[,c(1, 6, 14, 9, 10, 2:5, 7:8, 11:13)]
+     rsf$DATABASE <- NULL
+     names(rsf) <- c("Sample", "Gene", "Resistance", "Coverage", "Identity",   "Sequence", "Start", "End", "Strand", "N Coverage", "Gaps", "Accession", "Product")
+     rsf <- rsf[rsf$Coverage >= coverage & rsf$Identity >= identity, ]
+     return(rsf)
+   }
+  arg_tab <- as.data.frame(do.call(rbind, lapply(abricate_arg, abricate_arg_function)))
+
+arg <- arg_tab[c(1,2)]
+arg$Presence <- 1
+
+arg1 <- reshape(arg, timevar = "Gene", idvar = "Sample", direction = "wide")
+arg1[is.na(arg1)] <- 0
+colnames(arg1) <- gsub("Presence.", "", colnames(arg1))
+rownames(arg1) <- arg1$Sample
+arg1$Sample <- NULL
+col_fun = colorRamp2(c(0, 1), c("white", "red"))
+d <- Heatmap(arg1, col = col_fun, rect_gp = gpar(col = "black", lwd = 2),
+        column_title = "Antibiotic Resistance Genes", cluster_columns = FALSE,  column_title_gp = gpar(fontsize=25),
+        row_names_side = "left", row_dend_side = "right", column_names_rot = 90,
+        show_heatmap_legend = FALSE, row_names_gp = gpar(fontsize = 20), column_names_gp = gpar(fontsize=15))
+plot(d)
+
+```
+
+## Virulence Factors {.tabset #virulence}
+
+### VFDB  {.tabset}
+
+```{r VFDB, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+abricate_vfdb <- list.files(path=paste0(path_output, "/abricate/"), pattern = "vfdb", full.names=TRUE, recursive=TRUE)
+
+   abricate_vfdb_function <- function(i){
+     vfdb <- read.csv(i, sep= "\t")
+     if(dim(vfdb)[1] > 0){
+      vfdb$X.FILE <- basename(tools::file_path_sans_ext(vfdb$X.FILE))
+      vfdb$COVERAGE_MAP <- NULL
+      vfdb$DATABASE <- NULL
+      vfdb <- vfdb[,c(1, 6, 12, 9, 10, 2:5, 7:8, 11, 13)]
+      names(vfdb) <- c("Sample", "Gene", "Product", "Coverage", "Identity", "Sequence", "Start", "End", "Strand", "N Coverage", "Gaps", "Accession", "Resistance")
+      vfdb$Strand[vfdb$Strand == "+"] <- "$+$"
+      vfdb$Strand[vfdb$Strand == "-"] <- "$-$"
+      vfdb <- vfdb[vfdb$Coverage >= coverage & vfdb$Identity >= identity, ]
+      vfdb <- vfdb[order(vfdb$Gene),]
+      return(vfdb)
+     }
+   }
+   vfdb_tab <- lapply(abricate_vfdb, abricate_vfdb_function)
+   vfdb_tab <- vfdb_tab[!sapply(vfdb_tab,is.null)]
+   vfdb_tab <- vfdb_tab[sapply(vfdb_tab, nrow)>0]
+   
+  for (i in 1:length(vfdb_tab)) {
+      cat("####", as.data.frame(vfdb_tab[i])$Sample[1], "<br>", "\n")
+    print(kable(as.data.frame(vfdb_tab[i]), row.names = FALSE) %>%
+      kable_styling(bootstrap_options = c("striped", "hover","responsive"),
+                    fixed_thead = T) %>%
+         scroll_box(width = "100%", height = "300px"))
+    cat("\n", "<br>", "\n\n")
+  }
+   
+   vfdb1_tab <- as.data.frame(do.call(rbind, lapply(abricate_vfdb, abricate_vfdb_function)))
+   wbv <- createWorkbook()
+   addWorksheet(wbv, "VFDB")
+   writeData(wbv, sheet = "VFDB", vfdb1_tab)
+```
+
+### Virulencefinder  {.tabset}
+
+```{r Virulencefinder, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+ virulencefinder <- list.files(path=paste0(path_output, "/virulencefinder/"), pattern = "results_tab.tsv", full.names=TRUE, recursive=TRUE)
+
+   virulencefinder_function <- function(i){
+     vf <- read.csv(i, sep= "\t")
+     if(dim(vf)[1] > 0){
+      vf$Sample <- basename(tools::file_path_sans_ext(i))
+      vf$Sample <- gsub("_results_tab", "", vf$Sample)
+      vf <- vf[,c(9, 2, 3, 4, 7, 8, 1, 5, 6 )]
+      names(vf) <- c("Sample", "Gene", "Identity",  "Coverage", "Product", "Accession", "Database", "Contig", "Position in contig")
+      vf <- vf[vf$Identity >= identity, ]
+      vf <- vf[order(vf$Gene),]
+      return(vf)
+     }
+   }
+  vf_tab <- lapply(virulencefinder, virulencefinder_function)
+  vf_tab <- vf_tab[!sapply(vf_tab,is.null)]
+  vf_tab <- vf_tab[sapply(vf_tab, nrow)>0]
+
+  for (i in 1:length(vf_tab)) {
+      cat("####", as.data.frame(vf_tab[i])$Sample[1], "<br>", "\n")
+    print(kable(as.data.frame(vf_tab[i]), row.names = FALSE) %>%
+      kable_styling(bootstrap_options = c("striped", "hover","responsive"),
+                    fixed_thead = T) %>%
+         scroll_box(width = "100%", height = "300px"))
+    cat("\n", "<br>", "\n\n")
+  }
+  
+   vf1_tab <- as.data.frame(do.call(rbind, lapply(virulencefinder, virulencefinder_function)))
+   addWorksheet(wbv, "VirulenceFinder")
+   writeData(wbv, sheet = "VirulenceFinder", vf1_tab) 
+   saveWorkbook(wbv, file=paste0(path_excel, "/Virulence_factor_table.xlsx"), overwrite = TRUE)
+ 
+  
+```
+
+## Virulence Factors Heatmaps {.tabset .tabset-fade .tabset-pills #virulenceplot}
+
+### VFDB
+
+```{r vfdb plot, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+  abricate_vfdb <- list.files(path=paste0(path_output, "/abricate/"), pattern = "vfdb", full.names=TRUE, recursive=TRUE)
+
+   abricate_vfdb_function <- function(i){
+     vfdb <- read.csv(i, sep= "\t")
+     if(dim(vfdb)[1] > 0){
+      vfdb$X.FILE <- basename(tools::file_path_sans_ext(vfdb$X.FILE))
+      vfdb$COVERAGE_MAP <- NULL
+      vfdb$DATABASE <- NULL
+      vfdb <- vfdb[,c(1, 6, 12, 9, 10, 2:5, 7:8, 11, 13)]
+      names(vfdb) <- c("Sample", "Gene", "Product", "Coverage", "Identity", "Sequence", "Start", "End", "Strand", "N Coverage", "Gaps", "Accession", "Resistance")
+      vfdb <- vfdb[vfdb$Coverage >= coverage & vfdb$Identity >= identity, ]
+      return(vfdb)
+     }
+   }
+   vfdb_tab <- as.data.frame(do.call(rbind, lapply(abricate_vfdb, abricate_vfdb_function)))
+  vfdb_tab <- vfdb_tab[!sapply(vfdb_tab,is.null)]
+vfdb <- vfdb_tab[c(1,2)]
+vfdb$Presence <- 1
+
+vfdb1 <- reshape(vfdb, timevar = "Gene", idvar = "Sample", direction = "wide")
+vfdb1[is.na(vfdb1)] <- 0
+colnames(vfdb1) <- gsub("Presence.", "", colnames(vfdb1))
+rownames(vfdb1) <- vfdb1$Sample
+vfdb1$Sample <- NULL
+col_fun = colorRamp2(c(0, 1), c("white", "blue"))
+d <- Heatmap(vfdb1, col = col_fun, rect_gp = gpar(col = "black", lwd = 2),
+        column_title = "Virulence Factors", cluster_columns = FALSE, column_title_gp = gpar(fontsize=25),
+        row_names_side = "left", row_dend_side = "right", column_names_rot = 90,
+        show_heatmap_legend = FALSE, row_names_gp = gpar(fontsize = 20), column_names_gp = gpar(fontsize=15))
+plot(d)
+  
+  
+```
+
+### VirulenceFinder
+
+```{r virulencefinder plot, echo=FALSE, message=FALSE, warning=FALSE, results='asis', fig.align='center'}
+virulencefinder <- list.files(path=paste0(path_output, "/virulencefinder/"), pattern = "results_tab.tsv", full.names=TRUE, recursive=TRUE)
+
+   virulencefinder_function <- function(i){
+     vf <- read.csv(i, sep= "\t")
+     if(dim(vf)[1] > 0){
+      vf$Sample <- basename(tools::file_path_sans_ext(i))
+      vf$Sample <- gsub("_results_tab", "", vf$Sample)
+      vf <- vf[,c(9, 2, 3, 4, 7, 8, 1, 5, 6 )]
+      names(vf) <- c("Sample", "Gene", "Identity",  "Coverage", "Product", "Accession", "Database", "Contig", "Position in contig")
+      vf <- vf[vf$Identity >= identity, ]
+      return(vf)
+     }
+   }
+  vf_tab <- as.data.frame(do.call(rbind, lapply(virulencefinder, virulencefinder_function)))
+  vf_tab <- vf_tab[!sapply(vf_tab,is.null)]
+vf <- vf_tab[c(1,2)]
+vf$Presence <- 1
+
+vf1 <- reshape(vf, timevar = "Gene", idvar = "Sample", direction = "wide")
+vf1[is.na(vf1)] <- 0
+colnames(vf1) <- gsub("Presence.", "", colnames(vf1))
+rownames(vf1) <- vf1$Sample
+vf1$Sample <- NULL
+col_fun = colorRamp2(c(0, 1), c("white", "blue"))
+d <- Heatmap(vf1, col = col_fun, rect_gp = gpar(col = "black", lwd = 2),
+        column_title = "Virulence Factors", cluster_columns = FALSE,  column_title_gp = gpar(fontsize=25),
+        row_names_side = "left", row_dend_side = "right", column_names_rot = 90,
+        show_heatmap_legend = FALSE, row_names_gp = gpar(fontsize = 20), column_names_gp = gpar(fontsize=15))
+plot(d)
+  
+```
+
+
+## Plasmids {.tabset .tabset-fade .tabset-pills #plasm}
+
+### Plasmidfinder {.tabset}
+
+```{r Plasmids, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+ abricate_plfd <- list.files(path=paste0(path_output, "/abricate/"), pattern = "plasmidfinder", full.names=TRUE, recursive=TRUE)
+
+   abricate_plfd_function <- function(i){
+     smp <- read.csv(i, sep= "\t")
+     if(dim(smp)[1] > 0){
+       smp$X.FILE <- basename(tools::file_path_sans_ext(smp$X.FILE))
+       smp$COVERAGE_MAP <- NULL
+       smp$DATABASE <- NULL
+       smp <- smp[,c(1, 6, 12, 9, 10, 2:5, 7:8, 11, 13)]
+       names(smp) <- c("Sample", "Plasmid", "Product", "Coverage", "Identity", "Sequence", "Start", "End", "Strand", "N Coverage", "Gaps", "Accession", "Resistance")
+       smp$Strand[smp$Strand == "+"] <- "$+$"
+       smp$Strand[smp$Strand == "-"] <- "$-$"
+       smp <- smp[smp$Coverage >= coverage & smp$Identity >= identity, ]
+       return(smp)
+     }
+   }
+  plfd_tab <- lapply(abricate_plfd, abricate_plfd_function)
+  plfd_tab <- plfd_tab[!sapply(plfd_tab,is.null)]
+  plfd_tab <- plfd_tab[sapply(plfd_tab, nrow)>0]
+  
+  for (i in 1:length(plfd_tab)) {
+    cat("####", as.data.frame(plfd_tab[i])$Sample[1], "<br>", "\n")
+  print(kable(as.data.frame(plfd_tab[i]), row.names = FALSE) %>%
+    kable_styling(bootstrap_options = c("striped", "hover","responsive"),
+                  fixed_thead = T) %>%
+       scroll_box(width = "100%", height = "300px"))
+  cat("\n", "<br>", "\n\n")
+  }
+  
+  pd1_tab <- as.data.frame(do.call(rbind, lapply(abricate_plfd, abricate_plfd_function)))
+    write.xlsx(pd1_tab, file=paste0(path_excel, "/Plasmid_table.xlsx"),   sheetName = "plasmid_finder", col.names = TRUE, row.names = FALSE)
+```
+
+## *Escherichia* {.tabset #esche}
+
+### ECtyper
+
+```{r ECtyper, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+options(knitr.table.format = "html")
+ 
+ectyper <- list.files(path = paste0(path_output, "/ectyper/"), pattern = ".tsv", full.names = TRUE, recursive = TRUE)
+
+ectyper_function <- function(i) {
+  ec <- read.csv(i, sep = "\t")
+  
+  if (ncol(ec) < 1) {
+    stop(paste("File", i, "non contiene colonne valide."))
+  }
+  
+  colnames(ec)[1] <- "Sample"
+  
+  if ("Species" %in% colnames(ec)) ec$Species[ec$Species == "-"] <- "$-$"
+  if ("H.type" %in% colnames(ec)) ec$H.type[ec$H.type == "-"] <- "$-$"
+  if ("QC" %in% colnames(ec)) ec$QC[ec$QC == "-"] <- "$-$"
+  if ("Warnings" %in% colnames(ec)) ec$Warnings[ec$Warnings == "-"] <- "$-$"
+  
+  return(ec)
+}
+
+ec_tab <- do.call(rbind, lapply(ectyper, function(file) {
+  tryCatch(
+    ectyper_function(file),
+    error = function(e) {
+      message(paste("Error during processing of file:", file, "->", e$message))
+      NULL
+    }
+  )
+}))
+
+ec_tab <- as.data.frame(ec_tab)
+ec_tab$O.type <- gsub("-", "", ec_tab$O.type)
+
+print(kable(ec_tab) %>% kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>% scroll_box(width = "100%", height = "300px"))
+
+if(dim(ec_tab)[1] != 0){
+  ec1_tab <- as.data.frame(do.call(rbind, lapply(ectyper, ectyper_function)))
+    wbec <- createWorkbook()
+   addWorksheet(wbec, "ECTyper")
+   writeData(wbec, sheet = "ECTyper", ec1_tab)
+}
+  
+```
+
+### Kleborate
+
+```{r Kleborate-escherichia, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+ kleborate_esch <- list.files(path=paste0(path_output, "/kleborate_escherichia/"), pattern = "", full.names=TRUE, recursive=TRUE)
+
+   kleborate_esch_function <- function(i){
+     klb <- read.csv(i, sep= "\t")
+     klb <- klb[,c(1, 2, 10:27)]
+     colnames(klb)[1] <- "Sample"
+     for(n in 1:nrow(klb)){
+       for(j in 1:ncol(klb)){
+        if(klb[n,j] == "-" & !is.na(klb[n,j])){
+          klb[n,j] <- gsub("-","$-$",klb[n,j])
+        }
+      }
+    }
+    return(klb)
+   }
+  klb_es_tab <- as.data.frame(do.call(rbind, lapply(kleborate_esch, kleborate_esch_function)))
+  
+  print(kable(klb_es_tab) %>%
+    kable_styling(bootstrap_options = c("striped", "hover","responsive"),
+                  fixed_thead = T) %>%
+       scroll_box(width = "100%", height = "300px"))
+    
+  if(dim(klb_es_tab)[1] != 0){
+    kb1_es_tab <- as.data.frame(do.call(rbind, lapply(kleborate_esch, kleborate_esch_function)))
+    for(n in 1:nrow(kb1_es_tab)){
+       for(j in 1:ncol(kb1_es_tab)){
+        if(kb1_es_tab[n,j] == "$-$" & !is.na(kb1_es_tab[n,j])){
+    kb1_es_tab[n,j] <- gsub("\\$-\\$","-",kb1_es_tab[n,j])
+        }
+       } 
+    }
+   addWorksheet(wbec, "Kleborate")
+   writeData(wbec, sheet = "Kleborate", kb1_es_tab) 
+  }
+   
+```
+
+### EcOH
+
+```{r EcOH, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+ecoh <- list.files(path=paste0(path_output, "/abricate_ecoli/"), pattern = "ecoh", full.names=TRUE, recursive=TRUE)
+
+   ecoh_function <- function(i){
+     ec <- read.csv(i, sep= "\t")
+     ec$DATABASE <- NULL
+     names(ec) <- c("Sample", "Sequence", "Start", "End", "Strand", "Gene", "Coverage", "Coverage_map",
+    "Gaps", "Coverage_Percentage", "Identity_Percentage", "Accession", "Product", "Resistance")
+     ec$Strand[ec$Strand == "+"] <- "$+$"
+     ec$Sample <- gsub(".fasta","",basename(ec$Sample))
+     ec <- ec[,c(1, 6, 10:14, 2:5, 7:9)]
+     ec <- ec[ec$Identity_Percentage >= identity & ec$Coverage_Percentage >= coverage, ]
+    return(ec)
+   }
+  ec_tab <- as.data.frame(do.call(rbind, lapply(ecoh, ecoh_function)))
+  
+  print(kable(ec_tab, row.names = FALSE) %>%
+    kable_styling(bootstrap_options = c("striped", "hover","responsive"),
+                  fixed_thead = T) %>%
+       scroll_box(width = "100%", height = "300px"))
+    
+  if(dim(ec_tab)[1] != 0){
+    ec1_tab <- as.data.frame(do.call(rbind, lapply(ecoh, ecoh_function)))
+   addWorksheet(wbec, "EcOH")
+   writeData(wbec, sheet = "EcOH", ec1_tab) 
+
+  }
+```
+
+### Ecoli_VF
+
+```{r ecoli_vf, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+ ecoli_vf <- list.files(path=paste0(path_output, "/abricate_ecoli/"), pattern = "ecoli_vf", full.names=TRUE, recursive=TRUE)
+
+   ecoli_vf_function <- function(i){
+     evf <- read.csv(i, sep= "\t")
+     evf$DATABASE <- NULL
+     names(evf) <- c("Sample", "Sequence", "Start", "End", "Strand", "Gene", "Coverage", "Coverage_map",
+    "Gaps", "Coverage_Percentage", "Identity_Percentage", "Accession", "Product", "Resistance")
+     evf$Sample <- gsub(".fasta","",basename(evf$Sample))
+     evf$Strand[evf$Strand == "+"] <- "$+$"
+     evf$Strand[evf$Strand == "-"] <- "$-$"
+     evf <- evf[,c(1, 6, 10:14, 2:5, 7:9)]
+     evf <- evf[evf$Identity_Percentage >= identity & evf$Coverage_Percentage >= coverage, ]
+    return(evf)
+   }
+  evf_tab <- as.data.frame(do.call(rbind, lapply(ecoli_vf, ecoli_vf_function)))
+  
+  print(kable(evf_tab, row.names = FALSE) %>%
+    kable_styling(bootstrap_options = c("striped", "hover","responsive"),
+                  fixed_thead = T) %>%
+       scroll_box(width = "100%", height = "300px"))
+    
+  if(dim(evf_tab)[1] != 0){
+    evf1_tab <- as.data.frame(do.call(rbind, lapply(ecoli_vf, ecoli_vf_function)))
+   addWorksheet(wbec, "ecoli_vf")
+   writeData(wbec, sheet = "ecoli_vf", evf1_tab) 
+   saveWorkbook(wbec, file=paste0(path_excel, "/Escherichia_table.xlsx"), overwrite = TRUE)
+
+  }
+```
+
+
+## *Klebsiella* {.tabset #klebsielle}
+
+### Kleborate
+
+```{r Kleborate, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+ kleborate <- list.files(path=paste0(path_output, "/kleborate/"), pattern = "", full.names=TRUE, recursive=TRUE)
+   kleborate_function <- function(i){
+     klb <- read.csv(i, sep= "\t")
+     klb <- klb[,c(1, 2, 9:113)]
+     colnames(klb)[1] <- "Sample"
+     for(n in 1:nrow(klb)){
+       for(j in 1:ncol(klb)){
+        if(klb[n,j] == "-" & !is.na(klb[n,j])){
+          klb[n,j] <- gsub("-","$-$",klb[n,j])
+        }
+      }
+    }
+    return(klb)
+   }
+  klb_tab <- as.data.frame(do.call(rbind, lapply(kleborate, kleborate_function)))
+  
+  print(kable(klb_tab) %>%
+    kable_styling(bootstrap_options = c("striped", "hover","responsive"),
+                  fixed_thead = T) %>%
+       scroll_box(width = "100%", height = "300px"))
+    
+  if(dim(klb_tab)[1] != 0){
+    kb1_tab <- as.data.frame(do.call(rbind, lapply(kleborate, kleborate_function)))
+    for(n in 1:nrow(kb1_tab)){
+       for(j in 1:ncol(kb1_tab)){
+        if(kb1_tab[n,j] == "$-$" & !is.na(kb1_tab[n,j])){
+    kb1_tab[n,j] <- gsub("\\$-\\$","-",kb1_tab[n,j])
+        }
+       } 
+    }
+    write.xlsx(kb1_tab, file=paste0(path_excel, "/Klebsiella_table.xlsx"),   sheetName = "kleborate", col.names = TRUE, row.names = FALSE)
+  }
+   
+  
+```
+
+## *Streptococcus Pyogenes* {.tabset #Strepto}
+
+### EMMtyper
+```{r EMMtyper, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+
+ emmtyper <- list.files(path=paste0(path_output, "/emmtyper/"), full.names=TRUE, recursive=TRUE) 
+
+   emmtyper_function <- function(i){
+     em <- read.csv(i, sep= "\t", header=FALSE)
+     em$V1 <- basename(tools::file_path_sans_ext(em$V1))
+     names(em) <- c("Sample", "Number of Clusters", "Predicted emm-type", "Possible emm-like alleles", "EMM clusters")
+
+     return(em)
+   }
+  emm_tab <- as.data.frame(do.call(rbind, lapply(emmtyper, emmtyper_function)))
+  print(kable(emm_tab) %>%
+    kable_styling(bootstrap_options = c("striped", "hover","responsive")) %>%
+  footnote(general = c("* 	Suspect emm-like 	Allele flagged in the CDC database as possibly emm-like", "~ 	Imperfect score 	Match score below 100%")))
+  
+    if(dim(emm_tab)[1] != 0){
+    emm1_tab <- as.data.frame(do.call(rbind, lapply(emmtyper, emmtyper_function)))
+  write.xlsx(emm1_tab, file=paste0(path_excel, "/S.pyogenes_table.xlsx"),   sheetName = "emmtyper", col.names = TRUE, row.names = FALSE)
+    }
+```
+
+## *Haemophilus influenzae* {.tabset #hinfluenzae}
+
+### HICAP
+
+```{r hicap, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+ hicap <- list.files(path=paste0(path_output, "/hicap/"), pattern = ".tsv", full.names=TRUE, recursive=TRUE)
+
+   hicap_function <- function(i){
+     hp <- read.csv(i, sep= "\t")
+     hp$X.isolate <- basename(tools::file_path_sans_ext(hp$X.isolate))
+     colnames(hp)[1] <- "Sample"
+     return(hp)
+   }
+  hp_tab <- as.data.frame(do.call(rbind, lapply(hicap, hicap_function)))
+  
+  print(kable(hp_tab) %>%
+    kable_styling(bootstrap_options = c("striped", "hover","responsive"),
+                  fixed_thead = T) %>%
+       scroll_box(width = "100%", height = "300px"))
+  
+  if(dim(hp_tab)[1] != 0){
+    hp1_tab <- as.data.frame(do.call(rbind, lapply(hicap, hicap_function)))
+  write.xlsx(hp1_tab, file=paste0(path_excel, "/H.influenzae_table.xlsx"),   sheetName = "hicap", col.names = TRUE, row.names = FALSE)
+    }
+```
+
+
+## *Shigella* {.tabset #shig}
+
+### Shigatyper
+
+```{r Shigatyper, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+ shigatyper <- list.files(path=paste0(path_output, "/shigatyper/"), pattern="_def.tsv", full.names=TRUE, recursive=TRUE)
+
+   shigatyper_function <- function(i){
+     sh <- read.csv(i, sep= "\t")
+     sh$sample <- gsub("shigatyper/", "", sh$sample)
+     names(sh) <- c("Sample", "Prediction", "ipaB", "Notes")
+     sh$ipaB[sh$ipaB == "+"] <- "$+$"
+     sh$ipaB[sh$ipaB == "-"] <- "$-$"
+     return(sh)
+   }
+  shiga_tab <- as.data.frame(do.call(rbind, lapply(shigatyper, shigatyper_function)))
+  
+  print(kable(shiga_tab) %>%
+    kable_styling(bootstrap_options = c("striped", "hover","responsive")))
+   
+  if(dim(shiga_tab)[1] != 0){
+    shiga1_tab <- as.data.frame(do.call(rbind, lapply(shigatyper, shigatyper_function)))
+  write.xlsx(shiga1_tab, file=paste0(path_excel, "/Shigella_table.xlsx"),   sheetName = "Shigatyper", col.names = TRUE, row.names = FALSE)
+    }
+  
+```
+
+## *Staphylococcus* {.tabset #Staph}
+
+### sccmec
+
+```{r sccmec, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+ staphopia <- list.files(path=paste0(path_output, "/sccmec/"), full.names=TRUE, recursive=TRUE,
+                         pattern = "sccmec.tsv") 
+
+   staphopia_function <- function(i){
+     stap <- read.csv(i, sep= "\t")
+     stap$sample <- gsub(paste0(path_output, "/sccmec/"), "", i)
+     stap$sample <- gsub("/sccmec.tsv", "", stap$sample)
+     colnames(stap)[1] <- "Sample"
+      for(n in 1:nrow(stap)){
+             for(j in 1:ncol(stap)){
+              if(!is.na(stap[n,j]) & stap[n,j] == "-"){
+                stap[n,j] <- gsub("-","$-$",stap[n,j])
+              }
+            }
+          }
+     return(stap)
+   }
+  stap_tab <- as.data.frame(do.call(rbind, lapply(staphopia, staphopia_function)))
+
+  print(kable(stap_tab) %>%
+    kable_styling(bootstrap_options = c("striped", "hover","responsive"),
+                  fixed_thead = T) %>%
+       scroll_box(width = "100%", height = "300px"))
+  
+  if(dim(stap_tab)[1] != 0){
+      st1_tab <- as.data.frame(do.call(rbind, lapply(staphopia, staphopia_function)))
+      wbstaph <- createWorkbook()
+   addWorksheet(wbstaph, "sscmec")
+   writeData(wbstaph, sheet = "sscmec", st1_tab)
+    }
+  
+
+```
+
+### spatyper
+
+```{r spatyper, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+
+ spatyper <- list.files(path=paste0(path_output, "/spatyper/"), full.names=TRUE, recursive=TRUE)
+
+    spatyper_function <- function(i){
+      spa <- read.csv(i, sep= "\t")
+      spa$Sample <- basename(tools::file_path_sans_ext(i))
+      spa <- spa[,c(4,1,2,3)]
+      colnames(spa)[2] <- "Sequence Name"
+      return(spa)
+   }
+  spa_tab <- as.data.frame(do.call(rbind, lapply(spatyper,  spatyper_function)))
+
+  print(kable(spa_tab) %>%
+    kable_styling(bootstrap_options = c("striped", "hover","responsive"),
+                  fixed_thead = T) %>%
+       scroll_box(width = "100%", height = "300px"))
+  
+  if(dim(spa_tab)[1] != 0){
+    sp1_tab <- as.data.frame(do.call(rbind, lapply(spatyper,  spatyper_function)))
+    addWorksheet(wbstaph, "spaTyper")
+   writeData(wbstaph, sheet = "spaTyper", sp1_tab)
+  }
+```
+
+### agrvate
+
+```{r agrvate, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+
+ agrvate <- list.files(path=paste0(path_output, "/agrvate/"), pattern= "summary", full.names=TRUE, recursive=TRUE)
+
+    agrvate_function <- function(i){
+      agr <- read.csv(i, sep= "\t")
+      colnames(agr)[1] <- "Sample"
+      return(agr)
+   }
+  agr_tab <- as.data.frame(do.call(rbind, lapply(agrvate,  agrvate_function)))
+
+  print(kable(agr_tab) %>%
+    kable_styling(bootstrap_options = c("striped", "hover","responsive"),
+                  fixed_thead = T) %>%
+       scroll_box(width = "100%", height = "300px"))
+  if(dim(agr_tab)[1] != 0){
+  ag1_tab <- as.data.frame(do.call(rbind, lapply(agrvate,  agrvate_function)))
+   addWorksheet(wbstaph, "agrvate")
+   writeData(wbstaph, sheet = "agrvate", ag1_tab) 
+   saveWorkbook(wbstaph, file=paste0(path_excel, "/Staphylococcus_table.xlsx"), overwrite = TRUE)
+
+  }
+```
+
+## *Streptococcus pneumoniae* {.tabset #pbp}
+
+### PBPtyper
+
+```{r pbptyper, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+
+ pbptyper <- list.files(path=paste0(path_output, "/pbptyper/"), pattern = ".tsv", full.names=TRUE, recursive=TRUE)
+
+    pbptyper_function <- function(i){
+      pbp <- read.csv(i, sep= "\t")
+      pbp$comment <- NULL
+      colnames(pbp)[1] <- "Sample"
+      return(pbp)
+   }
+  pbp_tab <- as.data.frame(do.call(rbind, lapply(pbptyper,  pbptyper_function)))
+
+  print(kable(pbp_tab) %>%
+    kable_styling(bootstrap_options = c("striped", "hover","responsive"),
+                  fixed_thead = T) %>%
+       scroll_box(width = "100%", height = "300px"))
+  
+  if(dim(pbp_tab)[1] != 0){
+  pbp1_tab <- as.data.frame(do.call(rbind, lapply(pbptyper,  pbptyper_function)))
+    write.xlsx(pbp1_tab, file=paste0(path_excel, "/S.pneumoniae_table.xlsx"),   sheetName = "PBPtyper", col.names = TRUE, row.names = FALSE, append=TRUE)
+  }
+  
+```
+## *Listeria monocytogenes* {.tabset #lis}
+
+### LisSero
+
+```{r lissero, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+
+ lissero <- list.files(path=paste0(path_output, "/lissero/"), pattern = ".tsv", full.names=TRUE, recursive=TRUE)
+
+    lissero_function <- function(i){
+      lis <- read.csv(i, sep= "\t")
+      lis$comment <- NULL
+      #lis <- lis[,c(4,1,2,3)]
+      colnames(lis)[1] <- "Sample"
+      return(lis)
+   }
+  lis_tab <- as.data.frame(do.call(rbind, lapply(lissero,  lissero_function)))
+
+  print(kable(lis_tab) %>%
+    kable_styling(bootstrap_options = c("striped", "hover","responsive")))
+  
+   if(dim(lis_tab)[1] != 0){
+  lis1_tab <- as.data.frame(do.call(rbind, lapply(lissero,  lissero_function)))
+    write.xlsx(lis1_tab, file=paste0(path_excel, "/L.monocytogenes_table.xlsx"),   sheetName = "LisSero", col.names = TRUE, row.names = FALSE, append=TRUE)
+  }
+  
+```
+
+## *Legionella pneumophila* {.tabset #leg}
+
+### Legsta
+
+```{r legsta, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+
+ legsta <- list.files(path=paste0(path_output, "/legsta/"), pattern = ".tsv", full.names=TRUE, recursive=TRUE)
+
+    legsta_function <- function(i){
+      leg <- read.csv(i, sep= "\t")
+      colnames(leg)[1] <- "Sample"
+      return(leg)
+   }
+  leg_tab <- as.data.frame(do.call(rbind, lapply(legsta,  legsta_function)))
+
+  print(kable(leg_tab) %>%
+    kable_styling(bootstrap_options = c("striped", "hover","responsive")))
+  
+   if(dim(leg_tab)[1] != 0){
+  leg1_tab <- as.data.frame(do.call(rbind, lapply(legsta,  legsta_function)))
+    write.xlsx(leg1_tab, file=paste0(path_excel, "/L.pneumophila_table.xlsx"),   sheetName = "Legsta", col.names = TRUE, row.names = FALSE, append=TRUE)
+  }
+  
+```
+
+
+## Citations {#Cite}
+<br>
+Privitera GF, Cannata AA, Campanile F, Alaimo S, Bongiorno D, Pulvirenti A. __BacExplorer__ (2024). Available at [https://github.com/gretep/BacExplorer](https://github.com/gretep/BacExplorer)
+<br>
+<br>
+
+
+Tools used in BacExplorer:
+
+|Package/Tool             | Reference   | 
+|--------------------------|-------------|
+| SPAdes v4.0.0             | [Prjibelski A. et al., 2017](https://currentprotocols.onlinelibrary.wiley.com/doi/10.1002/cpbi.102) |
+| TrimGalore v0.6.10  | [F. Krueger](https://github.com/FelixKrueger/TrimGalore)
+| mlst v2.23.0             | [T. Seemann](https://github.com/tseemann/mlst) |
+| kraken2 v2.1.3  | [D. E. Wood, J. Lu & B. Langmead, 2019](https://doi.org/10.1186/s13059-019-1891-0)
+|
+| ABRicate v1.0.1          | [T. Seemann](https://github.com/tseemann/abricate) |
+| CARD v.3.3.0  | [Alcock et al. 2023](https://card.mcmaster.ca/) |
+| Megares v.2  | [E. Doster et al., 2019](https://doi.org/10.1093/nar/gkz1010) |
+| Resfinder  | [AF Florensa et al., 2022](https://pmc.ncbi.nlm.nih.gov/articles/PMC8914360/) |
+| ARG-ANNOT v.6  | [SK Gupta et al., 2014](https://pmc.ncbi.nlm.nih.gov/articles/PMC3910750/) |
+| VFDB  | [L. Bo et al., 2022](https://pubmed.ncbi.nlm.nih.gov/34850947/) |
+| PlasmidFinder v.2.2.0  | [O. Lund, 2014](https://github.com/genomicepidemiology/plasmidfinder) |
+| ecoli_vf  | [ecoli_vf](https://github.com/phac-nml/ecoli_vf/) |
+| ecoh  | [DJ Ingle et al., 2016](https://pmc.ncbi.nlm.nih.gov/articles/PMC5343136/) |
+| ectyper  | [K. Bessonov et al., 2021](https://doi.org/10.1099/mgen.0.000728) |
+| BLAST v2.15.0             | [Z. Zhang et al., 2000](https://www.ncbi.nlm.nih.gov/pubmed/10890397)
+| AMRFinderPlus v3.12.8    | [M. Feldgarden et al., 2019](https://journals.asm.org/doi/10.1128/AAC.00483-19) |
+| R v4.4.0   | [R Core Team, 2024](https://www.R-project.org/) |
+| complexHeatmap v2.20.0   | [Gu et al., 2016](https://www.bioconductor.org/packages/release/bioc/html/ComplexHeatmap.html) |
+| rmarkdown v2.27          | [Allaire et al., 2022](https://cran.r-project.org/web/packages/rmarkdown/index.html) |
+| kableExtra v1.4.0           | [H. Zhu, 2024](https://CRAN.R-project.org/package=kableExtra) |
+| circlize v0.4.16           | [Z. Gu, 2014](https://academic.oup.com/bioinformatics/article/30/19/2811/2422259?login=false) |
+| stringr v1.5.1           | [H. Wickham, 2023](https://CRAN.R-project.org/package=stringr) |
+| dplyr v1.1.4           | [Wickham et al., 2023](https://cran.r-project.org/package=dplyr) |
+| VirulenceFinder v2.0.4           | [Joensen et al., 2014](https://journals.asm.org/doi/10.1128/jcm.03617-13) |
+| Kleborate v3.1.2           | [Wyres KL, et al., 2021](https://www.nature.com/articles/s41467-021-24448-3) |
+| emmtyper v0.2.0           | [Frost, H. R. et al., 2020](https://pubmed.ncbi.nlm.nih.gov/32120034/) |
+| agrvate v1.0.2           | [V Raghuram, 2022](https://github.com/VishnuRaghuram94/AgrVATE)
+|
+| sccmec v1.2.0           | [Petit, Robert A 3rd, and Timothy D Read, 2018](https://github.com/rpetit3/sccmec) |
+| spaTyper v0.3.3           | [MJ Sull](https://github.com/HCGB-IGTP/spaTyper?tab=readme-ov-file) |
+| Legsta v0.5.1           | [T. Seemann](https://github.com/tseemann/legsta) |
+| LisSero v0.4.9          | [Doumith M, 2004](https://github.com/MDU-PHL/LisSero) |
+| ShigaTyper v2.0.5          | [Wu Y., 2019](https://journals.asm.org/doi/10.1128/aem.00165-19) |
+| pbptyper v2.0.0          | [Petit III RA](https://github.com/rpetit3/pbptyper) |
+| hicap v1.0.4          | [SC Watts](https://github.com/scwatts/hicap) |
+| SISTR v1.1.2          | [C Yoshida](https://github.com/phac-nml/sistr_cmd) |
+| geNomad v.1.8.0  | [AP Camargo et al., 2023](https://doi.org/10.1038/s41587-023-01953-y) |

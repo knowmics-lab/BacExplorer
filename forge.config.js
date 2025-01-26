@@ -8,6 +8,9 @@ module.exports = {
   packagerConfig: {
     asar: true,
     executableName: 'bacexplorer',
+    extraResource: [
+      "./snakemake",
+    ]
   },
   rebuildConfig: {},
   makers: [
@@ -28,7 +31,7 @@ module.exports = {
     //   config: {},
     // },
   ],
-  hooks: "require:hooks.js",
+  // hooks: "require:hooks.js",
   // hooks: {
   //   prePackage: async (forgeConfig, options) => {
   //     console.log("Running beforePack hook");

@@ -34,11 +34,11 @@ rule all:
         '''
         echo "Execution complete\nPostprocessing..."
         python {params.post_processing}
-        echo "Producing report..."
-        Rscript -e "rmarkdown::render('{params.report}', output_file='{params.report_file}',
-        output_dir = '{PATH_OUTPUT}', params=list(path_output='{PATH_OUTPUT}',
-        identity='{IDENTITY}', coverage='{COVERAGE}'))"
         '''
+
+# Rscript -e "rmarkdown::render('{params.report}', output_file='{params.report_file}',
+#         output_dir = '{PATH_OUTPUT}', params=list(path_output='{PATH_OUTPUT}',
+#         identity={IDENTITY}, coverage={COVERAGE}))"
 
 rule mlst:
     input:
