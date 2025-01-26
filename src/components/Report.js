@@ -14,7 +14,9 @@ export default function Report(){
                 
                 const tempFilePath = await window.api.createTempHtmlFile(content);
 
-                shell.openExternal(`file://${tempFilePath}`);
+                await window.api.openHtmlFile(tempFilePath);
+
+                // shell.openExternal(`file://${tempFilePath}`);
             } catch(error) {
                 console.error("Error in fetching report: ", error);
                 throw(error);

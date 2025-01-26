@@ -6,16 +6,37 @@ export default function AnalysisProg({progress, setProgress}) {
     const [output, setOutput] = useState("");
     const [error, setError] = useState({error: false, message: ""});
     const [reportCreated, setReportCreated] = useState(false);
+    const [htmlContent, setHtmlContent] = useState("");
 
-    const navigate = (page) =>{
-        console.log(`Navigando verso ${page}`);
-        window.api.onNavigate(page);
-      }
+    // const navigate = (page) =>{
+    //     console.log(`Navigando verso ${page}`);
+    //     window.api.onNavigate(page);
+    //   }
+    
+    const fetchReport = async () => {
+        try {
+            const reportPath = await window.api.pickReportDir();
+            console.log("report path is: ", reportPath);
+            const content = await window.api.readHtmlFile(reportPath);
+            console.log("html content: ", content);
+            setHtmlContent(content);
+            
+            const tempFilePath = await window.api.createTempHtmlFile(content);
+
+            await window.api.openHtmlFile(tempFilePath);
+
+        } catch(error) {
+            console.error("Error in fetching report: ", error);
+            throw(error);
+        }
+    }
+    
+    const handleClick = () => {
+        fetchReport();
+    }
 
     useEffect(() => {
         window.api.onSnakemakeOutput((data) => {
-            // console.log('Received data from Snakemake: ', data);
-
             if (data) {
             console.log('Data properties:', data);
             }
@@ -128,7 +149,7 @@ export default function AnalysisProg({progress, setProgress}) {
             )}
 
             {reportCreated && (
-                <Button variant="secondary" onClick={() => navigate("report")}>Go to report</Button>
+                <Button variant="secondary" onClick={()=>handleClick()}>Go to report</Button>
             )}
 
         </div>

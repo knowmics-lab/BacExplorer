@@ -39,8 +39,8 @@ export default function App() {
                 return <DockerConfig />;
             case 'settings':
                 return <Inputs />;
-            case 'report':
-                return <Report />;
+            // case 'report':
+            //     return <Report />;
             default:
                 return <Home />;
         }

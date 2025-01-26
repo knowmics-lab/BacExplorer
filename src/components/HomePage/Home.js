@@ -32,7 +32,7 @@ export default function Home() {
             </Stack>
 
             {/* test report without launching analysis */}
-            <Button onClick={() => navigate('report')}>Go to Report</Button>
+            {/* <Button onClick={() => handleClick()}>Go to Report</Button> */}
             
         </div>
     )

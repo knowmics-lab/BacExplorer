@@ -426,8 +426,6 @@ ipcMain.handle('run-snakemake', async (event, userInput) => {
     return;
   }
 
-  // saveUserInput(configFile);
-
   const snakefileDir = path.dirname(configFile);
   try {
     const dirContent = fs.readdirSync(snakefileDir);
@@ -520,7 +518,6 @@ ipcMain.handle('save-file', async (event, yamlData) => {
     fs.writeFileSync(configFile, yamlData, 'utf8');
     console.log('File saved as:', configFile);
 
-    //FOR TEST ONLY
     saveUserInput(configFile);
 
     return { success: true, filePath: configFile };
@@ -544,7 +541,7 @@ ipcMain.handle ('readHTML', async(event, filePath) => {
   return fs.readFileSync(filePath, 'utf8');
 })
 
-ipcMain.handle("createTempHtmlFile", async (_, htmlContent) => {
+ipcMain.handle("create-temp-html-file", async (event, htmlContent) => {
   try {
     const tempDir = os.tmpdir();
     const tempFilePath = path.join(tempDir, `report-${Date.now()}.html`);
@@ -557,3 +554,7 @@ ipcMain.handle("createTempHtmlFile", async (_, htmlContent) => {
     throw error;
   }
 });
+
+ipcMain.handle("open-html", (event, htmlFile) => {
+  shell.openExternal(`file://${htmlFile}`);
+})
