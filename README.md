@@ -15,7 +15,7 @@ Please read the following guide for a correct installation and usage.
 
 ## SYSTEM REQUIREMENTS:
 ### Installation:
-Internet connection needed to fetch the Docker image and external resources.
+Internet connection is required to fetch the Docker image and external resources.
 ...
 %Inserire qui link download eseguibili
 Windows
@@ -24,8 +24,10 @@ Linux
 
 ### Analysis:
 It can be performed both with .fasta and .fastq files, with the following requirements:
-FASTA: ...
-FASTQ: ...
+- at least 25 GB of storage space;
+- FASTA: at least 8 GB of RAM to analyze one sample;
+- FASTQ: at least 8 GB of RAM to analyze one sample;
+
 
 ## INSTALLATION
 An UNIX environment is required so that Snakemake will be able to perform. This is ensured with the usage of Docker, so the tool can be executed on Linux, macOS and Windows.
@@ -34,22 +36,27 @@ You can decide to install Docker later, since we provide the download link for y
 The installation of Docker is the only manual step for the usage of BacExplorer: everything else is automatized.
 **Please ensure to run Docker before you start setting the environment, otherwise the app will not be able to run.**
 
+![App setup](https://github.com/user-attachments/assets/eec116f4-2993-432f-854a-0fc53c3a7991)
 
-![immagine](https://github.com/user-attachments/assets/80b90d15-599f-4321-bda5-a6685b1445ad)
+## SETUP
+1) Check if Docker is installed, otherwise download the version for your platform.
+2) Start Docker or Docker Desktop.
+3) Run the **Environment Setup** to setup the container and run it.
 
+![Docker setup](https://github.com/user-attachments/assets/3b5d3af5-a311-49d0-b590-f3d03b5292c6)
 
 ## USAGE
 1) **Input**  
-The user should put his input files in a specific folder, where the output are going to be saved. FASTQ file format need to be ...
-Fasta file extension should be
+The user should put his input files in a specific folder, where the outputs are going to be saved. FASTQ file formats need to be either .fastq.gz or .fq.gz.
+Fasta file extension should be .fasta.
 2) **Parameters setting**  
-The user need to set the parameter for the analysis:
+The user needs to set the following parameters for the analysis:
 - The analysis name, this will also be the name of the HTML report;
 - If all the samples belongs to the same Genus and Species, it is possible to specify them and the kraken2 taxonomy analysis will be skipped.
 - Identity and Coverage value for the filtering of AMR and virulence factor results. Default parameter is 90% for both.
 - The folder with the data to be analyzed.
 
-![immagine](https://github.com/user-attachments/assets/5f11dff9-9d8d-4ecc-90f6-0512cdc39dc3)
+![Parameters_setting](https://github.com/user-attachments/assets/0865b1fb-63ce-41b7-b792-509d1f853410)
 
 3) Output organization
 Inside the input folder the system will create an output folder with several subfolders:
@@ -95,7 +102,7 @@ Inside the input folder the system will create an output folder with several sub
 ## Test
 
 ### FASTQ
-To test BacExplorer with fastq samples it is possible to donwload:
+To test BacExplorer with fastq samples it is possible to download:
 - *Klebsiella pnaumoniae* samples from https://www.ncbi.nlm.nih.gov/bioproject/PRJNA1125320 and from https://www.ncbi.nlm.nih.gov/bioproject/PRJNA1193841
 - *Staphylococcus aureus* sample from https://www.ncbi.nlm.nih.gov/bioproject/PRJNA912391
 
