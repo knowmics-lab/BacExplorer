@@ -4,9 +4,9 @@ export default function OutputOrg() {
     return(
         <div className='text-container' id='out'>
             <h2 className='text-header'>Output organization</h2>
-            <div className='text-simple'>Each analysis is identified by the name you will specify in the setting page. <br/>
+            <div className='text-simple'>Each analysis is identified by the name specified in the setting page. <br/>
                 Please collect each of your analyses in a principal directory (now called "ANALYSIS_FOLDER"). <br/>
-                Take note of the following hieracy:
+                Take note of the following hierarchy:
                 <ul className='custom-list'>
                     <li className='example'>ANALYSIS FOLDER
                         <ul className='custom-list'>
