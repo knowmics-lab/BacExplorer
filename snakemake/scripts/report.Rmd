@@ -27,7 +27,7 @@ library(DT)
 library(openxlsx)
 
 #for Rstudio testing
-# path_output <- "/Users/gretu/Documents/Annotazioni_batteriche/software_batteri/test2/output/"
+# path_output <- "/Users/gretu/Documents/Batteri_Dafne/Gennaio25/output/"
 # identity <- 90
 # coverage <- 90
 
@@ -41,7 +41,7 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
 
 ```
 
-![](logo.png)
+![](./logo.png)
 
 
 #### Analysis performed on `r format(Sys.time(), '%d/%m/%y')`
@@ -55,6 +55,7 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
 * #### [Virulence Factors](#virulence)
 * #### [Virulence Factors Heatmaps](#virulenceplot)
 * #### [Plasmids](#plasm)
+* #### [Viruses](#vir)
 * #### [Escherichia](#esche)
 * #### [Klebsiella](#klebsielle)
 * #### [Streptococcus pyogenes](#Strepto)
@@ -86,23 +87,24 @@ try({
     if (any(kr$V1 == "Check MLST output")) {
       krak <- data.frame("Sample"= nm, "Family"=NA, "Genus"=NA, "Species"=NA)
     } else {
-    f <- which(kr$V4 == "F")[1]
-    g <- which(kr$V4 == "G")[1]
-    s <- which(kr$V4 == "S")[1]
-    krak <- data.frame("Sample"= nm, "Family"=paste0(kr$V6[f]," (", kr$V1[f],"%)"), 
-                 "Genus"=paste0(kr$V6[g]," (", kr$V1[g],"%)"), 
-                 "Species"=paste0(kr$V6[s]," (", kr$V1[s],"%)"))
-    }
+      f <- which(kr$V4 == "F")[1]
+      g <- which(kr$V4 == "G")[1]
+      s <- which(kr$V4 == "S")[1]
+      krak <- data.frame("Sample"= nm, "Family"=paste0(kr$V6[f]," (", kr$V1[f],"%)"), 
+                   "Genus"=paste0(kr$V6[g]," (", kr$V1[g],"%)"), 
+                   "Species"=paste0(kr$V6[s]," (", kr$V1[s],"%)"))
+      }
     
     return(krak)
   }
+  
   kraken2_tab <- as.data.frame(do.call(rbind, lapply(kraken2, kraken2_function)))
-  kraken2_tab <- na.omit(kraken2_tab)
   
-  write.xlsx(kraken2_tab, file=paste0(path_excel, "/Taxonomy_table.xlsx"),   sheetName = "Kraken2", col.names = TRUE, row.names = FALSE)
+  # print(kable(mlst_tab) %>%
+  #   kable_styling(bootstrap_options = c("striped", "hover","responsive")))
   
-    DT::datatable(kraken2_tab, rownames = FALSE)
-  
+  library(DT)
+  DT::datatable(kraken2_tab)
 }, silent = TRUE)
 ```
 
@@ -113,8 +115,12 @@ try({
 options(knitr.table.format = "html")
 args=commandArgs(trailingOnly = TRUE)
 try({
-  mlst <- list.files(path=paste0(path_output, "/mlst/"), full.names=TRUE, recursive=FALSE)
-
+  #Per ora path assoluti, poi path_output
+  mlst <- list.files(paste0(path_output, "/mlst/"), full.names=TRUE, recursive=FALSE)
+  mlst2 <- !grepl("result", mlst)
+  mlst2 <- which(mlst2 == T)
+  mlst <- mlst[mlst2]
+  
   mlst_function <- function(i){
     sm <- read.csv(i, sep= "\t", header=FALSE)
     if(dim(sm)[2] > 3){
@@ -122,17 +128,25 @@ try({
       if(dim(sm)[2] == 9){
         sm$V10 <- NA
       }
-      names(sm) <- c("Sample", "Organism", "ST", "1", "2", "3", "4", "5", "6", "7")
-      return(sm)
+      if(dim(sm)[2] == 10){
+      sm$V11 <- NA
+      }
+      names(sm) <- c("Sample", "Organism", "ST", "1", "2", "3", "4", "5", "6", "7", "8")
     }
+    return(sm)
   }
   mlst_tab <- as.data.frame(do.call(rbind,lapply(mlst, mlst_function)))
   mlst_tab <- mlst_tab[!sapply(mlst_tab,is.null)]
-  print(kable(mlst_tab) %>%
-    kable_styling(bootstrap_options = c("striped", "hover","responsive")))
+  # print(kable(mlst_tab) %>%
+  #   kable_styling(bootstrap_options = c("striped", "hover","responsive")))
   
-  write.xlsx(mlst_tab, file=paste0(path_excel, "/MLST_table.xlsx"),   sheetName = "MLST", col.names = TRUE, row.names = FALSE)
-  
+  library(DT)
+  #DT::datatable(mlst_tab)
+  mlst_tab %>%
+  DT::datatable(
+    extensions = 'Buttons', 
+    options = list(dom = 'Bfrtip', 
+                   buttons = c('excel', "csv")))
 }, silent = TRUE)
 ```
 
@@ -180,7 +194,7 @@ amrfinder_db <- list.files(path=paste0(path_output, "/amrfinder/"), full.names=T
 
 ### NCBI {.tabset}
 
-```{r ncbi antibiotic resistance, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+```{r NCBI_antibiotic_resistance, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
  abricate_ncbi <- list.files(path=paste0(path_output, "/abricate/"), pattern = "ncbi", full.names=TRUE, recursive=TRUE)
 
    abricate_ncbi_function <- function(i){
@@ -385,7 +399,7 @@ amrfinder_db <- list.files(path=paste0(path_output, "/amrfinder/"), full.names=T
 ## Antimicrobial Resistance Heatmaps {.tabset .tabset-fade .tabset-pills #resistanceplot}
 
 ### AMRfinder plus
-```{r AMRfinder plot, echo=FALSE, message=FALSE, warning=FALSE, results='asis', fig.align='center'}
+```{r AMRfinder_plot, echo=FALSE, message=FALSE, warning=FALSE, results='asis', fig.align='center'}
  amrfinder <- list.files(path=paste0(path_output, "/amrfinder/"), full.names=TRUE, recursive=FALSE)
 
    amrfinder_function <- function(i){
@@ -422,8 +436,7 @@ plot(d)
 ```
 
 ### NCBI
-
-```{r ncbi plot, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+```{r ncbi_plot, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
  abricate_ncbi <- list.files(path=paste0(path_output, "/abricate/"), pattern = "ncbi", full.names=TRUE, recursive=TRUE)
 
    abricate_ncbi_function <- function(i){
@@ -459,7 +472,7 @@ plot(d)
 
 ### Megares
 
-```{r Megares plot, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+```{r Megares_plot, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
  abricate_mega <- list.files(path=paste0(path_output, "/abricate/"), pattern = "megares", full.names=TRUE, recursive=TRUE)
 
    abricate_mega_function <- function(i){
@@ -494,7 +507,7 @@ plot(d)
 
 ### ResFinder
 
-```{r resfinder plot, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+```{r resfinder_plot, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
  abricate_resfinder <- list.files(path=paste0(path_output, "/abricate/"), pattern = "resfinder", full.names=TRUE, recursive=TRUE)
 
    abricate_resfinder_function <- function(i){
@@ -528,7 +541,7 @@ plot(d)
 
 ### CARD
 
-```{r CARD plot, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+```{r CARD_plot, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
  abricate_card <- list.files(path=paste0(path_output, "/abricate/"), pattern = "card", full.names=TRUE, recursive=TRUE)
 
    abricate_card_function <- function(i){
@@ -563,7 +576,7 @@ plot(d)
 
 ### arg-annot
 
-```{r arg-annot plot, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+```{r arg-annot_plot, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
  abricate_arg <- list.files(path=paste0(path_output, "/abricate/"), pattern = "argannot", full.names=TRUE, recursive=TRUE)
 
    abricate_arg_function <- function(i){
@@ -678,7 +691,7 @@ abricate_vfdb <- list.files(path=paste0(path_output, "/abricate/"), pattern = "v
 
 ### VFDB
 
-```{r vfdb plot, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+```{r vfdb_plot, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
   abricate_vfdb <- list.files(path=paste0(path_output, "/abricate/"), pattern = "vfdb", full.names=TRUE, recursive=TRUE)
 
    abricate_vfdb_function <- function(i){
@@ -715,7 +728,7 @@ plot(d)
 
 ### VirulenceFinder
 
-```{r virulencefinder plot, echo=FALSE, message=FALSE, warning=FALSE, results='asis', fig.align='center'}
+```{r virulencefinder_plot, echo=FALSE, message=FALSE, warning=FALSE, results='asis', fig.align='center'}
 virulencefinder <- list.files(path=paste0(path_output, "/virulencefinder/"), pattern = "results_tab.tsv", full.names=TRUE, recursive=TRUE)
 
    virulencefinder_function <- function(i){
@@ -784,8 +797,130 @@ plot(d)
   }
   
   pd1_tab <- as.data.frame(do.call(rbind, lapply(abricate_plfd, abricate_plfd_function)))
-    write.xlsx(pd1_tab, file=paste0(path_excel, "/Plasmid_table.xlsx"),   sheetName = "plasmid_finder", col.names = TRUE, row.names = FALSE)
+  
+  wbp <- createWorkbook()
+  addWorksheet(wbp, "Plasmidfinder")
+  writeData(wbp, sheet = "Plasmidfinder", pd1_tab)
+  
+
 ```
+
+### geNomad {.tabset}
+
+```{r geNomad, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+genomad_plasmid <- list.files(path=paste0(path_output, "/genomad/"), pattern = "_plasmid_summary.tsv", full.names=TRUE, recursive=TRUE)
+
+   genomad_plasmid_function <- function(i){
+     gpl <- read.csv(i, sep= "\t")
+     n <- gsub("plasmid_summary", "plasmid_genes", i)
+     gplg <- read.csv(n, sep= "\t")
+     #gplg <- gplg[!is.na(gplg$annotation_accessions),]
+     gplg$seq_name <- gsub("_.*","",gplg$gene)
+     colnames(gplg)[4] <- "Gene_lenght"
+     gpl$Sample <- gsub("_plasmid_summary","",basename(tools::file_path_sans_ext(i)))
+     gpt <- merge(gpl, gplg)
+     gpt <- gpt[,c(12, 1:11, 13:31)]
+     gpl <- gpl[,c(12, 1:11)]
+     names(gpl) <- c("Sample", "Plasmid name", "Length", "Topology", "Number of Genes", "Genetic code", "Score", "FDR", "Number of Hallmarks", "Marker Enrichment", "Conjugation Genes", "AMR Genes")
+       #return(gpl)
+     plng <- list(gpl, gpt)
+     return(plng)
+   }
+   
+     gpl_tab <- lapply(genomad_plasmid, genomad_plasmid_function)
+
+   #Plasmid
+     if(length(gpl_tab) != 0){
+       gpl_tab1 <- list()
+   gpl_tab2 <- list()
+  for(ls in 1:length(gpl_tab)) {
+    ex <- gpl_tab[[ls]][1]
+    gpl_tab1 <- c(gpl_tab1,ex)
+    ex1 <- gpl_tab[[ls]][2]
+    gpl_tab2 <- c(gpl_tab2,ex1)
+  }
+   
+   
+  gpl_tab1 <- gpl_tab1[!sapply(gpl_tab1,is.null)]
+  gpl_tab1 <- gpl_tab1[sapply(gpl_tab1, nrow)>0]
+  
+   for (i in 1:length(gpl_tab1)) {
+    cat("####", as.data.frame(gpl_tab1[i])$Sample[1], "<br>", "\n")
+  print(kable(as.data.frame(gpl_tab1[i]), row.names = FALSE) %>%
+    kable_styling(bootstrap_options = c("striped", "hover","responsive"),
+                  fixed_thead = T) %>%
+       scroll_box(width = "100%", height = "300px"))
+  cat("\n", "<br>", "\n\n")
+  }
+
+  gpl_tab2 <- as.data.frame(do.call(rbind, gpl_tab2))
+  
+
+  addWorksheet(wbp, "geNomad")
+  writeData(wbp, sheet = "geNomad", gpl_tab2)
+  saveWorkbook(wbp, file=paste0(path_excel, "/Plasmid_table.xlsx"), overwrite = TRUE)
+     }
+
+```
+
+## Viruses {.tabset #vir}
+
+### geNomad
+
+```{r geNomad viruses, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+ genomad_virus <- list.files(path=paste0(path_output, "/genomad/"), pattern = "_virus_summary.tsv", full.names=TRUE, recursive=TRUE)
+
+   genomad_virus_function <- function(i){
+     gv <- read.csv(i, sep= "\t")
+     n <- gsub("virus_summary", "virus_genes", i)
+     gvg <- read.csv(n, sep= "\t")
+     gv$Sample <- gsub("_virus_summary","",basename(tools::file_path_sans_ext(i)))
+     gv <- gv[,c(12, 1:11)]
+     gvg$seq_name <- gsub("^([^,]*_[^,]*)_.*", "\\1", gvg$gene)
+     colnames(gvg)[4] <- "Gene_lenght"
+     gva <- merge(gv, gvg)
+     gv$seq_name <- gsub("\\|", "_", gv$seq_name)
+     names(gv) <- c("Sample", "Virus name", "Length", "Topology", "Coordinates", "Number of Genes", "Genetic code", "Score", "FDR", "Number of Hallmarks", "Marker Enrichment", "Taxonomy")
+     vng <- list(gv, gva)
+     return(vng)
+
+   }
+   
+   gv_tab <- lapply(genomad_virus, genomad_virus_function)
+
+   if(length(gv_tab) != 0){
+   gv_tab1 <- list()
+   gv_tab2 <- list()
+  for(ls in 1:length(gv_tab)) {
+    ex <- gv_tab[[ls]][1]
+    gv_tab1 <- c(gv_tab1,ex)
+    ex1 <- gv_tab[[ls]][2]
+    gv_tab2 <- c(gv_tab2,ex1)
+  }
+   gv_tab1 <- gv_tab1[!sapply(gv_tab1,is.null)]
+   gv_tab1 <- gv_tab1[sapply(gv_tab1, nrow)>0]
+
+   
+  for (i in 1:length(gv_tab1)) {
+    cat("####", as.data.frame(gv_tab1[i])$Sample[1], "<br>", "\n")
+  print(kable(as.data.frame(gv_tab1[i]), row.names = FALSE) %>%
+    kable_styling(bootstrap_options = c("striped", "hover","responsive"),
+                  fixed_thead = T) %>%
+       scroll_box(width = "100%", height = "300px"))
+  cat("\n", "<br>", "\n\n")
+  }
+
+  gv_tab2 <- as.data.frame(do.call(rbind, gv_tab2))
+  
+  wbv <- createWorkbook()
+  addWorksheet(wbv, "geNomad")
+  writeData(wbv, sheet = "geNomad", gpl_tab2)
+  saveWorkbook(wbv, file=paste0(path_excel, "/Virus_table.xlsx"), overwrite = TRUE)
+   }
+   
+  
+```
+
 
 ## *Escherichia* {.tabset #esche}
 
@@ -826,7 +961,10 @@ ec_tab <- do.call(rbind, lapply(ectyper, function(file) {
 ec_tab <- as.data.frame(ec_tab)
 ec_tab$O.type <- gsub("-", "", ec_tab$O.type)
 
-print(kable(ec_tab) %>% kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>% scroll_box(width = "100%", height = "300px"))
+if(dim(ec_tab)[1] != 0){
+  print(kable(ec_tab) %>% kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>% scroll_box(width = "100%", height = "300px"))
+}
+
 
 if(dim(ec_tab)[1] != 0){
   ec1_tab <- as.data.frame(do.call(rbind, lapply(ectyper, ectyper_function)))
@@ -856,7 +994,7 @@ if(dim(ec_tab)[1] != 0){
     return(klb)
    }
   klb_es_tab <- as.data.frame(do.call(rbind, lapply(kleborate_esch, kleborate_esch_function)))
-  
+  #if(length(klb_es_tab) != 0){
   print(kable(klb_es_tab) %>%
     kable_styling(bootstrap_options = c("striped", "hover","responsive"),
                   fixed_thead = T) %>%
@@ -923,6 +1061,7 @@ ecoh <- list.files(path=paste0(path_output, "/abricate_ecoli/"), pattern = "ecoh
      evf$Strand[evf$Strand == "-"] <- "$-$"
      evf <- evf[,c(1, 6, 10:14, 2:5, 7:9)]
      evf <- evf[evf$Identity_Percentage >= identity & evf$Coverage_Percentage >= coverage, ]
+     evf <- evf[order(evf$Gene),]
     return(evf)
    }
   evf_tab <- as.data.frame(do.call(rbind, lapply(ecoli_vf, ecoli_vf_function)))
@@ -962,11 +1101,12 @@ ecoh <- list.files(path=paste0(path_output, "/abricate_ecoli/"), pattern = "ecoh
     return(klb)
    }
   klb_tab <- as.data.frame(do.call(rbind, lapply(kleborate, kleborate_function)))
-  
+  if(dim(klb_tab)[1] != 0){
   print(kable(klb_tab) %>%
     kable_styling(bootstrap_options = c("striped", "hover","responsive"),
                   fixed_thead = T) %>%
        scroll_box(width = "100%", height = "300px"))
+  }
     
   if(dim(klb_tab)[1] != 0){
     kb1_tab <- as.data.frame(do.call(rbind, lapply(kleborate, kleborate_function)))
@@ -1022,11 +1162,12 @@ ecoh <- list.files(path=paste0(path_output, "/abricate_ecoli/"), pattern = "ecoh
      return(hp)
    }
   hp_tab <- as.data.frame(do.call(rbind, lapply(hicap, hicap_function)))
-  
+  if(dim(hp_tab)[1] != 0){
   print(kable(hp_tab) %>%
     kable_styling(bootstrap_options = c("striped", "hover","responsive"),
                   fixed_thead = T) %>%
        scroll_box(width = "100%", height = "300px"))
+  }
   
   if(dim(hp_tab)[1] != 0){
     hp1_tab <- as.data.frame(do.call(rbind, lapply(hicap, hicap_function)))
@@ -1085,11 +1226,12 @@ ecoh <- list.files(path=paste0(path_output, "/abricate_ecoli/"), pattern = "ecoh
      return(stap)
    }
   stap_tab <- as.data.frame(do.call(rbind, lapply(staphopia, staphopia_function)))
-
+ if(dim(stap_tab)[1] != 0){
   print(kable(stap_tab) %>%
     kable_styling(bootstrap_options = c("striped", "hover","responsive"),
                   fixed_thead = T) %>%
        scroll_box(width = "100%", height = "300px"))
+ }
   
   if(dim(stap_tab)[1] != 0){
       st1_tab <- as.data.frame(do.call(rbind, lapply(staphopia, staphopia_function)))
@@ -1169,12 +1311,12 @@ ecoh <- list.files(path=paste0(path_output, "/abricate_ecoli/"), pattern = "ecoh
       return(pbp)
    }
   pbp_tab <- as.data.frame(do.call(rbind, lapply(pbptyper,  pbptyper_function)))
-
+if(dim(pbp_tab)[1] != 0){
   print(kable(pbp_tab) %>%
     kable_styling(bootstrap_options = c("striped", "hover","responsive"),
                   fixed_thead = T) %>%
        scroll_box(width = "100%", height = "300px"))
-  
+}
   if(dim(pbp_tab)[1] != 0){
   pbp1_tab <- as.data.frame(do.call(rbind, lapply(pbptyper,  pbptyper_function)))
     write.xlsx(pbp1_tab, file=paste0(path_excel, "/S.pneumoniae_table.xlsx"),   sheetName = "PBPtyper", col.names = TRUE, row.names = FALSE, append=TRUE)
@@ -1232,6 +1374,46 @@ ecoh <- list.files(path=paste0(path_output, "/abricate_ecoli/"), pattern = "ecoh
   }
   
 ```
+<!-- ## Mutations {.tabset #mut} -->
+
+<!-- ### Protein -->
+
+<!-- ```{r protein, echo=FALSE, message=FALSE, warning=FALSE, results='asis'} -->
+
+<!--  snippy <- list.files(path=paste0(path_output, "/snippy/"), pattern = ".tab", full.names=TRUE, recursive=TRUE) -->
+
+<!--     snippy_function <- function(i){ -->
+<!--       sn <- read.csv(i, sep= "\t") -->
+<!--       sn$Sample <- gsub("snps_","",tools::file_path_sans_ext(basename(i))) -->
+<!--       sn <- sn[,c(15, 1, 9:14)] -->
+<!--       colnames(sn)[1] <- "Sample" -->
+<!--       sn <- sn[sn$NT_POS != "",] -->
+<!--       sn$type <- gsub(" c.*","",sn$EFFECT) -->
+<!--       sn <- sn[sn$type != "synonymous_variant",] -->
+<!--       sn$Aminoacid <- gsub(".*p\\.","", sn$EFFECT) -->
+<!--       sn$EFFECT <- NULL -->
+<!--       sn <- sn[,c(1,9,8,7,6,2,5,3,4)] -->
+<!--       return(sn) -->
+<!--    } -->
+<!--   sn_tab <- lapply(snippy,  snippy_function) -->
+<!--   sn_tab <- sn_tab[!sapply(sn_tab,is.null)] -->
+<!--   sn_tab <- sn_tab[sapply(sn_tab, nrow)>0] -->
+
+<!--   for (i in 1:length(sn_tab)) { -->
+<!--       cat("####", as.data.frame(sn_tab[i])$Sample[1], "<br>", "\n") -->
+<!--     print(kable(as.data.frame(sn_tab[i]), row.names = FALSE) %>% -->
+<!--       kable_styling(bootstrap_options = c("striped", "hover","responsive"), -->
+<!--                     fixed_thead = T) %>% -->
+<!--          scroll_box(width = "100%", height = "300px")) -->
+<!--     cat("\n", "<br>", "\n\n") -->
+<!--   } -->
+
+<!--   if(length(sn_tab) > 0){ -->
+<!--    sn1_tab <- as.data.frame(do.call(rbind, lapply(snippy, snippy_function))) -->
+<!--    write.xlsx(sn1_tab, file=paste0(path_excel, "/Mutations_table.xlsx"),   sheetName = "Snippy", col.names = TRUE,      row.names = FALSE, append=TRUE) -->
+<!--   } -->
+
+<!-- ``` -->
 
 
 ## Citations {#Cite}

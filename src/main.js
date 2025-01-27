@@ -7,7 +7,7 @@ import fsExtra                                                      from 'fs-ext
 import path                                                         from 'path';
 import yaml from 'js-yaml';
 import { checkDockerInstalled, checkDockerRunning }                 from './utilities/functions.js';
-import { setupContainer, prepareSnakemakeCommand, runAnalysis, produceReport }     from './utilities/containers.js';
+import { setupContainer, prepareSnakemakeCommand, runAnalysis, produceReport, checkContainerRunning }     from './utilities/containers.js';
 // per testare su container giocattolo
 // import { prepareSnakemakeCommand } from './utilities/docker_utils.js';
 
@@ -393,6 +393,16 @@ ipcMain.handle('create-container', async (event) => {
     throw new Error(`Error creating container: ${message}`);
   }
 });
+
+ipcMain.handle('check-container', async (event) => {
+  try {
+    const result = await checkContainerRunning(containerName);
+    console.log("Container status: ", result);
+    return result;
+  } catch (error) {
+    throw(error);
+  }
+})
 
 // select input folder
 ipcMain.handle('dialog:select-folder', async function (event) {

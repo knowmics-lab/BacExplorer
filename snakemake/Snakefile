@@ -61,7 +61,7 @@ def update_databases():
         print(f"Errore nell'aggiornamento dei database: {e}")
         raise
 
-update_databases()
+# update_databases()
 
 if type == "fastq":
     os.makedirs(os.path.join(PATH_PROJECT, "fastq"), exist_ok=True)
