@@ -22,6 +22,8 @@ Windows
 Mac 
 Linux
 
+LINUX USERS: the package xdg-open is required. Make sure to install it with sudo apt install xdg-utils.
+
 ### Analysis:
 It can be performed both with .fasta and .fastq files, with the following requirements:
 - at least 25 GB of storage space;
