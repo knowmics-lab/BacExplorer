@@ -1,11 +1,32 @@
-import React from "react";
+import React, { useState } from "react";
 import logo from './logo.png';
 import { Stack, Col, Button } from "react-bootstrap";
 
 export default function Home() {
+
+    const [containerRunning, setContainerRunning] = useState(false);
+    const [containerMessage, setContainerMessage] = useState("");
+    const [defaultButton, setDefaultButton] = useState(true);
+
     const navigate = (page) =>{
         console.log(`Navigando verso ${page}`);
         window.api.onNavigate(page);
+    }
+
+    const handleClick = async () => {
+        try {
+            console.log("Starting container");
+            const response = await window.api.checkContainer();
+            if (response === "Container running") {
+                setContainerRunning(true);
+                setContainerMessage(response);
+                setDefaultButton(false);
+            }
+        } catch (error) {
+            setContainerMessage("! Unable to run container !");
+            setDefaultButton(false);
+            setContainerRunning(false);
+        }
     }
 
     return(
@@ -26,7 +47,15 @@ export default function Home() {
                     <h2 className="text-header">Start analysis</h2>
                     <p className="text-secondary">Skip the setup, launch your analysis.</p>
                     <div className="d-flex">
-                        <Button className="ms-auto" variant="primary" onClick={() => navigate('settings')}>Go to analysis</Button>
+                        {defaultButton &&
+                            <Button className="ms-auto" variant="secondary" onClick={handleClick}> Start container</Button>
+                        }
+                        {containerRunning &&
+                            <Button className="ms-auto" variant="primary" onClick={() => navigate('settings')}>Go to analysis</Button>
+                        }
+                        {!containerRunning && !defaultButton &&
+                            <p className="ms-auto" style={{color:"red"}}>{containerMessage}</p>
+                        }
                     </div>
                 </Col>
             </Stack>

@@ -5,13 +5,9 @@ import { ProgressBar, Modal, Button } from "react-bootstrap";
 export default function AnalysisProg({progress, setProgress}) {
     const [output, setOutput] = useState("");
     const [error, setError] = useState({error: false, message: ""});
+    const [errorReport, setErrorReport] = useState({error: false, message: ""})
     const [reportCreated, setReportCreated] = useState(false);
     const [htmlContent, setHtmlContent] = useState("");
-
-    // const navigate = (page) =>{
-    //     console.log(`Navigando verso ${page}`);
-    //     window.api.onNavigate(page);
-    //   }
     
     const fetchReport = async () => {
         try {
@@ -82,20 +78,11 @@ export default function AnalysisProg({progress, setProgress}) {
                 console.log("Data.stderr: ", data.stderr);
                 if (data.stderr.match(/Execution halted/)) {
                     console.log("STOPPED EXECUTION");
-                    setError({error: true, message: `Error: ${data.stderr}`});
+                    setErrorReport({error: true, message: `Error in report production: ${data.stderr}`});
                 }
                 if (data.stderr.match(/output file/)) {
                     console.log("REPORT PRODUCED");
                     setReportCreated(true);
-                }
-                const progressMatch = data.stderr.match(/(\d+)%/);
-                if (progressMatch) {
-                    console.log("Progress match: ", progressMatch);
-                    console.log("Progress match[1]: ", progressMatch[1]);
-                    if (progressMatch[1]) {
-                        const percentage = parseInt(progressMatch[1], 10);
-                        setProgress(percentage);
-                    }
                 }
             }
             else if (data.stdout) {
@@ -143,14 +130,15 @@ export default function AnalysisProg({progress, setProgress}) {
             
                     <Modal.Body className="modal-primary">
                         <p>{reportCreated ? "Your output files and report have been produced." : "Producing report..."}</p>
+                        {reportCreated && (
+                            <Button variant="secondary" onClick={()=>handleClick()}>Go to report</Button>
+                        )}
                     </Modal.Body>
                 </Modal.Dialog>
                 </div>
             )}
 
-            {reportCreated && (
-                <Button variant="secondary" onClick={()=>handleClick()}>Go to report</Button>
-            )}
+            
 
         </div>
         </>

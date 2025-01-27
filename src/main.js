@@ -7,7 +7,7 @@ import fsExtra                                                      from 'fs-ext
 import path                                                         from 'path';
 import yaml from 'js-yaml';
 import { checkDockerInstalled, checkDockerRunning }                 from './utilities/functions.js';
-import { setupContainer, prepareSnakemakeCommand, runAnalysis, produceReport }     from './utilities/containers.js';
+import { setupContainer, prepareSnakemakeCommand, runAnalysis, produceReport, checkContainerRunning }     from './utilities/containers.js';
 // per testare su container giocattolo
 // import { prepareSnakemakeCommand } from './utilities/docker_utils.js';
 
@@ -382,6 +382,16 @@ ipcMain.handle('create-container', async (event) => {
   }
 });
 
+ipcMain.handle('check-container', async (event) => {
+  try {
+    const result = await checkContainerRunning(containerName);
+    console.log("Container status: ", result);
+    return result;
+  } catch (error) {
+    throw(error);
+  }
+})
+
 // select input folder
 ipcMain.handle('dialog:select-folder', async function (event) {
   const { canceled, filePaths } = await dialog.showOpenDialog({
@@ -460,18 +470,19 @@ ipcMain.handle('validate-folder', async (event, inputFolder, type) => {
   const response = {success: false, message: ""};
   try {
     const files = fs.readdirSync(inputFolder);
-    let invalidFiles = [];
-    if (type === "fasta" || type === "Fasta") {
-      invalidFiles = files.filter(file => path.extname(file).toLowerCase() !== `.${type}`);
-    } else if (type === "fastq" || type === "Fastq") {
-      invalidFiles = files.filter(file => 
-        !file.toLowerCase().endsWith(".fq.gz") &&
-        !file.toLowerCase().endsWith(".fastq.gz")
-      );
-    }
-    console.log("Invalid files: ", invalidFiles);
-
-    const outputFolder = "output";
+      let invalidFiles = [];
+      if (type === "fasta" || type === "Fasta") {
+        invalidFiles = files.filter(file => path.extname(file).toLowerCase() !== `.${type}`);
+      } else if (type === "fastq" || type === "Fastq") {
+        invalidFiles = files.filter(file => 
+          !file.toLowerCase().endsWith(".fq.gz") &&
+          !file.toLowerCase().endsWith(".fastq.gz")
+        );
+      }
+      console.log("Invalid files: ", invalidFiles);
+  
+      const outputFolder = "output";
+      invalidFiles = invalidFiles.filter(file => !file.endsWith("Zone.Identifier"));
 
     if (invalidFiles.length > 0) {
       if (invalidFiles.includes(outputFolder)) {

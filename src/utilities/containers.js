@@ -4,6 +4,7 @@ import { spawn, spawnSync } from 'child_process';
 import os                   from 'os';
 import fs                     from 'fs-extra';
 import { app, BrowserWindow } from 'electron';
+import { checkDockerInstalled } from './functions';
 
 const yaml = require('js-yaml');
 const Docker = require('dockerode');
@@ -35,6 +36,24 @@ const containerOutput = "/project/user-input/output/";
 const containerConfigPath = path.join(containerSnakemake, 'config.yaml');
 const containerResPath = "/project/snakemake/resources/";
 
+// function for second usage and further: check if snakemakeContainer is running, otherwise start it
+export async function checkContainerRunning(containerName) {
+  const container = docker.getContainer(containerName);
+  try {
+    const containerInfo = await container.inspect();
+    if (containerInfo.State.Status === 'running') {
+      console.log(`Container ${containerName} is already running.`);
+
+    } else {
+      await container.start();
+      console.log(`Container ${containerName} started.`);
+    }
+    const response = "Container running";
+    return response;
+  } catch (error) {
+    throw error;
+  }
+}
 export async function setupContainer (imageName, configPath, containerName) {
   // Esegui tutte le operazioni in sequenza
   try {
@@ -42,9 +61,6 @@ export async function setupContainer (imageName, configPath, containerName) {
     await downloadDatabases(configPath);
     await createContainer(imageName, containerName, configPath);
     await startContainer(containerName);
-
-    // add updateContainer to create volumes with updated dbs
-
     await updateContainer(containerName);
 
     return 'Container created successfully';
@@ -127,6 +143,7 @@ async function downloadDatabases (configPath) {
     let platform = os.platform();
     await fetchKrakenDB(resourcesDir, platform);
     await fetchVirulenceDB(resourcesDir, platform);
+    await prepareGenomadDB(resourcesDir);
     emitProgress('Completed step 2/4', 100);
 
   } catch (error) {
@@ -172,6 +189,27 @@ async function downloadFile (source, destination, statusMessage) {
     });
   });
 }
+
+// async function downloadGenomad (destination, statusMessage) {
+//   return new Promise((resolve, reject) => {
+//     const downloadProcess = spawn('genomad', ['download-database', destination]);
+//     downloadProcess.stdout.setEncoding('utf8');
+//     downloadProcess.stderr.setEncoding('utf8');
+//     downloadProcess.stdout.on('data', (data) => {
+//       processCurlOutput(data, statusMessage);
+//     });
+//     downloadProcess.stderr.on('data', (data) => {
+//       processCurlOutput(data, statusMessage);
+//     });
+//     downloadProcess.on('exit', (code) => {
+//       if (code === 0) {
+//         resolve();
+//       } else {
+//         reject(new Error(`Download failed with code ${code}`));
+//       }
+//     });
+//   });
+// }
 
 // function unzipFile(platform, filePath, destPath) {
 //   if(platform === "win32") {
@@ -262,17 +300,49 @@ async function fetchVirulenceDB (resourcesDir, platform) {
   }
 }
 
+// download genomad db
+async function prepareGenomadDB (resourcesDir) {
+  const genomadDir = path.join(resourcesDir, 'genomad_db');
+  const controlFile = path.join(genomadDir, "genomad_db");
+
+  try {
+    checkDir(genomadDir);
+
+    // if (fs.existsSync(controlFile)) {
+    //   console.log(`Genomad db found in ${genomadDir}. Skipping download`);
+    //   emitProgress('Virulence finder db already exists in folder. Skipping download', 100);
+    //   return;
+    // } else {
+    //   emitProgress('Downloading Genomad DB', 0);
+    //   await downloadGenomad(genomadDir, 'Downloading Genomad DB');
+    //   emitProgress('Downloading Genomad DB', 100);
+    // }
+  } catch (error) {
+    throw (error);
+  }
+}
+
+function checkDir(directory) {
+  if(!fs.existsSync(directory)) {
+    fs.mkdirSync(directory, { recursive: true });
+  }
+}
+
 // function to create container
 async function createContainer (imageName, containerName, snakemakePath) {
   emitProgress(`Step 3: Creating container ${containerName}...`, 0);
   const toolsPath = path.join(snakemakePath, "tools");
   const vfUSerPath = path.join(snakemakePath, "resources", "virulencefinder_db");
   const containerVfPath = "/project/snakemake/resources/virulencefinder_db";
-  // const amrfinderHostPath = path.join(containerResPath, "amrfinder");
-
-  // const amrfinderVolume = '/opt/conda/envs/bacEnv/share/amrfinderplus/data/2024-07-22.1/';
+  const genomadDir = path.join(snakemakePath, "resources", "genomad_db");
+  const containerGenomadPath = "/project/snakemake/resources/genomad_db";
+  const amrfinderHostPath = path.join(snakemakePath, "resources", "amrfinder");
+  const amrfinderVolume = '/opt/conda/envs/bacEnv/share/amrfinderplus';
 
   try {
+
+    checkDir(amrfinderHostPath);
+
     const containers = await docker.listContainers({ all: true });
     const existingContainer = containers.find(container =>
       container.Names.includes(`/${containerName}`),
@@ -284,24 +354,38 @@ async function createContainer (imageName, containerName, snakemakePath) {
       return;
     }
 
+    //prova a inserire a creazione lo scaricamento del db di amrfinder
+    //monta questa directory: /opt/conda/envs/bacEnv/share/amrfinderplus nelle resources del sistema host
+
     await docker.createContainer({
       Image: imageName,
       name: containerName,
-      Cmd: ['/bin/bash', '-c', `while true; do sleep 30; done`],
+      // at the moment server error while trying to fetch genomad
+      // Cmd: ['/bin/bash', '-c', `source /opt/conda/etc/profile.d/conda.sh &&
+      //   conda activate bacEnv &&
+      //   amrfinder -u &&
+      //   genomad download-database  ${containerGenomadPath} &&
+      //   while true; do sleep 30; done`],
+      Cmd: ['/bin/bash', '-c', `source /opt/conda/etc/profile.d/conda.sh &&
+        conda activate bacEnv &&
+        amrfinder -u &&
+        while true; do sleep 30; done`],
+      // Volumes: {
+      //   [`${containerVfPath}`]: {},
+      // },
       Volumes: {
         [`${containerVfPath}`]: {},
+        [`${amrfinderVolume}`]: {},
+        [`${containerGenomadPath}`]: {},
       },
-      // Volumes: {
-      //   [`${containerProject}`]: {},
-      //   [`${amrfinderVolume}`]: {},
-      // },
       HostConfig: {
         // Binds: [
-        //   `${toolsPath}:${containerProject}`,
-        //   `${amrfinderHostPath}:${amrfinderVolume}`,
+        //   `${vfUSerPath}:${containerVfPath}`,
         // ],
         Binds: [
           `${vfUSerPath}:${containerVfPath}`,
+          `${amrfinderHostPath}:${amrfinderVolume}`,
+          `${genomadDir}:${containerGenomadPath}`,
         ],
         RestartPolicy: { Name: 'no' },
       },
@@ -326,21 +410,13 @@ async function createContainer (imageName, containerName, snakemakePath) {
   }
 }
 
+// call this function for second usage and further too, to start the container if it is not running
 async function startContainer (containerName) {
-  const container = docker.getContainer(containerName);
-  emitProgress(`Step 4: Starting container...`, 0);
   try {
-    const containerInfo = await container.inspect();
-    if (containerInfo.State.Status === 'running') {
-      console.log(`Container ${containerName} is already running.`);
-
-    } else {
-      await container.start();
-      console.log(`Container ${containerName} started.`);
-    }
-    emitProgress(`Completed step 4/4: Container started`, 100);
-  } catch (error) {
-    throw error;
+    emitProgress(`Step 4: Starting container...`, 0);
+    await checkContainerRunning(containerName);
+  } catch(error) {
+    throw(error);
   }
 }
 
@@ -388,8 +464,11 @@ export async function prepareSnakemakeCommand (containerName, userInput, snakefi
 }
 
 async function mapIO (containerName, userInput, userConfigPath) {
+  const snakemakeDir = path.dirname(userConfigPath);
   const userOutput = path.join(userInput, 'output');
   const containerConfigPath = ('/project/snakemake/');
+  const amrfinderHost = path.join(path.join(snakemakeDir, "resources", "amrfinder"));
+  const amrfinderVolume = '/opt/conda/envs/bacEnv/share/amrfinderplus';
 
   const container = docker.getContainer(containerName);
 
@@ -429,7 +508,8 @@ async function mapIO (containerName, userInput, userConfigPath) {
           Binds: [
             `${userInput}:${containerInput}`,
             `${userOutput}:${containerOutput}`,
-            `${path.dirname(userConfigPath)}:${containerConfigPath}`, //in userConfigPath passo userData/snakemake
+            `${snakemakeDir}:${containerConfigPath}`,
+            `${amrfinderHost}:${amrfinderVolume}`,
           ],
         },
       });
@@ -530,13 +610,14 @@ async function demuxStream (stream, onStdout, onStderr, onEnd, checkRunning, tim
 async function updateContainer(containerName) {
   // download amrFinder and update abricate and mlst.
   // create volumes with paths to copy into the cloned container
+  const virulencefinderDbDir = "/project/snakemake/resources/virulencefinder_db";
 
   const container = docker.getContainer(containerName);
   const exec = await container.exec({
     Cmd: ['bash', '-c', `source /opt/conda/etc/profile.d/conda.sh &&
       conda activate bacEnv &&
-      cd /project/snakemake/resources/virulencefinder_db && 
-      python /project/snakemake/resources/virulencefinder_db/INSTALL.py`],
+      cd ${virulencefinderDbDir} && 
+      python ${virulencefinderDbDir}/INSTALL.py`],
     AttachStdout: true,
     AttachStderr: true,
     AttachStdin: true,
@@ -546,11 +627,9 @@ async function updateContainer(containerName) {
     stream,
     (data) => {
       console.log(`Stdout: ${data}`);
-      //reply({ stdout: data.toString(), stderr: null });
     },
     (data) => {
       console.error(`Stderr: ${data}`);
-      //reply({ stdout: null, stderr: data.toString() });
     },
     () => {
       (async () => {
@@ -558,7 +637,7 @@ async function updateContainer(containerName) {
         const code = (d) ? d.ExitCode : null;
         console.log(`Process exited with code: ${code}`);
         if (code !== 0) {
-          //onError({ stdout: null, stderr: `Process exited with code: ${code}` });
+          throw new Error (`Process exited with code: ${code}`);
         }
       })().catch(console.error);
     },
@@ -575,7 +654,7 @@ export async function runAnalysis (containerName, reply, onError) {
   const containerConfigPath = '/project/snakemake/config.yaml';
   const container = docker.getContainer(containerName);
   const exec = await container.exec({
-    Cmd: ['bash', '-c', `source /opt/conda/etc/profile.d/conda.sh && conda activate bacEnv && snakemake --cores 1 --configfile ${containerConfigPath} --force all`],
+    Cmd: ['bash', '-c', `source /opt/conda/etc/profile.d/conda.sh && conda activate bacEnv && snakemake --jobs 1 --configfile ${containerConfigPath} --force all`],
     AttachStdout: true,
     AttachStderr: true,
     AttachStdin: true,

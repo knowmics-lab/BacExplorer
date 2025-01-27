@@ -84,4 +84,5 @@ contextBridge.exposeInMainWorld('api', {
     },
     createTempHtmlFile: (htmlContent) => ipcRenderer.invoke("create-temp-html-file", htmlContent),
     openHtmlFile: (html) => ipcRenderer.invoke("open-html", html),
+    checkContainer: () => ipcRenderer.invoke('check-container'),
 });
