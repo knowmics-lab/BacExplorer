@@ -21,11 +21,11 @@ PATH_OUTPUT = os.path.join(PATH_PROJECT, "output")
 PATH_SCRIPT = workflow.basedir
 PATH_VIRULENCE_DB = os.path.join(PATH_SCRIPT, "resources/virulencefinder_db/")
 PATH_KRAKEN_DB = os.path.join(PATH_SCRIPT, "resources/kraken2db")
-# define PATH_HICAP
+PATH_GENOMAD = os.path.join(PATH_SCRIPT, "resources/genomad_db")
 
 SAMPLES = [os.path.splitext(os.path.basename(f))[0] for f in glob.glob(f"{PATH_PROJECT}/*.fasta")]
 
-DIRS_LIST = ["abricate", "abricate_ecoli", "agrvate", "amrfinder", "ectyper", "emmtyper", "hicap", "kleborate",
+DIRS_LIST = ["abricate", "abricate_ecoli", "agrvate", "amrfinder", "ectyper", "emmtyper", "genomad", "hicap", "kleborate",
 "kleborate_escherichia", "kraken2", "legsta", "lissero", "mlst", "pbptyper", "shigatyper", "spatyper", "sccmec",
 "virulencefinder", "trim"]
 
@@ -49,13 +49,11 @@ for d in DIRS_LIST:
 def update_databases():
     print("Updating databases...")
 
-    # Comando shell per aggiornare i database
     command = '''
     echo "Installing amrfinder db..." &&
     amrfinder -u
     '''
 
-    # Esegui il comando shell
     try:
         subprocess.run(command, shell=True, check=True)
         print("Database updated successfully.")
@@ -63,7 +61,6 @@ def update_databases():
         print(f"Errore nell'aggiornamento dei database: {e}")
         raise
 
-# Esegui l'aggiornamento dei database prima di tutto il resto
 update_databases()
 
 if type == "fastq":

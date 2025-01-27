@@ -15,6 +15,7 @@ rule all:
         expand(os.path.join(PATH_OUTPUT, "mlst/{sample}.txt"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "mlst/{sample}_result.txt"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "amrfinder/{sample}_amrfinder.txt"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "genomad/{sample}"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "virulencefinder/{sample}"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "abricate/{sample}"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "kleborate/{sample}"), sample=SAMPLES),
@@ -47,19 +48,14 @@ rule mlst:
         mlst_output = os.path.join(PATH_OUTPUT, "mlst/{sample}.txt"),
         genus_species = os.path.join(PATH_OUTPUT, "mlst/{sample}_result.txt")
     run:
-        if GENUS == "":
-            shell(f"""
-                echo "RULE: MLST, debug: {wildcards.sample}"
-                echo "Scan contig files against traditional PubMLST typing schemes"
-                mlst {input.fasta_file} > {output.mlst_output}
-                echo "output: {output.mlst_output}"
-            """)
-            check_mlst(output.mlst_output, output.genus_species)
-        else:
-            shell(f"""
-            echo "{GENUS}_{SPECIES}"> {output.mlst_output}
-            cp {output.mlst_output} {output.genus_species}
-            """)
+        print("Performing MLST")
+        shell(f"""
+            echo "RULE: MLST, debug: {wildcards.sample}"
+            echo "Scan contig files against traditional PubMLST typing schemes"
+            mlst {input.fasta_file} > {output.mlst_output}
+            echo "output: {output.mlst_output}"
+        """)
+        check_mlst(output.mlst_output, output.genus_species)
 
 def check_mlst (input_file, output_file):
     correspondeces = os.path.join(PATH_SCRIPT, "resources/Lista_mlst.csv")
@@ -100,7 +96,7 @@ rule kraken2:
     run:
         THRESHOLD = 8000
         available_ram = psutil.virtual_memory().available / (1024 * 1024)
-        if available_ram >= THRESHOLD:
+        if available_ram >= THRESHOLD and GENUS != "":
             try:
                 organism = ""
                 with open(input.mlst_output, 'r') as infile:
@@ -201,7 +197,19 @@ rule abricate:
         abricate {input.fasta_input} --db plasmidfinder > {output.abricate}/{wildcards.sample}_plasmidfinder.txt
         abricate {input.fasta_input} --db megares > {output.abricate}/{wildcards.sample}_megares.txt
         """
-        
+
+rule genomad:
+    input:
+        fasta_input = os.path.join(PATH_PROJECT, "{sample}.fasta")
+    output:
+        genomad = directory(os.path.join(PATH_OUTPUT, "genomad/{sample}"))
+    shell:
+        """
+        echo "Genomad"
+        mkdir -p {output.genomad}
+        genomad end-to-end --cleanup --splits 8 {input.fasta_input} {output.genomad} {PATH_GENOMAD}
+        """
+
 rule check_genus:
     input:
         fasta_input = os.path.join(PATH_PROJECT, "{sample}.fasta"),

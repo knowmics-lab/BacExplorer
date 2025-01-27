@@ -472,18 +472,19 @@ ipcMain.handle('validate-folder', async (event, inputFolder, type) => {
   const response = {success: false, message: ""};
   try {
     const files = fs.readdirSync(inputFolder);
-    let invalidFiles = [];
-    if (type === "fasta" || type === "Fasta") {
-      invalidFiles = files.filter(file => path.extname(file).toLowerCase() !== `.${type}`);
-    } else if (type === "fastq" || type === "Fastq") {
-      invalidFiles = files.filter(file => 
-        !file.toLowerCase().endsWith(".fq.gz") &&
-        !file.toLowerCase().endsWith(".fastq.gz")
-      );
-    }
-    console.log("Invalid files: ", invalidFiles);
-
-    const outputFolder = "output";
+      let invalidFiles = [];
+      if (type === "fasta" || type === "Fasta") {
+        invalidFiles = files.filter(file => path.extname(file).toLowerCase() !== `.${type}`);
+      } else if (type === "fastq" || type === "Fastq") {
+        invalidFiles = files.filter(file => 
+          !file.toLowerCase().endsWith(".fq.gz") &&
+          !file.toLowerCase().endsWith(".fastq.gz")
+        );
+      }
+      console.log("Invalid files: ", invalidFiles);
+  
+      const outputFolder = "output";
+      invalidFiles = invalidFiles.filter(file => !file.endsWith("Zone.Identifier"));
 
     if (invalidFiles.length > 0) {
       if (invalidFiles.includes(outputFolder)) {
