@@ -8,6 +8,8 @@ elif type == "fastq":
 
 print("FASTA SAMPLES: ", SAMPLES)
 
+print(f"FASTA ANALYSIS STARTED")
+
 rule all:
     input:
         expand(os.path.join(PATH_OUTPUT, "kraken2/{sample}_kraken2.txt"), sample=SAMPLES),
@@ -35,6 +37,7 @@ rule all:
         '''
         echo "Execution complete\nPostprocessing..."
         python {params.post_processing}
+        echo 'Workflow complete'
         '''
 
 # Rscript -e "rmarkdown::render('{params.report}', output_file='{params.report_file}',

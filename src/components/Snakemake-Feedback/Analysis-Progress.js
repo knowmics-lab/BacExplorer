@@ -5,6 +5,7 @@ import { ProgressBar, Modal, Button } from "react-bootstrap";
 export default function AnalysisProg({progress, setProgress}) {
     const [output, setOutput] = useState("");
     const [error, setError] = useState({error: false, message: ""});
+    const [analysisCompleted, setAnalysisCompleted] = useState(false);
     const [errorReport, setErrorReport] = useState({error: false, message: ""})
     const [reportCreated, setReportCreated] = useState(false);
     const [htmlContent, setHtmlContent] = useState("");
@@ -41,13 +42,13 @@ export default function AnalysisProg({progress, setProgress}) {
                 console.log("Data.stderr: ", data.stderr);
                 if (data.stderr.match(/WorkflowError/) || data.stderr.match(/IncompleteFilesException/)) {
                     setError({error: true, message: `Error: ${data.stderr}`});
-
                     console.log("STOPPED EXECUTION");
                     return;
                 }
-                if (data.stderr.match(/Finished job/)) {
+                if (data.stderr.match(/Workflow completed: Snakemake exited with code 0/)) {
                     setOutput(`${data.stderr}`);
                     console.log("ANALYSIS COMPLETED. Producing report...");
+                    setAnalysisCompleted(true);
                     window.api.launchReport();
                 }
                 else {
@@ -66,7 +67,10 @@ export default function AnalysisProg({progress, setProgress}) {
             else if (data.stdout) {
                 console.log("Data.stdout: ", data.stdout);
                 setOutput(`${data.stdout}`);
-            }  
+            }
+            if(analysisCompleted) {
+                window.api.launchReport();
+            }
         });
 
         window.api.onReportOutput((data) => {
@@ -137,9 +141,6 @@ export default function AnalysisProg({progress, setProgress}) {
                 </Modal.Dialog>
                 </div>
             )}
-
-            
-
         </div>
         </>
     )

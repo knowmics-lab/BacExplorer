@@ -48,6 +48,8 @@ print(f"FASTQ_SAMPLES: {FASTQ_SAMPLES}")
 
 print(f"Trim Galore path: {PATH_TRIMGALORE}")
 
+print(f"FASTQ ANALYSIS STARTED")
+
 def trim_galore():
     for sample in FASTQ_SAMPLES:
         print(f"Performing Trim Galore on: {sample}")

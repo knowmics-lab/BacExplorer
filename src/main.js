@@ -466,9 +466,6 @@ ipcMain.on('launch-analysis', async (event) => {
 });
 
 // launch the report
-// take coverage and identity from config file
-// launch report into the container (activate bacEnv before)
-// send output to renderer (it will take the percentage to update the progress bar)
 ipcMain.on('launch-report', async (event) => {
   await produceReport(containerName,
     data => event.reply('report-output', data),
