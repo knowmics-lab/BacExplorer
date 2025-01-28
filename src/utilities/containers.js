@@ -678,6 +678,10 @@ export async function runAnalysis (containerName, reply, onError) {
         console.log(`Snakemake process exited with code ${code}`);
         if (code !== 0) {
           onError({ stdout: null, stderr: `Snakemake exited with code ${code}` });
+        } else if (code === 0) {
+          const endMessage = `Workflow completed: Snakemake exited with code ${code}`;
+          console.error();
+          reply({ stdout: null, stderr: endMessage});
         }
       })().catch(console.error);
     },
