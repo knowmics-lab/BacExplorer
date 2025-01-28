@@ -20,7 +20,7 @@ Internet connection is required to fetch the Docker image and external resources
 **LINUX USERS**: the package xdg-open is required. Make sure to install it with the following command:
 
 ```
-sudo apt install xdg-utils.
+sudo apt install xdg-utils
 ```
 
 ### Analysis:
