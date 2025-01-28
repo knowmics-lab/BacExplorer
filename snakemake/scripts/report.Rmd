@@ -400,7 +400,8 @@ amrfinder_db <- list.files(path=paste0(path_output, "/amrfinder/"), full.names=T
 
 ### AMRfinder plus
 ```{r AMRfinder_plot, echo=FALSE, message=FALSE, warning=FALSE, results='asis', fig.align='center'}
- amrfinder <- list.files(path=paste0(path_output, "/amrfinder/"), full.names=TRUE, recursive=FALSE)
+ try({
+   amrfinder <- list.files(path=paste0(path_output, "/amrfinder/"), full.names=TRUE, recursive=FALSE)
 
    amrfinder_function <- function(i){
      amr <- read.csv(i, sep= "\t")
@@ -430,14 +431,15 @@ d <- Heatmap(amr1, col = col_fun, rect_gp = gpar(col = "black", lwd = 2),
         row_names_side = "left", row_dend_side = "right", column_names_rot = 90,
         show_heatmap_legend = FALSE, row_names_gp = gpar(fontsize = 20), column_names_gp = gpar(fontsize=15))
 plot(d)
-
+}, silent=TRUE)
 
 
 ```
 
 ### NCBI
 ```{r ncbi_plot, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
- abricate_ncbi <- list.files(path=paste0(path_output, "/abricate/"), pattern = "ncbi", full.names=TRUE, recursive=TRUE)
+try({ 
+abricate_ncbi <- list.files(path=paste0(path_output, "/abricate/"), pattern = "ncbi", full.names=TRUE, recursive=TRUE)
 
    abricate_ncbi_function <- function(i){
      sma <- read.csv(i, sep= "\t")
@@ -465,7 +467,7 @@ d <- Heatmap(ncbi1, col = col_fun, rect_gp = gpar(col = "black", lwd = 2),
         row_names_side = "left", row_dend_side = "right", column_names_rot = 90, 
         show_heatmap_legend = FALSE, row_names_gp = gpar(fontsize = 20), column_names_gp = gpar(fontsize=15))
 plot(d)
-
+}, silent=TRUE)
 
 ```
 
@@ -473,7 +475,8 @@ plot(d)
 ### Megares
 
 ```{r Megares_plot, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
- abricate_mega <- list.files(path=paste0(path_output, "/abricate/"), pattern = "megares", full.names=TRUE, recursive=TRUE)
+try({ 
+abricate_mega <- list.files(path=paste0(path_output, "/abricate/"), pattern = "megares", full.names=TRUE, recursive=TRUE)
 
    abricate_mega_function <- function(i){
      mega <- read.csv(i, sep= "\t")
@@ -502,13 +505,15 @@ d <- Heatmap(mega1, col = col_fun, rect_gp = gpar(col = "black", lwd = 2),
         row_names_side = "left", row_dend_side = "right", column_names_rot = 90,
         show_heatmap_legend = FALSE, row_names_gp = gpar(fontsize = 20), column_names_gp = gpar(fontsize=15))
 plot(d)
+}, silent=TRUE)
 
 ```
 
 ### ResFinder
 
 ```{r resfinder_plot, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
- abricate_resfinder <- list.files(path=paste0(path_output, "/abricate/"), pattern = "resfinder", full.names=TRUE, recursive=TRUE)
+try({
+abricate_resfinder <- list.files(path=paste0(path_output, "/abricate/"), pattern = "resfinder", full.names=TRUE, recursive=TRUE)
 
    abricate_resfinder_function <- function(i){
      rsf <- read.csv(i, sep= "\t")
@@ -536,13 +541,15 @@ d <- Heatmap(resfinder1, col = col_fun, rect_gp = gpar(col = "black", lwd = 2),
         row_names_side = "left", row_dend_side = "right", column_names_rot = 90,
         show_heatmap_legend = FALSE, row_names_gp = gpar(fontsize = 20), column_names_gp = gpar(fontsize=15))
 plot(d)
+}, silent=TRUE)
 
 ```
 
 ### CARD
 
 ```{r CARD_plot, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
- abricate_card <- list.files(path=paste0(path_output, "/abricate/"), pattern = "card", full.names=TRUE, recursive=TRUE)
+try({
+abricate_card <- list.files(path=paste0(path_output, "/abricate/"), pattern = "card", full.names=TRUE, recursive=TRUE)
 
    abricate_card_function <- function(i){
      card <- read.csv(i, sep= "\t")
@@ -571,13 +578,15 @@ d <- Heatmap(card1, col = col_fun, rect_gp = gpar(col = "black", lwd = 2),
         row_names_side = "left", row_dend_side = "right", column_names_rot = 90,
         show_heatmap_legend = FALSE, row_names_gp = gpar(fontsize = 20), column_names_gp = gpar(fontsize=15))
 plot(d)
+}, silent=TRUE)
 
 ```
 
 ### arg-annot
 
 ```{r arg-annot_plot, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
- abricate_arg <- list.files(path=paste0(path_output, "/abricate/"), pattern = "argannot", full.names=TRUE, recursive=TRUE)
+try({
+abricate_arg <- list.files(path=paste0(path_output, "/abricate/"), pattern = "argannot", full.names=TRUE, recursive=TRUE)
 
    abricate_arg_function <- function(i){
      rsf <- read.csv(i, sep= "\t")
@@ -605,6 +614,7 @@ d <- Heatmap(arg1, col = col_fun, rect_gp = gpar(col = "black", lwd = 2),
         row_names_side = "left", row_dend_side = "right", column_names_rot = 90,
         show_heatmap_legend = FALSE, row_names_gp = gpar(fontsize = 20), column_names_gp = gpar(fontsize=15))
 plot(d)
+}, silent=TRUE)
 
 ```
 
@@ -692,7 +702,8 @@ abricate_vfdb <- list.files(path=paste0(path_output, "/abricate/"), pattern = "v
 ### VFDB
 
 ```{r vfdb_plot, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
-  abricate_vfdb <- list.files(path=paste0(path_output, "/abricate/"), pattern = "vfdb", full.names=TRUE, recursive=TRUE)
+try({
+abricate_vfdb <- list.files(path=paste0(path_output, "/abricate/"), pattern = "vfdb", full.names=TRUE, recursive=TRUE)
 
    abricate_vfdb_function <- function(i){
      vfdb <- read.csv(i, sep= "\t")
@@ -722,13 +733,14 @@ d <- Heatmap(vfdb1, col = col_fun, rect_gp = gpar(col = "black", lwd = 2),
         row_names_side = "left", row_dend_side = "right", column_names_rot = 90,
         show_heatmap_legend = FALSE, row_names_gp = gpar(fontsize = 20), column_names_gp = gpar(fontsize=15))
 plot(d)
-  
+}, silent=TRUE)
   
 ```
 
 ### VirulenceFinder
 
 ```{r virulencefinder_plot, echo=FALSE, message=FALSE, warning=FALSE, results='asis', fig.align='center'}
+try({
 virulencefinder <- list.files(path=paste0(path_output, "/virulencefinder/"), pattern = "results_tab.tsv", full.names=TRUE, recursive=TRUE)
 
    virulencefinder_function <- function(i){
@@ -758,6 +770,7 @@ d <- Heatmap(vf1, col = col_fun, rect_gp = gpar(col = "black", lwd = 2),
         row_names_side = "left", row_dend_side = "right", column_names_rot = 90,
         show_heatmap_legend = FALSE, row_names_gp = gpar(fontsize = 20), column_names_gp = gpar(fontsize=15))
 plot(d)
+}, silent=TRUE)
   
 ```
 
