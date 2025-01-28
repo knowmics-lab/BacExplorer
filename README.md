@@ -16,13 +16,12 @@ Please read the following guide for a correct installation and usage.
 ## SYSTEM REQUIREMENTS:
 ### Installation:
 Internet connection is required to fetch the Docker image and external resources.
-...
-%Inserire qui link download eseguibili
-Windows
-Mac 
-Linux
 
-LINUX USERS: the package xdg-open is required. Make sure to install it with sudo apt install xdg-utils.
+**LINUX USERS**: the package xdg-open is required. Make sure to install it with the following command:
+
+```
+sudo apt install xdg-utils.
+```
 
 ### Analysis:
 It can be performed both with .fasta and .fastq files, with the following requirements:
@@ -32,7 +31,7 @@ It can be performed both with .fasta and .fastq files, with the following requir
 
 
 ## INSTALLATION
-An UNIX environment is required so that Snakemake will be able to perform. This is ensured with the usage of Docker, so the tool can be executed on Linux, macOS and Windows.
+An UNIX environment is required so that Snakemake will be able to perform. This is ensured with the usage of Docker, so the tool can be executed on Linux, macOS and Windows Professional.
 If your system doesn't have Docker, please install it for your platform from here: https://www.docker.com/.
 You can decide to install Docker later, since we provide the download link for your platform inside the application too.
 The installation of Docker is the only manual step for the usage of BacExplorer: everything else is automatized.
