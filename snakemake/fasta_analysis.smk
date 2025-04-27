@@ -1,6 +1,19 @@
 # choose the samples directory
 SAMPLES = []
 if type == "fasta":
+
+    formats = [".fa", '.fna', '.fsa']
+
+    for file in os.listdir(PATH_PROJECT):
+        filename = os.path.join(PATH_PROJECT, file)
+
+        if os.path.isFile(filename):
+            for f in formats:
+                if filename.endswith(f):
+                    new_name = f.rsplit('.', 1)[0] + '.fasta'
+                    new_filename = os.path.join(PATH_PROJECT, new_name)
+                    os.rename(filename, new_filename)
+
     SAMPLES = [os.path.splitext(os.path.basename(f))[0] for f in glob.glob(f"{PATH_PROJECT}/*.fasta")]
 elif type == "fastq":
     SAMPLES = [os.path.splitext(os.path.basename(f))[0] for f in glob.glob(f"{PATH_PROJECT}/fasta_output/*.fasta")]
@@ -19,6 +32,12 @@ rule all:
         expand(os.path.join(PATH_OUTPUT, "amrfinder/{sample}_amrfinder.txt"), sample=SAMPLES),
         # expand(os.path.join(PATH_OUTPUT, "genomad/{sample}"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "virulencefinder/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "meningotype/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "fimtyper/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "ngmaster/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "shigeifinder/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "pasty/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "ClermonTyping/{sample}"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "abricate/{sample}"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "kleborate/{sample}"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "abricate_ecoli/{sample}"), sample=SAMPLES),
@@ -30,8 +49,8 @@ rule all:
         expand(os.path.join(PATH_OUTPUT, "pbptyper/{sample}"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "hicap/{sample}"), sample=SAMPLES)
     params:
-        report_file = os.path.join(PATH_OUTPUT, f"{ANALYSIS_NAME}_report.html"),
-        report = os.path.join(PATH_SCRIPT, "scripts/report.Rmd"),
+        # report_file = os.path.join(PATH_OUTPUT, f"{ANALYSIS_NAME}_report.html"),
+        # report = os.path.join(PATH_SCRIPT, "scripts/report.Rmd"),
         post_processing = os.path.join(PATH_SCRIPT, "scripts/post_processing.py")
     shell:
         '''
@@ -222,7 +241,8 @@ rule check_genus:
         sccmec = directory(os.path.join(PATH_OUTPUT, "sccmec/{sample}")),
         spatyper = directory(os.path.join(PATH_OUTPUT, "spatyper/{sample}")),
         agrvate = directory(os.path.join(PATH_OUTPUT, "agrvate/{sample}")),
-        shigatyper = directory(os.path.join(PATH_OUTPUT, "shigatyper/{sample}"))
+        shigatyper = directory(os.path.join(PATH_OUTPUT, "shigatyper/{sample}")),
+        shigeifinder = directory(os.path.join(PATH_OUTPUT, "shigeifinder/{sample}"))
     shell:
         """
         kraken_output=$(sed -n '1p' {input.kraken_report})
@@ -256,12 +276,18 @@ rule check_genus:
         fi
 
         mkdir -p {output.shigatyper}
+        mkdir -p {output.shigeifinder}
         if [[ "$genus" == "Shigella" ]]; then
             echo "Performing ShigaTyper"
             shigatyper --SE {input.fasta_input} -n {output.shigatyper} --verbose
             mv {output.shigatyper}/{wildcards.sample}.tsv {output.shigatyper}/{wildcards.sample}_def.tsv
+
+            echo "Performing ShigEiFinder"
+            shigeifinder -t 1 -i {input.fasta_input} > {output.shigeifinder}/{sample}_shigheifinder.txt
+
         else
             touch {output.shigatyper}/skipped.marker
+            touch {output.shigeifinder}/skipped.marker
         fi
         """
 
@@ -277,10 +303,15 @@ rule check_genus_species:
         abricate = directory(os.path.join(PATH_OUTPUT, "abricate_ecoli/{sample}")),
         ectyper = directory(os.path.join(PATH_OUTPUT, "ectyper/{sample}")),
         emmtyper = directory(os.path.join(PATH_OUTPUT, "emmtyper/{sample}")),
+        fimtyper = directory(os.path.join(PATH_OUTPUT, "fimtyper/{sample}")),
+        ClermonTyping = directory(os.path.join(PATH_OUTPUT, "ClermonTyping/{sample}")),
         legsta = directory(os.path.join(PATH_OUTPUT, "legsta/{sample}")),
         lissero = directory(os.path.join(PATH_OUTPUT, "lissero/{sample}")),
         pbptyper = directory(os.path.join(PATH_OUTPUT, "pbptyper/{sample}")),
-        hicap = directory(os.path.join(PATH_OUTPUT, "hicap/{sample}"))
+        hicap = directory(os.path.join(PATH_OUTPUT, "hicap/{sample}")),
+        ngmaster = directory(os.path.join(PATH_OUTPUT, "ngmaster/{sample}")),
+        meningotype = directory(os.path.join(PATH_OUTPUT, "meningotype/{sample}")),
+        pasty = directory(os.path.join(PATH_OUTPUT, "pasty/{sample}"))
     shell:
         """
         kraken_output=$(sed -n '1p' {input.kraken_report})
@@ -314,19 +345,37 @@ rule check_genus_species:
         mkdir -p {output.abricate}
         mkdir -p {output.ectyper}
         mkdir -p {output.kleborate_escherichia}
+        mkdir -p {output.ClermonTyping}
+        mkdir -p {output.fimtyper}
         if [[ "$genus" == "Escherichia" && "$species" == "coli" ]]; then
             echo "Performing Kleborate"
             kleborate  -a {input.fasta_input} -o {output.kleborate_escherichia} -p escherichia
+            
             echo "Performing Abricate"
             abricate {input.fasta_input} --db ecoli_vf > {output.abricate}/{wildcards.sample}_ecoli_vf.txt
             abricate {input.fasta_input} --db ecoh > {output.abricate}/{wildcards.sample}_ecoh.txt
+            
             echo "Performing Ectyper"
             ectyper -i {input.fasta_input} -o {output.ectyper}
             mv {output.ectyper}/output.tsv {output.ectyper}/{wildcards.sample}.tsv
+
+            echo "Performing fimtyper"
+            cd {PATH_ENV}/fimtyper
+            perl fimtyper.pl -d fimtyper_db/ -b {PATH_ENV} -i {input.fasta_input} -k 95.00 -l 0.60 -o {output.fimtyper}
+            mv result_tab > fasta_name_tab
+            cd {PATH_PROJECT}
+
+            echo "Performing ClermonTyping"
+            cd {PATH_ENV}/ClermonTyping
+            ./clermonTyping.sh --fasta {input.fasta_file}
+            cd {PATH_PROJECT}
+
         else
             touch {output.ectyper}/skipped.marker
             touch {output.kleborate_escherichia}/skipped.marker
             touch {output.abricate}/skipped.marker
+            touch {output.fimtyper}/skipped.marker
+            touch {output.ClermonTyping}/skipped.marker
         fi
 
         mkdir -p {output.emmtyper}
@@ -367,6 +416,31 @@ rule check_genus_species:
             hicap --query_fp {input.fasta_input} --output_dir {output.hicap}
         else
             touch {output.hicap}/skipped.marker
+        fi
+
+        mkdir -p {output.ngmaster}
+        
+        if [[ "$genus" == "Neisseria" && "$species" == "gonorrhoeae" ]]; then
+            echo "Performing ngmaster"
+            ngmaster {input.fasta_file} > {output.ngmaster}/{sample}.txt
+        else
+            touch {output.ngmaster}/skipped.marker
+        fi
+
+        mkdir -p {output.meningotype}
+        if [[ "$genus" == "Neisseria" && "$species" == "meningitidis" ]]; then
+            echo "Performing meningotype"
+            /root/.local/bin/meningotype --all {input.fasta_input} > {output.meningotype}/{sample}_meningotype.txt
+        else
+            touch {output.meningotype}/skipped.marker
+        fi
+
+        mkdir -p {output.pasty}
+        if [[ "$genus" == "Pseudomonas" && "$species" == "aeruginosa" ]]; then
+            echo "Performing pasty"
+            camlhmp-blast-regions --input {input.fasta_input} --outdir {output.pasty} --prefix {sample} -y {PATH_ENV}/bin/../share/pasty/pa-osa.yaml -t {PATH_ENV}/bin/../share/pasty/pa-osa.fasta
+        else
+            touch {output.pasty}/skipped.marker
         fi
         """
 

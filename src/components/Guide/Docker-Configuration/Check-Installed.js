@@ -22,7 +22,7 @@ export default function CheckInstalled() {
 
     return(
         <div className="text-container">
-            <h2 className="text-header">1. Docker installation</h2>
+            <h2 className="text-header">1. Docker Installation</h2>
             <Button variant="primary" onClick={handleClick}>Check</Button>
             {isInstalled && (
                 <div className="text-simple"><b>Docker installed! Go on.</b></div>

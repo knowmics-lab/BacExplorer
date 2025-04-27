@@ -16,6 +16,7 @@ RUN apt-get update && \
     libxml2-dev \
     libcurl4-openssl-dev \
     unzip \
+    cpanminus \
     && apt-get clean
 
 RUN curl -L https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -o miniconda.sh && \
@@ -49,6 +50,13 @@ WORKDIR /project/scripts
 RUN echo "Installing packages..." && \
     echo "sccmec" && \
     git clone --recurse-submodules https://github.com/rpetit3/sccmec && \
+    echo "fimtyper" && \
+    git clone https://bitbucket.org/genomicepidemiology/fimtyper.git \
+    cd fimtyper \
+    git clone https://bitbucket.org/genomicepidemiology/fimtyper_db.git \
+    make install \
+    echo "ClermonTyping" \
+    git clone https://github.com/happykhan/ClermonTyping.git \
     echo "trim-galore" && \
     curl -L https://github.com/FelixKrueger/TrimGalore/archive/refs/heads/master.zip -o master.zip && \
     unzip master.zip && \

@@ -3,7 +3,7 @@ import React from "react";
 export default function OutputOrg() {
     return(
         <div className='text-container' id='out'>
-            <h2 className='text-header'>Output organization</h2>
+            <h2 className='text-header'>Output Organization</h2>
             <div className='text-simple'>Each analysis is identified by the name specified in the setting page. <br/>
                 Please collect each of your analyses in a principal directory (now called "ANALYSIS_FOLDER"). <br/>
                 Take note of the following hierarchy:

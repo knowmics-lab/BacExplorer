@@ -1,6 +1,9 @@
 import React from "react";
 import { useState, useEffect } from "react";
-import { ProgressBar, Modal, Button } from "react-bootstrap";
+import { ProgressBar } from "react-bootstrap";
+import OutputModal from "./Output-Modal";
+import ErrorModal from "./Error-Modal";
+import SuccessModal from "./Success-Modal";
 
 export default function AnalysisProg({progress, setProgress}) {
     const [output, setOutput] = useState("");
@@ -8,29 +11,6 @@ export default function AnalysisProg({progress, setProgress}) {
     const [analysisCompleted, setAnalysisCompleted] = useState(false);
     const [errorReport, setErrorReport] = useState({error: false, message: ""})
     const [reportCreated, setReportCreated] = useState(false);
-    const [htmlContent, setHtmlContent] = useState("");
-    
-    const fetchReport = async () => {
-        try {
-            const reportPath = await window.api.pickReportDir();
-            console.log("report path is: ", reportPath);
-            const content = await window.api.readHtmlFile(reportPath);
-            console.log("html content: ", content);
-            setHtmlContent(content);
-            
-            const tempFilePath = await window.api.createTempHtmlFile(content);
-
-            await window.api.openHtmlFile(tempFilePath);
-
-        } catch(error) {
-            console.error("Error in fetching report: ", error);
-            throw(error);
-        }
-    }
-    
-    const handleClick = () => {
-        fetchReport();
-    }
 
     useEffect(() => {
         window.api.onSnakemakeOutput((data) => {
@@ -100,46 +80,17 @@ export default function AnalysisProg({progress, setProgress}) {
     return(
         <>
         <div className="mt-3">
-            <div>
-                <Modal.Dialog className="scrollable-modal">
-                    <Modal.Header>
-                        <Modal.Title>Analysis Output</Modal.Title>
-                    </Modal.Header>
-                    <Modal.Body>{output}</Modal.Body>
-                </Modal.Dialog>
-            </div>
+            <OutputModal output={output} />
+
             <h5>Progress: {progress}%</h5>
             <ProgressBar animated now={progress} label={`${progress}%`} variant="primary" />
 
             {error.error && (
-                <div className="modal show" style={{ display: 'block', position: 'initial' }}>
-                <Modal.Dialog className= "modal-danger">
-                    <Modal.Header className="modal-danger">
-                    <Modal.Title>Error!</Modal.Title>
-                    </Modal.Header>
-            
-                    <Modal.Body className="modal-danger">
-                    <p>{error.message}</p>
-                    </Modal.Body>
-                </Modal.Dialog>
-                </div>
+                <ErrorModal message={error.message} />
             )}
 
             {typeof progress === 'number' && progress === 100 && (
-                <div className="modal show" style={{ display: 'block', position: 'initial' }}>
-                <Modal.Dialog className="modal-primary">
-                    <Modal.Header className="modal-primary">
-                        <Modal.Title>{!reportCreated ? "Analysis Successful!" : "Workflow completed!"}</Modal.Title>
-                    </Modal.Header>
-            
-                    <Modal.Body className="modal-primary">
-                        <p>{reportCreated ? "Your output files and report have been produced." : "Producing report..."}</p>
-                        {reportCreated && (
-                            <Button variant="secondary" onClick={()=>handleClick()}>Go to report</Button>
-                        )}
-                    </Modal.Body>
-                </Modal.Dialog>
-                </div>
+                <SuccessModal reportCreated={reportCreated}/>
             )}
         </div>
         </>

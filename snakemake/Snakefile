@@ -1,4 +1,5 @@
 import os
+import subprocess
 import glob
 import shutil
 import psutil
@@ -8,6 +9,9 @@ configfile: "config.yaml"
 
 shell.executable("/usr/bin/bash")
 
+conda_info = subprocess.run(['conda', 'info', '--json'], capture_output=True, text=True)
+info = eval(conda_info.stdout)
+
 type = config["TYPE"]
 IDENTITY = config["IDENTITY"]
 COVERAGE = config["COVERAGE"]
@@ -16,6 +20,7 @@ GENUS = config["GENUS"]
 SPECIES = config["SPECIES"]
 
 #PATH_PROJECT is the input folder provided by the user
+PATH_ENV = info["envs_dirs"]
 PATH_PROJECT = config["INPUT"]
 PATH_OUTPUT = os.path.join(PATH_PROJECT, "output")
 PATH_SCRIPT = workflow.basedir
@@ -26,11 +31,11 @@ PATH_GENOMAD = os.path.join(PATH_SCRIPT, "resources/genomad_db")
 SAMPLES = [os.path.splitext(os.path.basename(f))[0] for f in glob.glob(f"{PATH_PROJECT}/*.fasta")]
 
 DIRS_LIST = ["abricate", "abricate_ecoli", "agrvate", "amrfinder", "ectyper", "emmtyper", "genomad", "hicap", "kleborate",
-"kleborate_escherichia", "kraken2", "legsta", "lissero", "mlst", "pbptyper", "shigatyper", "spatyper", "sccmec",
-"virulencefinder", "trim"]
+"kleborate_escherichia", "kraken2", "legsta", "lissero", "mlst", "pbptyper", "shigatyper", "spatyper", "sccmec", "fimtyper",
+"virulencefinder", "trim", "shigeifinder", "ngmaster", "ClermonTyping", "pasty", "_meningotype"]
 
 if not os.path.exists(PATH_PROJECT):
-    raise ValueError(f"Il percorso {PATH_PROJECT} non esiste!")
+    raise ValueError(f"Path {PATH_PROJECT} does not exist!")
 
 print(f"PATH_SCRIPT: {PATH_SCRIPT}")
 print(f"PATH_PROJECT: {PATH_PROJECT}")
@@ -58,7 +63,7 @@ def update_databases():
         subprocess.run(command, shell=True, check=True)
         print("Database updated successfully.")
     except subprocess.CalledProcessError as e:
-        print(f"Errore nell'aggiornamento dei database: {e}")
+        print(f"Error while updating databases: {e}")
         raise
 
 # update_databases()

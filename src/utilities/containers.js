@@ -33,7 +33,7 @@ const containerProject = "/project";
 const containerSnakemake = "/project/snakemake/";
 const containerInput = "/project/user-input/";
 const containerOutput = "/project/user-input/output/";
-const containerConfigPath = path.join(containerSnakemake, 'config.yaml');
+const containerConfigPath = "/project/snakemake/config.yaml";
 const containerResPath = "/project/snakemake/resources/";
 
 // function for second usage and further: check if snakemakeContainer is running, otherwise start it
@@ -226,10 +226,8 @@ async function fetchKrakenDB (resourcesDir, platform) {
   const krakenDBPath = 'https://genome-idx.s3.amazonaws.com/kraken/k2_standard_08gb_20240904.tar.gz';
   const tarFilePath = path.join(krakenDir, krakenDB);
   try {
-    if (!fs.existsSync(krakenDir)) {
-      console.log('Kraken dir not found: creating...');
-      fs.mkdirSync(krakenDir, { recursive: true });
-    }
+    
+    checkDir(krakenDir);
 
     if (fs.existsSync(tarFilePath)) {
       console.log(`Kraken database: ${krakenDB} found in ${krakenDir}. Skipping download`);

@@ -59,10 +59,6 @@ export default function Home() {
                     </div>
                 </Col>
             </Stack>
-
-            {/* test report without launching analysis */}
-            {/* <Button onClick={() => handleClick()}>Go to Report</Button> */}
-            
         </div>
     )
 }
