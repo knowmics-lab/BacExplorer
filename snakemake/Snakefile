@@ -1,5 +1,6 @@
 import os
 import subprocess
+import json
 import glob
 import shutil
 import psutil
@@ -10,7 +11,7 @@ configfile: "config.yaml"
 shell.executable("/usr/bin/bash")
 
 conda_info = subprocess.run(['conda', 'info', '--json'], capture_output=True, text=True)
-info = eval(conda_info.stdout)
+info = json.loads(conda_info.stdout)
 
 type = config["TYPE"]
 IDENTITY = config["IDENTITY"]
@@ -20,7 +21,8 @@ GENUS = config["GENUS"]
 SPECIES = config["SPECIES"]
 
 #PATH_PROJECT is the input folder provided by the user
-PATH_ENV = info["envs_dirs"]
+# PATH_ENV = os.path.join(info["envs_dirs"], "bacEnv")
+PATH_ENV = os.path.join(info["envs_dirs"][0], "bacEnv")
 PATH_PROJECT = config["INPUT"]
 PATH_OUTPUT = os.path.join(PATH_PROJECT, "output")
 PATH_SCRIPT = workflow.basedir
@@ -32,7 +34,7 @@ SAMPLES = [os.path.splitext(os.path.basename(f))[0] for f in glob.glob(f"{PATH_P
 
 DIRS_LIST = ["abricate", "abricate_ecoli", "agrvate", "amrfinder", "ectyper", "emmtyper", "genomad", "hicap", "kleborate",
 "kleborate_escherichia", "kraken2", "legsta", "lissero", "mlst", "pbptyper", "shigatyper", "spatyper", "sccmec", "fimtyper",
-"virulencefinder", "trim", "shigeifinder", "ngmaster", "ClermonTyping", "pasty", "_meningotype"]
+"virulencefinder", "trim", "shigeifinder", "ngmaster", "ClermonTyping", "pasty", "meningotype"]
 
 if not os.path.exists(PATH_PROJECT):
     raise ValueError(f"Path {PATH_PROJECT} does not exist!")
@@ -40,6 +42,7 @@ if not os.path.exists(PATH_PROJECT):
 print(f"PATH_SCRIPT: {PATH_SCRIPT}")
 print(f"PATH_PROJECT: {PATH_PROJECT}")
 print(f"PATH_OUTPUT: {PATH_OUTPUT}")
+print(f"PATH_ENV: {PATH_ENV}")
 print(f"SAMPLES: {SAMPLES}")
 
 os.makedirs(PATH_OUTPUT, exist_ok=True)

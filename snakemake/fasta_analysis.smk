@@ -7,10 +7,10 @@ if type == "fasta":
     for file in os.listdir(PATH_PROJECT):
         filename = os.path.join(PATH_PROJECT, file)
 
-        if os.path.isFile(filename):
+        if os.path.isfile(filename):
             for f in formats:
                 if filename.endswith(f):
-                    new_name = f.rsplit('.', 1)[0] + '.fasta'
+                    new_name = filename.rsplit('.', 1)[0] + '.fasta'
                     new_filename = os.path.join(PATH_PROJECT, new_name)
                     os.rename(filename, new_filename)
 
@@ -118,46 +118,56 @@ rule kraken2:
     run:
         THRESHOLD = 8000
         available_ram = psutil.virtual_memory().available / (1024 * 1024)
+        organism = ""
+        with open(input.mlst_output, 'r') as infile:
+            organism = infile.readline().strip()
+            if organism.endswith("_"):
+                organism = organism[:-1]
+
+            print("MLST output: ", organism)
+        # except FileNotFoundError:
+        #     print(f"Error: File {input.mlst_output} not found")
+        # except Exception as e:
+        #     print(f"An error occured: {e}")
+
+        #revise this part
+
         if available_ram >= THRESHOLD and GENUS != "":
-            try:
-                organism = ""
-                with open(input.mlst_output, 'r') as infile:
-                    organism = infile.readline().strip()
-                    if organism.endswith("_"):
-                        organism = organism[:-1]
-
-                    print("MLST output: ", organism)
-
-                if organism == "Unknown_organism":
-                    print("Performing Kraken")
-                    shell(f'''
-                    kraken2 --threads 2 --db {PATH_KRAKEN_DB} --report {output.report} {input.fasta_input}
-                    ''')
-                else:
-                    print(f"Organism classified by MLST.")
-                    with open(output.report, 'w') as out:
-                        out.write(f"Check MLST output")
-            except FileNotFoundError:
-                print(f"Error: File {input.mlst_output} not found")
-            except Exception as e:
-                print(f"An error occured: {e}")
+            if organism == "Unknown_organism":
+                print("Performing Kraken")
+                shell(f'''
+                kraken2 --threads 2 --db {PATH_KRAKEN_DB} --report {output.report} {input.fasta_input}
+                ''')
+            else:
+                print(f"Organism classified by MLST.")
+                with open(output.report, 'w') as out:
+                    out.write(f"Check MLST output")
         else:
             print(f"Available RAM: {available_ram} MB is insufficient. Unable to perform Kraken.")
-            with open(output.report, 'w') as out:
-                out.write(f"Check MLST output") 
+            if organism == "Unknown_organism":
+                print(f"Unknwon organism")
+                with open(output.report, 'w') as out:
+                    out.write(f"KRAKEN NOT PERFORMED: INSUFFICIENT RAM") # how to handle this?
+            else:
+                print(f"Organism classified by MLST.")
+                with open(output.report, 'w') as out:
+                    out.write(f"Check MLST output")
+        
         process_kraken2_output(output.report, output.genus_species)
 
 def process_kraken2_output(input_file, output_file):
     with open(output_file, "w") as out, open(input_file, "r") as infile:
-        if infile.readline().strip() != "Check MLST output":
-            print("Sono nell'if")
+        result = infile.readline().strip()
+        if result != "Check MLST output" and result != "KRAKEN NOT PERFORMED: INSUFFICIENT RAM":
             df = pd.read_csv(infile, sep="\t", header=None)
             genus = df.loc[df[3] == "G", 5].iloc[0].strip()
             species = df.loc[df[3] == "S", 5].iloc[0].strip().split()[-1]
             out.write(f"{genus}_{species}\n")
             return
-        else:
+        elif result == "Check MLST output":
             out.write(f"Check MLST output")
+        elif result == "KRAKEN NOT PERFORMED: INSUFFICIENT RAM":
+            out.write(f"KRAKEN NOT PERFORMED: INSUFFICIENT RAM")
 
 rule AMRfinder:
     input:
@@ -242,7 +252,10 @@ rule check_genus:
         spatyper = directory(os.path.join(PATH_OUTPUT, "spatyper/{sample}")),
         agrvate = directory(os.path.join(PATH_OUTPUT, "agrvate/{sample}")),
         shigatyper = directory(os.path.join(PATH_OUTPUT, "shigatyper/{sample}")),
-        shigeifinder = directory(os.path.join(PATH_OUTPUT, "shigeifinder/{sample}"))
+        shigeifinder = directory(os.path.join(PATH_OUTPUT, "shigeifinder/{sample}")),
+        kleborate_escherichia = directory(os.path.join(PATH_OUTPUT, "kleborate_escherichia/{sample}")), # estendere a tutte le escherichia
+        fimtyper = directory(os.path.join(PATH_OUTPUT, "fimtyper/{sample}")), # estendere a tutte le escherichia
+        ClermonTyping = directory(os.path.join(PATH_OUTPUT, "ClermonTyping/{sample}")) # estendere a tutte le escherichia
     shell:
         """
         kraken_output=$(sed -n '1p' {input.kraken_report})
@@ -283,11 +296,35 @@ rule check_genus:
             mv {output.shigatyper}/{wildcards.sample}.tsv {output.shigatyper}/{wildcards.sample}_def.tsv
 
             echo "Performing ShigEiFinder"
-            shigeifinder -t 1 -i {input.fasta_input} > {output.shigeifinder}/{sample}_shigheifinder.txt
+            shigeifinder -t 1 -i {input.fasta_input} > {output.shigeifinder}/{wildcards.sample}_shigheifinder.txt
 
         else
             touch {output.shigatyper}/skipped.marker
             touch {output.shigeifinder}/skipped.marker
+        fi
+
+        mkdir -p {output.kleborate_escherichia}
+        mkdir -p {output.ClermonTyping}
+        mkdir -p {output.fimtyper}
+
+        if [[ "$genus" == "Escherichia" ]]; then
+            echo "Performing Kleborate"
+            kleborate  -a {input.fasta_input} -o {output.kleborate_escherichia} -p escherichia
+
+            echo "Performing fimtyper"
+            cd {PATH_ENV}/fimtyper
+            perl fimtyper.pl -d fimtyper_db/ -b {PATH_ENV} -i {input.fasta_input} -k 95.00 -l 0.60 -o {output.fimtyper}
+            mv result_tab > {wildcards.sample}_tab
+            cd {PATH_PROJECT}
+
+            echo "Performing ClermonTyping"
+            cd {PATH_ENV}/ClermonTyping
+            ./clermonTyping.sh --fasta {input.fasta_input}
+            cd {PATH_PROJECT}
+        else
+            touch {output.fimtyper}/skipped.marker
+            touch {output.ClermonTyping}/skipped.marker
+            touch {output.kleborate_escherichia}/skipped.marker
         fi
         """
 
@@ -299,12 +336,9 @@ rule check_genus_species:
         kraken_report = os.path.join(PATH_OUTPUT, "kraken2/{sample}_result.txt")
     output:
         kleborate = directory(os.path.join(PATH_OUTPUT, "kleborate/{sample}")),
-        kleborate_escherichia = directory(os.path.join(PATH_OUTPUT, "kleborate_escherichia/{sample}")),
-        abricate = directory(os.path.join(PATH_OUTPUT, "abricate_ecoli/{sample}")),
-        ectyper = directory(os.path.join(PATH_OUTPUT, "ectyper/{sample}")),
+        abricate = directory(os.path.join(PATH_OUTPUT, "abricate_ecoli/{sample}")), # solo ecoli
+        ectyper = directory(os.path.join(PATH_OUTPUT, "ectyper/{sample}")), # solo ecoli
         emmtyper = directory(os.path.join(PATH_OUTPUT, "emmtyper/{sample}")),
-        fimtyper = directory(os.path.join(PATH_OUTPUT, "fimtyper/{sample}")),
-        ClermonTyping = directory(os.path.join(PATH_OUTPUT, "ClermonTyping/{sample}")),
         legsta = directory(os.path.join(PATH_OUTPUT, "legsta/{sample}")),
         lissero = directory(os.path.join(PATH_OUTPUT, "lissero/{sample}")),
         pbptyper = directory(os.path.join(PATH_OUTPUT, "pbptyper/{sample}")),
@@ -344,12 +378,8 @@ rule check_genus_species:
 
         mkdir -p {output.abricate}
         mkdir -p {output.ectyper}
-        mkdir -p {output.kleborate_escherichia}
-        mkdir -p {output.ClermonTyping}
-        mkdir -p {output.fimtyper}
+        
         if [[ "$genus" == "Escherichia" && "$species" == "coli" ]]; then
-            echo "Performing Kleborate"
-            kleborate  -a {input.fasta_input} -o {output.kleborate_escherichia} -p escherichia
             
             echo "Performing Abricate"
             abricate {input.fasta_input} --db ecoli_vf > {output.abricate}/{wildcards.sample}_ecoli_vf.txt
@@ -359,23 +389,9 @@ rule check_genus_species:
             ectyper -i {input.fasta_input} -o {output.ectyper}
             mv {output.ectyper}/output.tsv {output.ectyper}/{wildcards.sample}.tsv
 
-            echo "Performing fimtyper"
-            cd {PATH_ENV}/fimtyper
-            perl fimtyper.pl -d fimtyper_db/ -b {PATH_ENV} -i {input.fasta_input} -k 95.00 -l 0.60 -o {output.fimtyper}
-            mv result_tab > fasta_name_tab
-            cd {PATH_PROJECT}
-
-            echo "Performing ClermonTyping"
-            cd {PATH_ENV}/ClermonTyping
-            ./clermonTyping.sh --fasta {input.fasta_file}
-            cd {PATH_PROJECT}
-
         else
             touch {output.ectyper}/skipped.marker
-            touch {output.kleborate_escherichia}/skipped.marker
             touch {output.abricate}/skipped.marker
-            touch {output.fimtyper}/skipped.marker
-            touch {output.ClermonTyping}/skipped.marker
         fi
 
         mkdir -p {output.emmtyper}
@@ -419,26 +435,30 @@ rule check_genus_species:
         fi
 
         mkdir -p {output.ngmaster}
+        mkdir -p {output.meningotype}
         
-        if [[ "$genus" == "Neisseria" && "$species" == "gonorrhoeae" ]]; then
-            echo "Performing ngmaster"
-            ngmaster {input.fasta_file} > {output.ngmaster}/{sample}.txt
+        if [[ "$genus" == "Neisseria" ]]; then
+            if [[ "$species" ==  "" || "$species" == "gonorrhoeae" ]]; then
+                echo "Performing ngmaster"
+                ngmaster {input.fasta_input} > {output.ngmaster}/{wildcards.sample}.txt
+            else
+                touch {output.ngmaster}/skipped.marker
+            fi
+            if [[ "$species" ==  "" || "$species" == "meningitidis" ]]; then
+                echo "Performing meningotype"
+                /root/.local/bin/meningotype --all {input.fasta_input} > {output.meningotype}/{wildcards.sample}.txt
+            else
+                touch {output.meningotype}/skipped.marker
+            fi
         else
             touch {output.ngmaster}/skipped.marker
-        fi
-
-        mkdir -p {output.meningotype}
-        if [[ "$genus" == "Neisseria" && "$species" == "meningitidis" ]]; then
-            echo "Performing meningotype"
-            /root/.local/bin/meningotype --all {input.fasta_input} > {output.meningotype}/{sample}_meningotype.txt
-        else
             touch {output.meningotype}/skipped.marker
         fi
-
+    
         mkdir -p {output.pasty}
         if [[ "$genus" == "Pseudomonas" && "$species" == "aeruginosa" ]]; then
             echo "Performing pasty"
-            camlhmp-blast-regions --input {input.fasta_input} --outdir {output.pasty} --prefix {sample} -y {PATH_ENV}/bin/../share/pasty/pa-osa.yaml -t {PATH_ENV}/bin/../share/pasty/pa-osa.fasta
+            camlhmp-blast-regions --input {input.fasta_input} --outdir {output.pasty} --prefix {wildcards.sample} -y {PATH_ENV}/bin/../share/pasty/pa-osa.yaml -t {PATH_ENV}/bin/../share/pasty/pa-osa.fasta
         else
             touch {output.pasty}/skipped.marker
         fi
