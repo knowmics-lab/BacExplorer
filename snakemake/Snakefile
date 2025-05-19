@@ -14,15 +14,17 @@ conda_info = subprocess.run(['conda', 'info', '--json'], capture_output=True, te
 info = json.loads(conda_info.stdout)
 
 type = config["TYPE"]
+THREADS_NUMBER = config["THREADS_NUMBER"]
 IDENTITY = config["IDENTITY"]
 COVERAGE = config["COVERAGE"]
 ANALYSIS_NAME = config["NAME"]
 GENUS = config["GENUS"]
 SPECIES = config["SPECIES"]
+paired = config["PAIRED"]
 
-#PATH_PROJECT is the input folder provided by the user
+# PATH_PROJECT is the input folder provided by the user
 # PATH_ENV = os.path.join(info["envs_dirs"], "bacEnv")
-PATH_ENV = os.path.join(info["envs_dirs"][0], "bacEnv")
+PATH_ENV = os.path.join(info["envs_dirs"][0])
 PATH_PROJECT = config["INPUT"]
 PATH_OUTPUT = os.path.join(PATH_PROJECT, "output")
 PATH_SCRIPT = workflow.basedir
@@ -30,11 +32,12 @@ PATH_VIRULENCE_DB = os.path.join(PATH_SCRIPT, "resources/virulencefinder_db/")
 PATH_KRAKEN_DB = os.path.join(PATH_SCRIPT, "resources/kraken2db")
 PATH_GENOMAD = os.path.join(PATH_SCRIPT, "resources/genomad_db")
 
-SAMPLES = [os.path.splitext(os.path.basename(f))[0] for f in glob.glob(f"{PATH_PROJECT}/*.fasta")]
+SAMPLES = []
+FASTQ_SAMPLES = []
 
 DIRS_LIST = ["abricate", "abricate_ecoli", "agrvate", "amrfinder", "ectyper", "emmtyper", "genomad", "hicap", "kleborate",
 "kleborate_escherichia", "kraken2", "legsta", "lissero", "mlst", "pbptyper", "shigatyper", "spatyper", "sccmec", "fimtyper",
-"virulencefinder", "trim", "shigeifinder", "ngmaster", "ClermonTyping", "pasty", "meningotype"]
+"virulencefinder", "trim", "shigeifinder", "ngmaster", "ClermonTyping", "pasty", "meningotype", "quast_results"]
 
 if not os.path.exists(PATH_PROJECT):
     raise ValueError(f"Path {PATH_PROJECT} does not exist!")
@@ -43,7 +46,6 @@ print(f"PATH_SCRIPT: {PATH_SCRIPT}")
 print(f"PATH_PROJECT: {PATH_PROJECT}")
 print(f"PATH_OUTPUT: {PATH_OUTPUT}")
 print(f"PATH_ENV: {PATH_ENV}")
-print(f"SAMPLES: {SAMPLES}")
 
 os.makedirs(PATH_OUTPUT, exist_ok=True)
 
@@ -71,6 +73,34 @@ def update_databases():
 
 # update_databases()
 
+# def pre_processing():
+#     command = f'''
+#     PATH_SCRIPT="{PATH_SCRIPT}" PATH_PROJECT="{PATH_PROJECT}" type="{type}" SAMPLES="{SAMPLES}" FASTQ_SAMPLES="{FASTQ_SAMPLES}" python {PATH_SCRIPT}/scripts/pre_processing.py
+#     '''
+
+#     try:
+#         subprocess.run(command, shell=True, check=True)
+#         print("Preprocessing completed")
+#     except subprocess.CalledProcessError as e:
+#         print(f"Error during preprocessing: {e}")
+#         raise
+
+# def quality_check():
+#     print("Performing quality check...")
+
+#     command = f'''
+#     PATH_OUTPUT="{PATH_OUTPUT}" PATH_PROJECT="{PATH_PROJECT}" PATH_SCRIPT="{PATH_SCRIPT}" SAMPLES="{SAMPLES}" THREADS_NUMBER="{THREADS_NUMBER}" python {PATH_SCRIPT}/scripts/quality_check.py
+#     '''
+
+#     try:
+#         subprocess.run(command, shell=True, check=True)
+#         print("Quality check completed")
+#     except subprocess.CalledProcessError as e:
+#         print(f"Error during quality check: {e}")
+#         raise
+
+include: "pre_processing.smk"
+
 if type == "fastq":
     os.makedirs(os.path.join(PATH_PROJECT, "fastq"), exist_ok=True)
     include: "fastq_analysis.smk"
@@ -79,3 +109,5 @@ elif type == "fasta":
     include: "fasta_analysis.smk"
 else:
     raise ValueError(f"Type: {type} not supported")
+
+# include: "quality_check.smk"

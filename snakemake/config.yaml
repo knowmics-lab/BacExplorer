@@ -3,6 +3,7 @@ GENUS: ''
 SPECIES: ''
 TYPE: fasta
 PAIRED: 'no'
-INPUT: /home/adriana/analisi_bacExplorer/test1
+INPUT: /home/adriana/bacExplorer/test
 IDENTITY: 90
 COVERAGE: 90
+THREADS_NUMBER: 2

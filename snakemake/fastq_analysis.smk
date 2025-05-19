@@ -1,20 +1,16 @@
 from snakemake import shell
 
-# PATH SCRIPT = bacExplorer/snakemake
-# structure = snakemake/scripts/
-#                              |- report.Rmd
-#                              |- TrimGalore | sccmec | ecc.
-
-FASTQ_DIR = os.path.join(PATH_PROJECT, "fastq")
 PATH_TRIMGALORE = os.path.join(PATH_SCRIPT, "tools/TrimGalore-master")
 
-for file in os.listdir(PATH_PROJECT):
-    if file.endswith(".gz"):
-        source_path = os.path.join(PATH_PROJECT, file)
-        destination_path = os.path.join(FASTQ_DIR, file)
-        shutil.move(source_path, destination_path)
+FASTQ_DIR = os.path.join(PATH_PROJECT, "fastq")
 
-print("FASTQ_DIR: ", FASTQ_DIR)
+# for file in os.listdir(PATH_PROJECT):
+#     if file.endswith(".gz"):
+#         source_path = os.path.join(PATH_PROJECT, file)
+#         destination_path = os.path.join(FASTQ_DIR, file)
+#         shutil.move(source_path, destination_path)
+
+# print("FASTQ_DIR: ", FASTQ_DIR)
 
 ALL_BASENAMES = [
     os.path.basename(f).replace("fq", "fastq")
@@ -24,8 +20,8 @@ ALL_BASENAMES = [
 for s in ALL_BASENAMES:
     print(s)
 
-#non paired: sample.fq.gz
-#paired: sample_R1_001.fastq.gz
+# unpaired: sample.fq.gz
+# paired: sample_R1_001.fastq.gz sample_R2_001.fastq.gz, R1.fastq.gz R2.fastq.gz, nome_1.fastq.gz nome_2.fastq.gz
 
 FASTQ_PAIRED = [
     f.replace("_R1_001.fastq.gz", "")
@@ -39,16 +35,15 @@ FASTQ_SINGLE = [
 
 FASTQ_SAMPLES = FASTQ_PAIRED + FASTQ_SINGLE
 
-PATH_TRIM = os.path.join(PATH_OUTPUT, "trim")
-paired = config["PAIRED"]
-
 print(f"FASTQ_SINGLE: {FASTQ_SINGLE}")
 print(f"FASTQ_PAIRED: {FASTQ_PAIRED}")
 print(f"FASTQ_SAMPLES: {FASTQ_SAMPLES}")
 
-print(f"Trim Galore path: {PATH_TRIMGALORE}")
+PATH_TRIM = os.path.join(PATH_OUTPUT, "trim")
 
 print(f"FASTQ ANALYSIS STARTED")
+
+print(f"Trim Galore path: {PATH_TRIMGALORE}")
 
 def trim_galore():
     for sample in FASTQ_SAMPLES:
@@ -60,6 +55,10 @@ def trim_galore():
             print(f"Sample {sample} already processed, skipping...")
             continue
         
+        shell(f"""
+        chmod +x {PATH_TRIMGALORE}/trim_galore
+        """)
+        
         if paired == "yes":
             sample_f = os.path.join(FASTQ_DIR, f"{sample}_R1_001.fastq.gz")
             sample_r = os.path.join(FASTQ_DIR, f"{sample}_R2_001.fastq.gz")
@@ -67,16 +66,16 @@ def trim_galore():
             spades_sample_r = os.path.join(PATH_TRIM, f"{sample}_R2_001_val_2.fq.gz")
             
             shell(f"""
-            {PATH_TRIMGALORE}/trim_galore --paired -o {PATH_TRIM} {sample_f} {sample_r} -j 2
-            spades.py -1 {spades_sample_f} -2 {spades_sample_r} -t 2 -o {PATH_PROJECT}
+            {PATH_TRIMGALORE}/trim_galore --paired -o {PATH_TRIM} {sample_f} {sample_r} -j {THREADS_NUMBER}
+            spades.py -1 {spades_sample_f} -2 {spades_sample_r} -t {THREADS_NUMBER} -o {PATH_PROJECT}
             """)
         else:
             sample_s = os.path.join(FASTQ_DIR, f"{sample}.fastq.gz")
             spades_sample_s = os.path.join(PATH_TRIM, f"{sample}_trimmed.fq.gz")
             
             shell(f"""
-            {PATH_TRIMGALORE}/trim_galore -o {PATH_TRIM} {sample_s} -j 2
-            spades.py -s {spades_sample_s} -t 2 -o {PATH_PROJECT}
+            {PATH_TRIMGALORE}/trim_galore -o {PATH_TRIM} {sample_s} -j {THREADS_NUMBER}
+            spades.py -s {spades_sample_s} -t {THREADS_NUMBER} -o {PATH_PROJECT}
             """)
         
         shell(f"""
@@ -85,6 +84,7 @@ def trim_galore():
         mv {fasta_file} {PATH_PROJECT}/fasta_output
         """)
 
+print(f"FASTQ_SAMPLES: {FASTQ_SAMPLES}")
 
 ALL_FASTA_FILES = [
     os.path.join(PATH_PROJECT, "fasta_output", f"{sample}.fasta")

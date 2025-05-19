@@ -304,11 +304,12 @@ async function prepareGenomadDB (resourcesDir) {
   const controlFile = path.join(genomadDir, "genomad_db");
 
   try {
+    // probably dir not needed as it
     checkDir(genomadDir);
 
     // if (fs.existsSync(controlFile)) {
     //   console.log(`Genomad db found in ${genomadDir}. Skipping download`);
-    //   emitProgress('Virulence finder db already exists in folder. Skipping download', 100);
+    //   emitProgress('Genomad db already exists in folder. Skipping download', 100);
     //   return;
     // } else {
     //   emitProgress('Downloading Genomad DB', 0);

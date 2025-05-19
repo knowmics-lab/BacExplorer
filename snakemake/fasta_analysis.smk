@@ -1,30 +1,10 @@
-# choose the samples directory
-SAMPLES = []
-if type == "fasta":
-
-    formats = [".fa", '.fna', '.fsa']
-
-    for file in os.listdir(PATH_PROJECT):
-        filename = os.path.join(PATH_PROJECT, file)
-
-        if os.path.isfile(filename):
-            for f in formats:
-                if filename.endswith(f):
-                    new_name = filename.rsplit('.', 1)[0] + '.fasta'
-                    new_filename = os.path.join(PATH_PROJECT, new_name)
-                    os.rename(filename, new_filename)
-
-    SAMPLES = [os.path.splitext(os.path.basename(f))[0] for f in glob.glob(f"{PATH_PROJECT}/*.fasta")]
-elif type == "fastq":
-    SAMPLES = [os.path.splitext(os.path.basename(f))[0] for f in glob.glob(f"{PATH_PROJECT}/fasta_output/*.fasta")]
-    PATH_PROJECT = os.path.join(PATH_PROJECT, "fasta_output")
-
-print("FASTA SAMPLES: ", SAMPLES)
-
 print(f"FASTA ANALYSIS STARTED")
+
+# include: "quality_check.smk"
 
 rule all:
     input:
+        expand(os.path.join(PATH_OUTPUT, "quast_results/{sample}"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "kraken2/{sample}_kraken2.txt"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "kraken2/{sample}_result.txt"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "mlst/{sample}.txt"), sample=SAMPLES),
@@ -55,7 +35,7 @@ rule all:
     shell:
         '''
         echo "Execution complete\nPostprocessing..."
-        python {params.post_processing}
+        PATH_OUTPUT="{PATH_OUTPUT}" python {params.post_processing}
         echo 'Workflow complete'
         '''
 
@@ -63,9 +43,36 @@ rule all:
 #         output_dir = '{PATH_OUTPUT}', params=list(path_output='{PATH_OUTPUT}',
 #         identity={IDENTITY}, coverage={COVERAGE}))"
 
-rule mlst:
+rule quality_check:
     input:
         fasta_file = lambda wildcards: os.path.join(PATH_PROJECT, f"{wildcards.sample}.fasta")
+    output:
+        quast = directory(os.path.join(PATH_OUTPUT, "quast_results/{sample}"))
+    run:
+        # if type == "fasta":
+        #     shell(f"""
+        #     quast.py {wildcards.sample} -o {PATH_QUAST} -t {THREADS_NUMBER}
+        #     # mv report.tsv > {wildcards.sample}_report.tsv
+        #     """)
+        # elif type == "fastq":
+        #     shell(f"""
+        #     quast.py {wildcards.sample} -o {PATH_QUAST} -t {THREADS_NUMBER} -1 {PATH_PROJECT}/fasta_output/{sample}_R1_val_1.fq.gz -2 {PATH_PROJECT}/fasta_output/{sample}_R2_val_2.fq.gz
+        #     mv report.tsv > {wildcards.sample}_report.tsv
+        #     """)
+
+        # AT THE MOMENT WE ONLY PERFORM QUALITY ASSESSMENT ON FASTA FILES
+        
+        # COMMENT THE FOLLOWING CODE IF QUALITY ASSESSMENT IS PERFORMED DIFFERENTLY ON FASTQ AND FASTA FILES
+        print(f"Performing quality check")
+        shell(f"""
+            mkdir -p {output.quast}
+            quast.py {input.fasta_file} -o {output.quast} -t {THREADS_NUMBER}
+            mv {output.quast}/report.tsv {output.quast}/{wildcards.sample}_report.tsv
+            """)
+
+rule mlst:
+    input:
+        fasta_file = os.path.join(PATH_PROJECT, "{sample}.fasta")
     output:
         mlst_output = os.path.join(PATH_OUTPUT, "mlst/{sample}.txt"),
         genus_species = os.path.join(PATH_OUTPUT, "mlst/{sample}_result.txt")
@@ -105,8 +112,7 @@ def check_mlst (input_file, output_file):
                 outfile.write(f"Unknown_organism\n")
         else:
             print("ERROR: Organism not found")
-
-#basato sull'output della regola Check_mlst
+    
 rule kraken2:
     input:
         fasta_input = os.path.join(PATH_PROJECT, "{sample}.fasta"),
@@ -116,7 +122,7 @@ rule kraken2:
         genus_species = os.path.join(PATH_OUTPUT, "kraken2/{sample}_result.txt")
         
     run:
-        THRESHOLD = 8000
+        THRESHOLD = 6000
         available_ram = psutil.virtual_memory().available / (1024 * 1024)
         organism = ""
         with open(input.mlst_output, 'r') as infile:
@@ -124,34 +130,39 @@ rule kraken2:
             if organism.endswith("_"):
                 organism = organism[:-1]
 
-            print("MLST output: ", organism)
+            # print("MLST output: ", organism)
         # except FileNotFoundError:
         #     print(f"Error: File {input.mlst_output} not found")
         # except Exception as e:
         #     print(f"An error occured: {e}")
 
-        #revise this part
-
-        if available_ram >= THRESHOLD and GENUS != "":
-            if organism == "Unknown_organism":
-                print("Performing Kraken")
-                shell(f'''
-                kraken2 --threads 2 --db {PATH_KRAKEN_DB} --report {output.report} {input.fasta_input}
-                ''')
-            else:
-                print(f"Organism classified by MLST.")
-                with open(output.report, 'w') as out:
-                    out.write(f"Check MLST output")
+        if GENUS != "":
+            print(f"Genus already specified by user. Skipping Kraken")
+            with open(output.report, 'w') as out:
+                out.write(f"Check MLST output")
         else:
-            print(f"Available RAM: {available_ram} MB is insufficient. Unable to perform Kraken.")
-            if organism == "Unknown_organism":
-                print(f"Unknwon organism")
-                with open(output.report, 'w') as out:
-                    out.write(f"KRAKEN NOT PERFORMED: INSUFFICIENT RAM") # how to handle this?
+            print(f"Evaluating ram availability...")       
+            if available_ram >= THRESHOLD:
+                print(f"RAM is sufficient to perform Kraken")
+                if organism == "Unknown_organism":
+                    print("MLST unable to classify organism. Performing Kraken")
+                    shell(f'''
+                    kraken2 --threads {THREADS_NUMBER} --db {PATH_KRAKEN_DB} --report {output.report} {input.fasta_input}
+                    ''')
+                else:
+                    print(f"Organism classified by MLST. Skipping Kraken")
+                    with open(output.report, 'w') as out:
+                        out.write(f"Check MLST output")
             else:
-                print(f"Organism classified by MLST.")
-                with open(output.report, 'w') as out:
-                    out.write(f"Check MLST output")
+                print(f"Available RAM: {available_ram} MB is insufficient. Unable to perform Kraken.")
+                if organism == "Unknown_organism":
+                    print(f"MLST output: Unknwon organism")
+                    with open(output.report, 'w') as out:
+                        out.write(f"KRAKEN NOT PERFORMED: INSUFFICIENT RAM")
+                else:
+                    print(f"MLST output: organism classified.")
+                    with open(output.report, 'w') as out:
+                        out.write(f"Check MLST output")
         
         process_kraken2_output(output.report, output.genus_species)
 
@@ -237,7 +248,7 @@ rule genomad:
         genomad = directory(os.path.join(PATH_OUTPUT, "genomad/{sample}"))
     shell:
         """
-        echo "Genomad"
+        echo "Performing Genomad"
         mkdir -p {output.genomad}
         genomad end-to-end --cleanup --splits 8 {input.fasta_input} {output.genomad} {PATH_GENOMAD}
         """
@@ -296,7 +307,7 @@ rule check_genus:
             mv {output.shigatyper}/{wildcards.sample}.tsv {output.shigatyper}/{wildcards.sample}_def.tsv
 
             echo "Performing ShigEiFinder"
-            shigeifinder -t 1 -i {input.fasta_input} > {output.shigeifinder}/{wildcards.sample}_shigheifinder.txt
+            shigeifinder -t {THREADS_NUMBER} -i {input.fasta_input} > {output.shigeifinder}/{wildcards.sample}_shigheifinder.txt
 
         else
             touch {output.shigatyper}/skipped.marker
@@ -309,18 +320,17 @@ rule check_genus:
 
         if [[ "$genus" == "Escherichia" ]]; then
             echo "Performing Kleborate"
-            kleborate  -a {input.fasta_input} -o {output.kleborate_escherichia} -p escherichia
+            kleborate -a {input.fasta_input} -o {output.kleborate_escherichia} -p escherichia
 
             echo "Performing fimtyper"
             cd {PATH_ENV}/fimtyper
             perl fimtyper.pl -d fimtyper_db/ -b {PATH_ENV} -i {input.fasta_input} -k 95.00 -l 0.60 -o {output.fimtyper}
-            mv result_tab > {wildcards.sample}_tab
+            mv {output.fimtyper}/results_tab.txt {output.fimtyper}/{wildcards.sample}_tab.txt
             cd {PATH_PROJECT}
 
             echo "Performing ClermonTyping"
-            cd {PATH_ENV}/ClermonTyping
-            ./clermonTyping.sh --fasta {input.fasta_input}
-            cd {PATH_PROJECT}
+            {PATH_ENV}/ClermonTyping/clermonTyping.sh --fasta {input.fasta_input}
+            mv {PATH_PROJECT}/analysis_* {output.ClermonTyping}
         else
             touch {output.fimtyper}/skipped.marker
             touch {output.ClermonTyping}/skipped.marker
@@ -336,8 +346,8 @@ rule check_genus_species:
         kraken_report = os.path.join(PATH_OUTPUT, "kraken2/{sample}_result.txt")
     output:
         kleborate = directory(os.path.join(PATH_OUTPUT, "kleborate/{sample}")),
-        abricate = directory(os.path.join(PATH_OUTPUT, "abricate_ecoli/{sample}")), # solo ecoli
-        ectyper = directory(os.path.join(PATH_OUTPUT, "ectyper/{sample}")), # solo ecoli
+        abricate = directory(os.path.join(PATH_OUTPUT, "abricate_ecoli/{sample}")),
+        ectyper = directory(os.path.join(PATH_OUTPUT, "ectyper/{sample}")),
         emmtyper = directory(os.path.join(PATH_OUTPUT, "emmtyper/{sample}")),
         legsta = directory(os.path.join(PATH_OUTPUT, "legsta/{sample}")),
         lissero = directory(os.path.join(PATH_OUTPUT, "lissero/{sample}")),
@@ -446,7 +456,7 @@ rule check_genus_species:
             fi
             if [[ "$species" ==  "" || "$species" == "meningitidis" ]]; then
                 echo "Performing meningotype"
-                /root/.local/bin/meningotype --all {input.fasta_input} > {output.meningotype}/{wildcards.sample}.txt
+                meningotype --all {input.fasta_input} > {output.meningotype}/{wildcards.sample}.txt
             else
                 touch {output.meningotype}/skipped.marker
             fi
