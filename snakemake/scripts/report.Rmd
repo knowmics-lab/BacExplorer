@@ -1132,7 +1132,6 @@ if(dim(ec_tab)[1] != 0){
   # ec1_tab <- as.data.frame(do.call(rbind, lapply(ectyper, ectyper_function)))
    addWorksheet(wbec, "ECTyper")
    writeData(wbec, sheet = "ECTyper", ec_tab)
-   saveWorkbook(wbec, file=paste0(path_excel, "/Escherichia_table.xlsx"), overwrite = TRUE)
 }
 
 ```
@@ -1313,6 +1312,7 @@ clermontyping <- list.files(path=paste0(path_output, "/ClermonTyping/"), pattern
     
    addWorksheet(wbec, "ClermonTyping")
    writeData(wbec, sheet = "ClermonTyping", cle1_tab) 
+   saveWorkbook(wbec, file=paste0(path_excel, "/Escherichia_table.xlsx"), overwrite = TRUE)
   }
 ```
 
@@ -1444,7 +1444,7 @@ clermontyping <- list.files(path=paste0(path_output, "/ClermonTyping/"), pattern
 
 ```{r ShigEiFinder, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
 
- shige <- list.files(path=paste0(path_output, "/ShigEiFinder/"), pattern = ".txt", full.names=TRUE, recursive=TRUE)
+ shige <- list.files(path=paste0(path_output, "/shigeifinder/"), pattern = ".txt", full.names=TRUE, recursive=TRUE)
 
     shige_function <- function(i){
       shi <- read.csv(i, sep= "\t")

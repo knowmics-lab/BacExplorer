@@ -55,14 +55,26 @@ def delete_intermediate_files(directory, tool_name):
                 print(f"Deleting temp file: {file_path}")
                 os.remove(file_path)
 
+def clean_shigatyper(directory):
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            if "hits.tsv" not in file:
+                file_path = os.path.join(root, file)
+                new_filename = file.replace(".tsv", "_def.tsv")
+                new_file_path = os.path.join(root, new_filename)
+                os.rename(file_path, new_file_path)
+
+
 remove_temp(PATH_OUTPUT)
 mlst_path = os.path.join(PATH_OUTPUT, "mlst")
 kraken_path = os.path.join(PATH_OUTPUT, "kraken2")
 amrfinder_path = os.path.join(PATH_OUTPUT, "amrfinder")
 abricate_path = os.path.join(PATH_OUTPUT, "abricate")
 vf_path = os.path.join(PATH_OUTPUT, "virulencefinder")
+shigatyper_path = os.path.join(PATH_OUTPUT, "shigatyper")
 delete_empty_files(amrfinder_path, "amrfinder")
 delete_empty_files(abricate_path, "abricate")
 delete_empty_files(vf_path, "virulence_finder")
 delete_intermediate_files(mlst_path, "mlst")
 delete_intermediate_files(kraken_path, "kraken2")
+clean_shigatyper(shigatyper_path)

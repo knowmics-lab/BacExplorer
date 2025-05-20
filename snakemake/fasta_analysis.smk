@@ -301,10 +301,9 @@ rule check_genus:
 
         mkdir -p {output.shigatyper}
         mkdir -p {output.shigeifinder}
-        if [[ "$genus" == "Shigella" ]]; then
+        if [[ "$genus" == "Shigella" || "$genus" == "Escherichia" ]]; then
             echo "Performing ShigaTyper"
-            shigatyper --SE {input.fasta_input} -n {output.shigatyper} --verbose
-            mv {output.shigatyper}/{wildcards.sample}.tsv {output.shigatyper}/{wildcards.sample}_def.tsv
+            shigatyper --SE {input.fasta_input} -o {output.shigatyper} --verbose
 
             echo "Performing ShigEiFinder"
             shigeifinder -t {THREADS_NUMBER} -i {input.fasta_input} > {output.shigeifinder}/{wildcards.sample}_shigheifinder.txt
@@ -330,7 +329,10 @@ rule check_genus:
 
             echo "Performing ClermonTyping"
             {PATH_ENV}/ClermonTyping/clermonTyping.sh --fasta {input.fasta_input}
-            mv {PATH_PROJECT}/analysis_* {output.ClermonTyping}
+            
+            if compgen -G "{PATH_PROJECT}/analysis_*" > /dev/null; then
+                mv {PATH_PROJECT}/analysis_* {output.ClermonTyping}
+            fi
         else
             touch {output.fimtyper}/skipped.marker
             touch {output.ClermonTyping}/skipped.marker
