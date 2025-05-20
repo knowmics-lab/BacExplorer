@@ -1,9 +1,10 @@
 NAME: prova-container
 GENUS: ''
 SPECIES: ''
-TYPE: fasta
-PAIRED: 'no'
-INPUT: /home/adriana/bacExplorer/test
+TYPE: fastq
+PAIRED: 'yes'
+INPUT: /home/adriana/bacExplorer/test2
 IDENTITY: 90
 COVERAGE: 90
 THREADS_NUMBER: 2
+GENOMAD_ANALYSIS: 'yes'

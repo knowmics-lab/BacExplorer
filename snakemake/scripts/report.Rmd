@@ -120,17 +120,20 @@ try({
  
    quast_function <- function(i){
       qs <- read.csv(i, sep= "\t")
-      qs <- qs[c(13:21),]
-      qs <- as.data.frame(t(qs))
-      colnames(qs) <- qs[1,]
-      qs <- qs[-1,]
-      qs$sample <- tools::file_path_sans_ext(basename(i))
-      qs$sample <- gsub("_report", "", qs$sample)
-      names(qs) <- c("contigs", "largest contig", "total length", "gc (%)", "n50", "n75", "l50", "l75", "n's per 100 kbp", "sample")
-    qs <- qs[,c(10,1:9)]
-  
-      return(qs)
-     }
+      if(nrow(qs) > 0) {
+        qs <- qs[c(13:21),]
+        qs <- as.data.frame(t(qs))
+        colnames(qs) <- qs[1,]
+        qs <- qs[-1,]
+        qs$sample <- tools::file_path_sans_ext(basename(i))
+        qs$sample <- gsub("_report", "", qs$sample)
+        names(qs) <- c("contigs", "largest contig", "total length", "gc (%)", "n50", "n75", "l50", "l75", "n's per 100 kbp", "sample")
+      qs <- qs[,c(10,1:9)]
+    
+        return(qs)
+      }
+      
+   }
   
   quast_tab <- as.data.frame(do.call(rbind, lapply(quast, quast_function)))
   rownames(quast_tab) <- NULL
@@ -152,19 +155,20 @@ args=commandArgs(trailingOnly = TRUE)
 try({
   kraken2 <- list.files(path=paste0(path_output, "/kraken2/"), full.names=TRUE, recursive=FALSE)
   
-  i <- kraken2[1]
-
   kraken2_function <- function(i){
     kr <- read.csv(i, sep= "\t", header=FALSE)
-    f <- which(kr$V4 == "F")[1]
-    g <- which(kr$V4 == "G")[1]
-    s <- which(kr$V4 == "S")[1]
-    nm <- gsub("_kraken2.txt", "", basename(i))
-    krak <- data.frame("Sample"= nm, "Family"=paste0(kr$V6[f]," (", kr$V1[f],"%)"), 
-                 "Genus"=paste0(kr$V6[g]," (", kr$V1[g],"%)"), 
-                 "Species"=paste0(kr$V6[s]," (", kr$V1[s],"%)"))
-
-    return(krak)
+    if(nrow(kr) > 0) {
+      f <- which(kr$V4 == "F")[1]
+      g <- which(kr$V4 == "G")[1]
+      s <- which(kr$V4 == "S")[1]
+      nm <- gsub("_kraken2.txt", "", basename(i))
+      krak <- data.frame("Sample"= nm, "Family"=paste0(kr$V6[f]," (", kr$V1[f],"%)"), 
+                   "Genus"=paste0(kr$V6[g]," (", kr$V1[g],"%)"), 
+                   "Species"=paste0(kr$V6[s]," (", kr$V1[s],"%)"))
+  
+      return(krak)
+    }
+    
   }
   kraken2_tab <- as.data.frame(do.call(rbind, lapply(kraken2, kraken2_function)))
   
@@ -233,7 +237,7 @@ amrfinder_db <- list.files(path=paste0(path_output, "/amrfinder/"), full.names=T
 
    amrfinder_db_function <- function(i){
      amr <- read.csv(i, sep= "\t")
-     if(dim(amr)[1] > 0){
+     if(nrow(amr) > 0){
       amr$sample <- basename(tools::file_path_sans_ext(i))
       amr <- amr[,c(23, 6, 7, 11, 12, 16, 17, 14, 15, 18, 2:5,  19:22, 1, 8:10)]
       names(amr) <- c("Sample", "Gene", "Sequence Name", "Antibiotic class", "Antibiotic subclass", "Coverage", "Identity", "Target Length", "Reference Length", "Alignment Length", "Contig", "Start", "Stop", "Strand", "Accession", "Clostest sequence name", "HMM ID", "HMM Description", "Protein identifier", "Scope", "Element type", "Element Subtype")
@@ -273,7 +277,7 @@ amrfinder_db <- list.files(path=paste0(path_output, "/amrfinder/"), full.names=T
 
    abricate_ncbi_function <- function(i){
      sma <- read.csv(i, sep= "\t")
-     if(dim(sma)[1] > 0){
+     if(nrow(sma) > 0){
      sma$X.FILE <- basename(tools::file_path_sans_ext(sma$X.FILE))
      sma$COVERAGE_MAP <- NULL
      sma <- sma[,c(1, 6, 14, 9, 10, 2:5, 7:8, 11:13)]
@@ -314,7 +318,7 @@ amrfinder_db <- list.files(path=paste0(path_output, "/amrfinder/"), full.names=T
 
    abricate_mega_function <- function(i){
      mega <- read.csv(i, sep= "\t")
-     if(dim(mega)[1] > 0){
+     if(nrow(mega) > 0){
      mega$X.FILE <- basename(tools::file_path_sans_ext(mega$X.FILE))
      mega$COVERAGE_MAP <- NULL
      mega$DATABASE <- NULL
@@ -353,7 +357,7 @@ amrfinder_db <- list.files(path=paste0(path_output, "/amrfinder/"), full.names=T
 
    abricate_resfinder_function <- function(i){
      rsf <- read.csv(i, sep= "\t")
-     if(dim(rsf)[1] > 0){
+     if(nrow(rsf) > 0){
      rsf$X.FILE <- basename(tools::file_path_sans_ext(rsf$X.FILE))
      rsf$COVERAGE_MAP <- NULL
      rsf <- rsf[,c(1, 6, 14, 9, 10, 2:5, 7:8, 11:13)]
@@ -394,7 +398,7 @@ amrfinder_db <- list.files(path=paste0(path_output, "/amrfinder/"), full.names=T
 
    abricate_card_function <- function(i){
      cd <- read.csv(i, sep= "\t")
-     if(dim(cd)[1] > 0){
+     if(nrow(cd) > 0){
      cd$X.FILE <- basename(tools::file_path_sans_ext(cd$X.FILE))
      cd$COVERAGE_MAP <- NULL
      cd <- cd[,c(1, 6, 14, 9, 10, 2:5, 7:8, 11:13)]
@@ -435,7 +439,7 @@ amrfinder_db <- list.files(path=paste0(path_output, "/amrfinder/"), full.names=T
 
    abricate_argannot_function <- function(i){
      aga <- read.csv(i, sep= "\t")
-     if(dim(aga)[1] > 0){
+     if(nrow(aga) > 0){
      aga$X.FILE <- basename(tools::file_path_sans_ext(aga$X.FILE))
      aga$COVERAGE_MAP <- NULL
      aga <- aga[,c(1, 6, 14, 9, 10, 2:5, 7:8, 11:13)]
@@ -478,7 +482,7 @@ amrfinder_db <- list.files(path=paste0(path_output, "/amrfinder/"), full.names=T
 
    amrfinder_function <- function(i){
      amr <- read.csv(i, sep= "\t")
-     if(dim(amr)[1] > 0){
+     if(nrow(amr) > 0){
       amr$sample <- basename(tools::file_path_sans_ext(i))
       amr <- amr[,c(23, 6, 7, 11, 12, 16, 17, 14, 15, 18, 2:5, 19:22, 1, 8:10)]
       names(amr) <- c("Sample", "Gene", "Sequence Name", "Antibiotic class", "Antibiotic subclass", "Coverage", "Identity", "Target Length", "Reference Length", "Alignment Length", "Contig", "Start", "Stop", "Strand", "Accession", "Clostest sequence name", "HMM ID", "HMM Description", "Protein identifier", "Scope", "Element type", "Element Subtype")
@@ -722,7 +726,7 @@ abricate_vfdb <- list.files(path=paste0(path_output, "/abricate/"), pattern = "v
 
    abricate_vfdb_function <- function(i){
      vfdb <- read.csv(i, sep= "\t")
-     if(dim(vfdb)[1] > 0){
+     if(nrow(vfdb) > 0){
       vfdb$X.FILE <- basename(tools::file_path_sans_ext(vfdb$X.FILE))
       vfdb$COVERAGE_MAP <- NULL
       vfdb$DATABASE <- NULL
@@ -762,7 +766,7 @@ abricate_vfdb <- list.files(path=paste0(path_output, "/abricate/"), pattern = "v
 
    virulencefinder_function <- function(i){
      vf <- read.csv(i, sep= "\t")
-     if(dim(vf)[1] > 0){
+     if(nrow(vf) > 0){
       vf$Sample <- basename(tools::file_path_sans_ext(i))
       vf$Sample <- gsub("_results_tab", "", vf$Sample)
       vf <- vf[,c(9, 2, 3, 4, 7, 8, 1, 5, 6)]
@@ -813,7 +817,7 @@ abricate_vfdb <- list.files(path=paste0(path_output, "/abricate/"), pattern = "v
 
   abricate_vfdb_function <- function(i){
      vfdb <- read.csv(i, sep= "\t")
-     if(dim(vfdb)[1] > 0){
+     if(nrow(vfdb) > 0){
       vfdb$X.FILE <- basename(tools::file_path_sans_ext(vfdb$X.FILE))
       vfdb$COVERAGE_MAP <- NULL
       vfdb$DATABASE <- NULL
@@ -855,7 +859,7 @@ virulencefinder <- list.files(path=paste0(path_output, "/virulencefinder/"), pat
 
    virulencefinder_function <- function(i){
      vf <- read.csv(i, sep= "\t")
-     if(dim(vf)[1] > 0){
+     if(nrow(vf) > 0){
       vf$Sample <- basename(tools::file_path_sans_ext(i))
       vf$Sample <- gsub("_results_tab", "", vf$Sample)
       vf <- vf[,c(9, 2, 3, 4, 7, 8, 1, 5, 6 )]
@@ -899,7 +903,7 @@ virulencefinder <- list.files(path=paste0(path_output, "/virulencefinder/"), pat
 
    abricate_plfd_function <- function(i){
      smp <- read.csv(i, sep= "\t")
-     if(dim(smp)[1] > 0){
+     if(nrow(smp) > 0){
        smp$X.FILE <- basename(tools::file_path_sans_ext(smp$X.FILE))
        smp$COVERAGE_MAP <- NULL
        smp$DATABASE <- NULL
@@ -939,21 +943,25 @@ virulencefinder <- list.files(path=paste0(path_output, "/virulencefinder/"), pat
 ```{r geNomad, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
 genomad_plasmid <- list.files(path=paste0(path_output, "/genomad/"), pattern = "_plasmid_summary.tsv", full.names=TRUE, recursive=TRUE)
 
+
    genomad_plasmid_function <- function(i){
      gpl <- read.csv(i, sep= "\t")
-     n <- gsub("plasmid_summary", "plasmid_genes", i)
-     gplg <- read.csv(n, sep= "\t")
-     #gplg <- gplg[!is.na(gplg$annotation_accessions),]
-     gplg$seq_name <- gsub("_.*","",gplg$gene)
-     colnames(gplg)[4] <- "Gene_lenght"
-     gpl$Sample <- gsub("_plasmid_summary","",basename(tools::file_path_sans_ext(i)))
-     gpt <- merge(gpl, gplg)
-     gpt <- gpt[,c(12, 1:11, 13:31)]
-     gpl <- gpl[,c(12, 1:11)]
-     names(gpl) <- c("Sample", "Plasmid name", "Length", "Topology", "Number of Genes", "Genetic code", "Score", "FDR", "Number of Hallmarks", "Marker Enrichment", "Conjugation Genes", "AMR Genes")
-       #return(gpl)
-     plng <- list(gpl, gpt)
-     return(plng)
+     if(nrow(gpl) > 0) {
+       n <- gsub("plasmid_summary", "plasmid_genes", i)
+       gplg <- read.csv(n, sep= "\t")
+       #gplg <- gplg[!is.na(gplg$annotation_accessions),]
+       gplg$seq_name <- gsub("_.*","",gplg$gene)
+       colnames(gplg)[4] <- "Gene_lenght"
+       gpl$Sample <- gsub("_plasmid_summary","",basename(tools::file_path_sans_ext(i)))
+       gpt <- merge(gpl, gplg)
+       gpt <- gpt[,c(12, 1:11, 13:31)]
+       gpl <- gpl[,c(12, 1:11)]
+       names(gpl) <- c("Sample", "Plasmid name", "Length", "Topology", "Number of Genes", "Genetic code", "Score", "FDR", "Number of Hallmarks", "Marker Enrichment", "Conjugation Genes", "AMR Genes")
+         #return(gpl)
+       plng <- list(gpl, gpt)
+       return(plng)
+     }
+     
    }
    
      gpl_tab <- lapply(genomad_plasmid, genomad_plasmid_function)
@@ -1005,19 +1013,21 @@ genomad_plasmid <- list.files(path=paste0(path_output, "/genomad/"), pattern = "
 
    genomad_virus_function <- function(i){
      gv <- read.csv(i, sep= "\t")
-     n <- gsub("virus_summary", "virus_genes", i)
-     gvg <- read.csv(n, sep= "\t")
-     gv$Sample <- gsub("_virus_summary","",basename(tools::file_path_sans_ext(i)))
-     gv <- gv[,c(12, 1:11)]
-     gvg$seq_name <- gsub("^([^,]*_[^,]*)_.*", "\\1", gvg$gene)
-     colnames(gvg)[4] <- "Gene_lenght"
-     gva <- merge(gv, gvg)
-     gv$seq_name <- gsub("\\|", "_", gv$seq_name)
-     names(gv) <- c("Sample", "Virus name", "Length", "Topology", "Coordinates", "Number of Genes", "Genetic code", "Score", "FDR", "Number of Hallmarks", "Marker Enrichment", "Taxonomy")
-     vng <- list(gv, gva)
-     return(vng)
-
+     if(nrow(gv) > 0) {
+        n <- gsub("virus_summary", "virus_genes", i)
+       gvg <- read.csv(n, sep= "\t")
+       gv$Sample <- gsub("_virus_summary","",basename(tools::file_path_sans_ext(i)))
+       gv <- gv[,c(12, 1:11)]
+       gvg$seq_name <- gsub("^([^,]*_[^,]*)_.*", "\\1", gvg$gene)
+       colnames(gvg)[4] <- "Gene_lenght"
+       gva <- merge(gv, gvg)
+       gv$seq_name <- gsub("\\|", "_", gv$seq_name)
+       names(gv) <- c("Sample", "Virus name", "Length", "Topology", "Coordinates", "Number of Genes", "Genetic code", "Score", "FDR", "Number of Hallmarks", "Marker Enrichment", "Taxonomy")
+       vng <- list(gv, gva)
+       return(vng)
+      }
    }
+
    
    gv_tab <- lapply(genomad_virus, genomad_virus_function)
 
@@ -1033,7 +1043,6 @@ genomad_plasmid <- list.files(path=paste0(path_output, "/genomad/"), pattern = "
    gv_tab1 <- gv_tab1[!sapply(gv_tab1,is.null)]
    gv_tab1 <- gv_tab1[sapply(gv_tab1, nrow)>0]
 
-   
   for (i in 1:length(gv_tab1)) {
     cat("####", as.data.frame(gv_tab1[i])$Sample[1], "<br>", "\n")
   print(kable(as.data.frame(gv_tab1[i]), row.names = FALSE) %>%
@@ -1132,6 +1141,7 @@ if(dim(ec_tab)[1] != 0){
   # ec1_tab <- as.data.frame(do.call(rbind, lapply(ectyper, ectyper_function)))
    addWorksheet(wbec, "ECTyper")
    writeData(wbec, sheet = "ECTyper", ec_tab)
+   saveWorkbook(wbec, file=paste0(path_excel, "/Escherichia_table.xlsx"), overwrite = TRUE)
 }
 
 ```
@@ -1143,16 +1153,19 @@ if(dim(ec_tab)[1] != 0){
 
    kleborate_esch_function <- function(i){
      klb <- read.csv(i, sep= "\t")
-     klb <- klb[,c(1, 2, 10:27)]
-     colnames(klb)[1] <- "Sample"
-     for(n in 1:nrow(klb)){
-       for(j in 1:ncol(klb)){
-        if(klb[n,j] == "-" & !is.na(klb[n,j])){
-          klb[n,j] <- gsub("-","$-$",klb[n,j])
+     if(nrow(klb) > 0) {
+       klb <- klb[,c(1, 2, 10:27)]
+       colnames(klb)[1] <- "Sample"
+       for(n in 1:nrow(klb)){
+         for(j in 1:ncol(klb)){
+          if(klb[n,j] == "-" & !is.na(klb[n,j])){
+            klb[n,j] <- gsub("-","$-$",klb[n,j])
+          }
         }
       }
-    }
-    return(klb)
+      return(klb)
+     }
+     
    }
   klb_es_tab <- as.data.frame(do.call(rbind, lapply(kleborate_esch, kleborate_esch_function)))
   #if(length(klb_es_tab) != 0){
@@ -1184,16 +1197,19 @@ ecoh <- list.files(path=paste0(path_output, "/abricate_ecoli/"), pattern = "ecoh
 
    ecoh_function <- function(i){
      ec <- read.csv(i, sep= "\t")
-     ec$DATABASE <- NULL
-     names(ec) <- c("Sample", "Sequence", "Start", "End", "Strand", "Gene", "Coverage", "Coverage_map",
-    "Gaps", "Coverage_Percentage", "Identity_Percentage", "Accession", "Product", "Resistance")
-     ec$Strand[ec$Strand == "+"] <- "$+$"
-     ec$Strand[ec$Strand == "-"] <- "$-$"
-     ec$Sample <- gsub(".fasta","",basename(ec$Sample))
-     ec <- ec[,c(1, 6, 10:14, 2:5, 7:9)]
-     ec <- ec[ec$Identity_Percentage >= identity & ec$Coverage_Percentage >= coverage, ]
-    return(ec)
+     if(nrow(ec) > 0) {
+       ec$DATABASE <- NULL
+       names(ec) <- c("Sample", "Sequence", "Start", "End", "Strand", "Gene", "Coverage", "Coverage_map",
+      "Gaps", "Coverage_Percentage", "Identity_Percentage", "Accession", "Product", "Resistance")
+       ec$Strand[ec$Strand == "+"] <- "$+$"
+       ec$Strand[ec$Strand == "-"] <- "$-$"
+       ec$Sample <- gsub(".fasta","",basename(ec$Sample))
+       ec <- ec[,c(1, 6, 10:14, 2:5, 7:9)]
+       ec <- ec[ec$Identity_Percentage >= identity & ec$Coverage_Percentage >= coverage, ]
+      return(ec)
+     }
    }
+     
   ec_tab <- as.data.frame(do.call(rbind, lapply(ecoh, ecoh_function)))
   
   print(kable(ec_tab, row.names = FALSE) %>%
@@ -1216,17 +1232,20 @@ ecoh <- list.files(path=paste0(path_output, "/abricate_ecoli/"), pattern = "ecoh
 
    ecoli_vf_function <- function(i){
      evf <- read.csv(i, sep= "\t")
-     evf$DATABASE <- NULL
-     names(evf) <- c("Sample", "Sequence", "Start", "End", "Strand", "Gene", "Coverage", "Coverage_map",
-    "Gaps", "Coverage_Percentage", "Identity_Percentage", "Accession", "Product", "Resistance")
-     evf$Sample <- gsub(".fasta","",basename(evf$Sample))
-     evf$Strand[evf$Strand == "+"] <- "$+$"
-     evf$Strand[evf$Strand == "-"] <- "$-$"
-     evf <- evf[,c(1, 6, 10:14, 2:5, 7:9)]
-     evf <- evf[evf$Identity_Percentage >= identity & evf$Coverage_Percentage >= coverage, ]
-     evf <- evf[order(evf$Gene),]
-    return(evf)
+     if(nrow(evf) > 0) {
+       evf$DATABASE <- NULL
+       names(evf) <- c("Sample", "Sequence", "Start", "End", "Strand", "Gene", "Coverage", "Coverage_map",
+      "Gaps", "Coverage_Percentage", "Identity_Percentage", "Accession", "Product", "Resistance")
+       evf$Sample <- gsub(".fasta","",basename(evf$Sample))
+       evf$Strand[evf$Strand == "+"] <- "$+$"
+       evf$Strand[evf$Strand == "-"] <- "$-$"
+       evf <- evf[,c(1, 6, 10:14, 2:5, 7:9)]
+       evf <- evf[evf$Identity_Percentage >= identity & evf$Coverage_Percentage >= coverage, ]
+       evf <- evf[order(evf$Gene),]
+      return(evf)
+     }
    }
+     
   evf_tab <- as.data.frame(do.call(rbind, lapply(ecoli_vf, ecoli_vf_function)))
   
   print(kable(evf_tab, row.names = FALSE) %>%
@@ -1249,10 +1268,12 @@ fim <- list.files(path=paste0(path_output, "/fimtyper/"), pattern = "_tab", full
    fim_function <- function(i){
      if(length(lines) > 3) {
        fm <- read.csv(i, sep= "\t", skip=3)
-       fm$Sample <- gsub("_tab","", basename(tools::file_path_sans_ext(i)))
-       fm <- fm[,c(7,1:6)]
-       names(fm) <- c("Sample", "Fimtype", "Identity", "Query HSP", "Contig", "Position in contig",   "Accession.no.")
-      return(fm)
+       if(nrow(fm) > 0) {
+         fm$Sample <- gsub("_tab","", basename(tools::file_path_sans_ext(i)))
+         fm <- fm[,c(7,1:6)]
+         names(fm) <- c("Sample", "Fimtype", "Identity", "Query HSP", "Contig", "Position in contig",   "Accession.no.")
+        return(fm)
+       }
      }
    }
   fim_tab <- as.data.frame(do.call(rbind, lapply(fim, fim_function)))
@@ -1279,26 +1300,29 @@ clermontyping <- list.files(path=paste0(path_output, "/ClermonTyping/"), pattern
 
    clermontyping_function <- function(i){
      cle <- read.csv(i, sep= "\t", header=FALSE)
-     cle$V1 <- gsub(".fasta","", cle$V1)
-     cle$V3 <- gsub("\\[", "", cle$V3)
-     cle$V3 <- gsub("\\]", "", cle$V3)
-     cle$V3 <- gsub("\\'", "", cle$V3)
-     cle[c('arpA', 'chuA', 'yjaA', 'TspE4.C2')] <- str_split_fixed(cle$V3, ',', 4)
-     cle <- cle[c(1:2,7:10, 4:6)]
-     cle$arpA <- trimws(cle$arpA)
-     cle$arpA[cle$arpA == "+"] <- "$+$"
-     cle$arpA[cle$arpA == "-"] <- "$-$"
-     cle$chuA <- trimws(cle$chuA)
-     cle$chuA[cle$chuA == "+"] <- "$+$"
-     cle$chuA[cle$chuA == "-"] <- "$-$"
-     cle$yjaA <- trimws(cle$yjaA)
-     cle$yjaA[cle$yjaA == "+"] <- "$+$"
-     cle$yjaA[cle$yjaA == "-"] <- "$-$"
-     cle$TspE4.C2 <- trimws(cle$TspE4.C2)
-     cle$TspE4.C2[cle$TspE4.C2 == "+"] <- "$+$"
-     cle$TspE4.C2[cle$TspE4.C2 == "-"] <- "$-$"
-     names(cle) <- c("Sample", "Genes", "arpA", "chuA", "yjaA", "TspE4.C2", "Alleles specific for groups C and E", "Phylogroup", "Species")
-    return(cle)
+     if(nrow(cle) > 0) {
+       cle$V1 <- gsub(".fasta","", cle$V1)
+       cle$V3 <- gsub("\\[", "", cle$V3)
+       cle$V3 <- gsub("\\]", "", cle$V3)
+       cle$V3 <- gsub("\\'", "", cle$V3)
+       cle[c('arpA', 'chuA', 'yjaA', 'TspE4.C2')] <- str_split_fixed(cle$V3, ',', 4)
+       cle <- cle[c(1:2,7:10, 4:6)]
+       cle$arpA <- trimws(cle$arpA)
+       cle$arpA[cle$arpA == "+"] <- "$+$"
+       cle$arpA[cle$arpA == "-"] <- "$-$"
+       cle$chuA <- trimws(cle$chuA)
+       cle$chuA[cle$chuA == "+"] <- "$+$"
+       cle$chuA[cle$chuA == "-"] <- "$-$"
+       cle$yjaA <- trimws(cle$yjaA)
+       cle$yjaA[cle$yjaA == "+"] <- "$+$"
+       cle$yjaA[cle$yjaA == "-"] <- "$-$"
+       cle$TspE4.C2 <- trimws(cle$TspE4.C2)
+       cle$TspE4.C2[cle$TspE4.C2 == "+"] <- "$+$"
+       cle$TspE4.C2[cle$TspE4.C2 == "-"] <- "$-$"
+       names(cle) <- c("Sample", "Genes", "arpA", "chuA", "yjaA", "TspE4.C2", "Alleles specific for groups C and E", "Phylogroup", "Species")
+      return(cle)
+     }
+     
    }
   cle_tab <- as.data.frame(do.call(rbind, lapply(clermontyping, clermontyping_function)))
   
@@ -1312,7 +1336,6 @@ clermontyping <- list.files(path=paste0(path_output, "/ClermonTyping/"), pattern
     
    addWorksheet(wbec, "ClermonTyping")
    writeData(wbec, sheet = "ClermonTyping", cle1_tab) 
-   saveWorkbook(wbec, file=paste0(path_excel, "/Escherichia_table.xlsx"), overwrite = TRUE)
   }
 ```
 
@@ -1324,16 +1347,19 @@ clermontyping <- list.files(path=paste0(path_output, "/ClermonTyping/"), pattern
  kleborate <- list.files(path=paste0(path_output, "/kleborate/"), pattern = "", full.names=TRUE, recursive=TRUE)
    kleborate_function <- function(i){
      klb <- read.csv(i, sep= "\t")
-     klb <- klb[,c(1, 2, 9:113)]
-     colnames(klb)[1] <- "Sample"
-     for(n in 1:nrow(klb)){
-       for(j in 1:ncol(klb)){
-        if(klb[n,j] == "-" & !is.na(klb[n,j])){
-          klb[n,j] <- gsub("-","$-$",klb[n,j])
+     if(nrow(klb) > 0) {
+       klb <- klb[,c(1, 2, 9:113)]
+       colnames(klb)[1] <- "Sample"
+       for(n in 1:nrow(klb)){
+         for(j in 1:ncol(klb)){
+          if(klb[n,j] == "-" & !is.na(klb[n,j])){
+            klb[n,j] <- gsub("-","$-$",klb[n,j])
+          }
         }
       }
-    }
-    return(klb)
+      return(klb)
+     }
+     
    }
   klb_tab <- as.data.frame(do.call(rbind, lapply(kleborate, kleborate_function)))
   if(dim(klb_tab)[1] != 0){
@@ -1367,10 +1393,13 @@ clermontyping <- list.files(path=paste0(path_output, "/ClermonTyping/"), pattern
 
    emmtyper_function <- function(i){
      em <- read.csv(i, sep= "\t", header=FALSE)
-     em$V1 <- basename(tools::file_path_sans_ext(em$V1))
-     names(em) <- c("Sample", "Number of Clusters", "Predicted emm-type", "Possible emm-like alleles", "EMM clusters")
-
-     return(em)
+     if(nrow(em) > 0) {
+       em$V1 <- basename(tools::file_path_sans_ext(em$V1))
+       names(em) <- c("Sample", "Number of Clusters", "Predicted emm-type", "Possible emm-like alleles", "EMM clusters")
+  
+       return(em)
+     }
+     
    }
   emm_tab <- as.data.frame(do.call(rbind, lapply(emmtyper, emmtyper_function)))
   print(kable(emm_tab) %>%
@@ -1392,9 +1421,12 @@ clermontyping <- list.files(path=paste0(path_output, "/ClermonTyping/"), pattern
 
    hicap_function <- function(i){
      hp <- read.csv(i, sep= "\t")
-     hp$X.isolate <- basename(tools::file_path_sans_ext(hp$X.isolate))
-     colnames(hp)[1] <- "Sample"
-     return(hp)
+     if(nrow(hp) > 0) {
+       hp$X.isolate <- basename(tools::file_path_sans_ext(hp$X.isolate))
+       colnames(hp)[1] <- "Sample"
+       return(hp)
+     }
+     
    }
   hp_tab <- as.data.frame(do.call(rbind, lapply(hicap, hicap_function)))
   if(dim(hp_tab)[1] != 0){
@@ -1420,11 +1452,14 @@ clermontyping <- list.files(path=paste0(path_output, "/ClermonTyping/"), pattern
 
    shigatyper_function <- function(i){
      sh <- read.csv(i, sep= "\t")
-     sh$sample <- gsub("shigatyper/", "", sh$sample)
-     names(sh) <- c("Sample", "Prediction", "ipaB", "Notes")
-     sh$ipaB[sh$ipaB == "+"] <- "$+$"
-     sh$ipaB[sh$ipaB == "-"] <- "$-$"
-     return(sh)
+     if(nrow(sh) > 0) {
+       sh$sample <- gsub("shigatyper/", "", sh$sample)
+       names(sh) <- c("Sample", "Prediction", "ipaB", "Notes")
+       sh$ipaB[sh$ipaB == "+"] <- "$+$"
+       sh$ipaB[sh$ipaB == "-"] <- "$-$"
+       return(sh)
+     }
+     
    }
   shiga_tab <- as.data.frame(do.call(rbind, lapply(shigatyper, shigatyper_function)))
   
@@ -1444,13 +1479,16 @@ clermontyping <- list.files(path=paste0(path_output, "/ClermonTyping/"), pattern
 
 ```{r ShigEiFinder, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
 
- shige <- list.files(path=paste0(path_output, "/shigeifinder/"), pattern = ".txt", full.names=TRUE, recursive=TRUE)
+ shige <- list.files(path=paste0(path_output, "/ShigEiFinder/"), pattern = ".txt", full.names=TRUE, recursive=TRUE)
 
     shige_function <- function(i){
       shi <- read.csv(i, sep= "\t")
-      colnames(shi)[1] <- "Sample"
-      if ("ipaH" %in% colnames(shi)) shi$ipaH[shi$ipaH == "+"] <- "$+$"
-      return(shi)
+      if(nrow(shi) > 0) {
+        colnames(shi)[1] <- "Sample"
+        if ("ipaH" %in% colnames(shi)) shi$ipaH[shi$ipaH == "+"] <- "$+$"
+        return(shi)
+      }
+      
     }
     
   shige_tab <- as.data.frame(do.call(rbind, lapply(shige,  shige_function)))
@@ -1477,18 +1515,20 @@ clermontyping <- list.files(path=paste0(path_output, "/ClermonTyping/"), pattern
 
    staphopia_function <- function(i){
      stap <- read.csv(i, sep= "\t")
-     stap$sample <- gsub(paste0(path_output, "/sccmec/"), "", i)
-     stap$sample <- gsub("/sccmec.tsv", "", stap$sample)
-     colnames(stap)[1] <- "Sample"
-     if ("mecA" %in% colnames(stap)) stap$mecA[stap$mecA == "+"] <- "$+$"
-      for(n in 1:nrow(stap)){
-             for(j in 1:ncol(stap)){
-              if(!is.na(stap[n,j]) & stap[n,j] == "-"){
-                stap[n,j] <- gsub("-","$-$",stap[n,j])
+     if(nrow(stap) > 0) {
+       stap$sample <- gsub(paste0(path_output, "/sccmec/"), "", i)
+       stap$sample <- gsub("/sccmec.tsv", "", stap$sample)
+       colnames(stap)[1] <- "Sample"
+       if ("mecA" %in% colnames(stap)) stap$mecA[stap$mecA == "+"] <- "$+$"
+        for(n in 1:nrow(stap)){
+               for(j in 1:ncol(stap)){
+                if(!is.na(stap[n,j]) & stap[n,j] == "-"){
+                  stap[n,j] <- gsub("-","$-$",stap[n,j])
+                }
               }
             }
-          }
-     return(stap)
+       return(stap)
+     }
    }
   stap_tab <- as.data.frame(do.call(rbind, lapply(staphopia, staphopia_function)))
  if(dim(stap_tab)[1] != 0){
@@ -1516,10 +1556,12 @@ clermontyping <- list.files(path=paste0(path_output, "/ClermonTyping/"), pattern
 
     spatyper_function <- function(i){
       spa <- read.csv(i, sep= "\t")
-      spa$Sample <- basename(tools::file_path_sans_ext(i))
-      spa <- spa[,c(4,1,2,3)]
-      colnames(spa)[2] <- "Sequence Name"
-      return(spa)
+      if(nrow(spa) > 0) {
+        spa$Sample <- basename(tools::file_path_sans_ext(i))
+        spa <- spa[,c(4,1,2,3)]
+        colnames(spa)[2] <- "Sequence Name"
+        return(spa)
+      }
    }
   spa_tab <- as.data.frame(do.call(rbind, lapply(spatyper,  spatyper_function)))
 
@@ -1543,8 +1585,10 @@ clermontyping <- list.files(path=paste0(path_output, "/ClermonTyping/"), pattern
 
     agrvate_function <- function(i){
       agr <- read.csv(i, sep= "\t")
-      colnames(agr)[1] <- "Sample"
-      return(agr)
+      if(nrow(agr) > 0) {
+        colnames(agr)[1] <- "Sample"
+        return(agr)
+      }
    }
   agr_tab <- as.data.frame(do.call(rbind, lapply(agrvate,  agrvate_function)))
 
@@ -1571,9 +1615,12 @@ clermontyping <- list.files(path=paste0(path_output, "/ClermonTyping/"), pattern
 
     pbptyper_function <- function(i){
       pbp <- read.csv(i, sep= "\t")
-      pbp$comment <- NULL
-      colnames(pbp)[1] <- "Sample"
-      return(pbp)
+      if(nrow(pbp) > 0) {
+        pbp$comment <- NULL
+        colnames(pbp)[1] <- "Sample"
+        return(pbp)
+      }
+      
    }
   pbp_tab <- as.data.frame(do.call(rbind, lapply(pbptyper,  pbptyper_function)))
 if(dim(pbp_tab)[1] != 0){
@@ -1598,10 +1645,13 @@ if(dim(pbp_tab)[1] != 0){
 
     lissero_function <- function(i){
       lis <- read.csv(i, sep= "\t")
-      lis$comment <- NULL
-      #lis <- lis[,c(4,1,2,3)]
-      colnames(lis)[1] <- "Sample"
-      return(lis)
+      if(nrow(lis) > 0) {
+        lis$comment <- NULL
+        #lis <- lis[,c(4,1,2,3)]
+        colnames(lis)[1] <- "Sample"
+        return(lis)
+      }
+      
    }
   lis_tab <- as.data.frame(do.call(rbind, lapply(lissero,  lissero_function)))
 
@@ -1625,8 +1675,10 @@ if(dim(pbp_tab)[1] != 0){
 
     legsta_function <- function(i){
       leg <- read.csv(i, sep= "\t")
-      colnames(leg)[1] <- "Sample"
-      return(leg)
+      if(nrow(leg) > 0) {
+        colnames(leg)[1] <- "Sample"
+        return(leg)
+      }
    }
   leg_tab <- as.data.frame(do.call(rbind, lapply(legsta,  legsta_function)))
 
@@ -1651,9 +1703,12 @@ if(dim(pbp_tab)[1] != 0){
 
     meningotype_function <- function(i){
       men <- read.csv(i, sep= "\t")
-      colnames(men)[1] <- "Sample"
-      men$Sample <- basename(tools::file_path_sans_ext(men$Sample))
-      return(men)
+      if(nrow(men) > 0) {
+        colnames(men)[1] <- "Sample"
+        men$Sample <- basename(tools::file_path_sans_ext(men$Sample))
+        return(men)
+      }
+      
    }
   men_tab <- as.data.frame(do.call(rbind, lapply(meningotype,  meningotype_function)))
 
@@ -1678,10 +1733,13 @@ if(dim(pbp_tab)[1] != 0){
 
     ngmaster_function <- function(i){
       ng <- read.csv(i, sep= "\t")
-      colnames(ng)[1] <- "Sample"
-      ng$Sample <- basename(tools::file_path_sans_ext(i))
-      colnames(ng) <- gsub("\\.", "-", colnames(ng))
-      return(ng)
+      if(nrow(ng) > 0) {
+        colnames(ng)[1] <- "Sample"
+        ng$Sample <- basename(tools::file_path_sans_ext(i))
+        colnames(ng) <- gsub("\\.", "-", colnames(ng))
+        return(ng)
+      }
+      
    }
   ng_tab <- as.data.frame(do.call(rbind, lapply(ngmaster,  ngmaster_function)))
 
@@ -1710,9 +1768,12 @@ pasty <- pasty[-c(a,b)]
 
     pasty_function <- function(i){
       pa <- read.csv(i, sep= "\t")
-      colnames(pa)[1] <- "Sample"
-      pa <- pa[,c(1:4)]
-      return(pa)
+      if(nrow(pa) > 0) {
+        colnames(pa)[1] <- "Sample"
+        pa <- pa[,c(1:4)]
+        return(pa)
+      }
+      
    }
   pa_tab <- as.data.frame(do.call(rbind, lapply(pasty,  pasty_function)))
 

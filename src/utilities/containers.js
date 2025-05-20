@@ -190,6 +190,8 @@ async function downloadFile (source, destination, statusMessage) {
   });
 }
 
+// download inside "resources and not resources/genomad_db"
+
 // async function downloadGenomad (destination, statusMessage) {
 //   return new Promise((resolve, reject) => {
 //     const downloadProcess = spawn('genomad', ['download-database', destination]);
