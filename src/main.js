@@ -1,13 +1,13 @@
 import { app, BrowserWindow, screen, dialog, ipcMain, Menu, shell } from 'electron';
-import started                                                      from 'electron-squirrel-startup';
-import { spawn, execSync, exec }                                          from 'child_process';
-import os                                                           from 'os';
-import fs                                                           from 'fs';
-import fsExtra                                                      from 'fs-extra';
-import path                                                         from 'path';
+import started from 'electron-squirrel-startup';
+import { spawn, execSync, exec } from 'child_process';
+import os from 'os';
+import fs from 'fs';
+import fsExtra from 'fs-extra';
+import path from 'path';
 import yaml from 'js-yaml';
-import { checkDockerInstalled, checkDockerRunning }                 from './utilities/functions.js';
-import { setupContainer, prepareSnakemakeCommand, runAnalysis, produceReport, checkContainerRunning }     from './utilities/containers.js';
+import { checkDockerInstalled, checkDockerRunning } from './utilities/functions.js';
+import { setupContainer, prepareSnakemakeCommand, runAnalysis, produceReport, checkContainerRunning } from './utilities/containers.js';
 // per testare su container giocattolo
 // import { prepareSnakemakeCommand } from './utilities/docker_utils.js';
 
@@ -155,7 +155,7 @@ const createWindow = () => {
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
 
   // Open the DevTools.
-  // mainWindow.webContents.openDevTools();
+  mainWindow.webContents.openDevTools();
 };
 
 // This method will be called when Electron has finished
@@ -353,7 +353,7 @@ ipcMain.handle('docker-running', async function () {
 //   }
 // })
 
-function navigate (page) {
+function navigate(page) {
   console.log('From main process: navigating to', page);
   if (mainWindow && mainWindow.webContents) {
     mainWindow.webContents.send('navigate', page);
@@ -388,7 +388,7 @@ ipcMain.handle('check-container', async (event) => {
     console.log("Container status: ", result);
     return result;
   } catch (error) {
-    throw(error);
+    throw (error);
   }
 })
 
@@ -464,22 +464,22 @@ ipcMain.on('launch-report', async (event) => {
 
 // validate input folder
 ipcMain.handle('validate-folder', async (event, inputFolder, type) => {
-  const response = {success: false, message: ""};
+  const response = { success: false, message: "" };
   try {
     const files = fs.readdirSync(inputFolder);
-      let invalidFiles = [];
-      if (type === "fasta" || type === "Fasta") {
-        invalidFiles = files.filter(file => path.extname(file).toLowerCase() !== `.${type}`);
-      } else if (type === "fastq" || type === "Fastq") {
-        invalidFiles = files.filter(file => 
-          !file.toLowerCase().endsWith(".fq.gz") &&
-          !file.toLowerCase().endsWith(".fastq.gz")
-        );
-      }
-      console.log("Invalid files: ", invalidFiles);
-  
-      const outputFolder = "output";
-      invalidFiles = invalidFiles.filter(file => !file.endsWith("Zone.Identifier"));
+    let invalidFiles = [];
+    if (type === "fasta" || type === "Fasta") {
+      invalidFiles = files.filter(file => path.extname(file).toLowerCase() !== `.${type}`);
+    } else if (type === "fastq" || type === "Fastq") {
+      invalidFiles = files.filter(file =>
+        !file.toLowerCase().endsWith(".fq.gz") &&
+        !file.toLowerCase().endsWith(".fastq.gz")
+      );
+    }
+    console.log("Invalid files: ", invalidFiles);
+
+    const outputFolder = "output";
+    invalidFiles = invalidFiles.filter(file => !file.endsWith("Zone.Identifier"));
 
     if (invalidFiles.length > 0) {
       if (invalidFiles.includes(outputFolder)) {
@@ -495,11 +495,11 @@ ipcMain.handle('validate-folder', async (event, inputFolder, type) => {
       }
       return response;
     }
-    
+
     response.success = true;
     response.message = "Ok";
     return response;
-  } catch(error) {
+  } catch (error) {
     console.error("Error: ", error);
     response.success = false;
     response.message = error.message;
@@ -524,7 +524,7 @@ ipcMain.handle('save-file', async (event, yamlData) => {
 });
 
 // pick report dir
-ipcMain.handle('pick-rep-dir', async(event) => {
+ipcMain.handle('pick-rep-dir', async (event) => {
   // const configFilePath = path.join(configPath, "config.yaml");
   // const config = yaml.load(fs.readFileSync(configFilePath, 'utf8'));
   const analysisName = userAnalysisName;
@@ -533,7 +533,7 @@ ipcMain.handle('pick-rep-dir', async(event) => {
   return reportPath;
 })
 
-ipcMain.handle ('readHTML', async(event, filePath) => {
+ipcMain.handle('readHTML', async (event, filePath) => {
   return fs.readFileSync(filePath, 'utf8');
 })
 

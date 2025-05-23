@@ -1,8 +1,8 @@
 // utils to create Docker container
 
 import { spawn, spawnSync } from 'child_process';
-import os                   from 'os';
-import fs                     from 'fs-extra';
+import os from 'os';
+import fs from 'fs-extra';
 import { app, BrowserWindow } from 'electron';
 import { checkDockerInstalled } from './functions';
 
@@ -54,14 +54,13 @@ export async function checkContainerRunning(containerName) {
     throw error;
   }
 }
-export async function setupContainer (imageName, configPath, containerName) {
-  // Esegui tutte le operazioni in sequenza
+export async function setupContainer(imageName, configPath, containerName) {
   try {
     await pullImage(imageName);
     await downloadDatabases(configPath);
     await createContainer(imageName, containerName, configPath);
-    await startContainer(containerName);
-    await updateContainer(containerName);
+    // await startContainer(containerName);
+    // await updateContainer(containerName);
 
     return 'Container created successfully';
   } catch (error) {
@@ -70,8 +69,8 @@ export async function setupContainer (imageName, configPath, containerName) {
 }
 
 // utility for below functions
-function emitProgress (status, progress) {
-  const window = BrowserWindow.getAllWindows()[0]; // Recupera la finestra principale
+function emitProgress(status, progress) {
+  const window = BrowserWindow.getAllWindows()[0];
   if (window) {
     window.webContents.send('progress', { status, progress });
   } else {
@@ -80,7 +79,7 @@ function emitProgress (status, progress) {
 }
 
 // pull docker image
-async function pullImage (imageName) {
+async function pullImage(imageName) {
   return new Promise((resolve, reject) => {
     docker.pull(imageName, (err, stream) => {
       if (err) {
@@ -89,7 +88,7 @@ async function pullImage (imageName) {
       docker.modem.followProgress(stream, onFinished, onProgress);
     });
 
-    function onFinished (err, output) {
+    function onFinished(err, output) {
       if (err) {
         return reject(err);
       }
@@ -100,7 +99,7 @@ async function pullImage (imageName) {
     const steps = 3; //pulling from, digest, status
     let layersCounter = 0;
 
-    function onProgress (event) {
+    function onProgress(event) {
       if (event.status) {
         //progress diviso su 3 + number of layers steps = totProg
         // totProg : 100 = 1 : x
@@ -133,9 +132,10 @@ async function pullImage (imageName) {
 
 }
 
-async function downloadDatabases (configPath) {
+// download databases in the local machine
+async function downloadDatabases(configPath) {
   emitProgress('Step 2: Preparing to download databases...', 0);
-  const resourcesDir = path.join(configPath, '/resources');
+  const resourcesDir = path.join(configPath, 'resources');
   try {
     if (!fs.existsSync(resourcesDir)) {
       fs.mkdirSync(resourcesDir, { recursive: true });
@@ -143,7 +143,7 @@ async function downloadDatabases (configPath) {
     let platform = os.platform();
     await fetchKrakenDB(resourcesDir, platform);
     await fetchVirulenceDB(resourcesDir, platform);
-    await prepareGenomadDB(resourcesDir);
+    await fetchGenomadDB(resourcesDir);
     emitProgress('Completed step 2/4', 100);
 
   } catch (error) {
@@ -152,7 +152,7 @@ async function downloadDatabases (configPath) {
   }
 }
 
-function processCurlOutput (data, statusMessage) {
+function processCurlOutput(data, statusMessage) {
   const match = data.toString().match(/(\d+)%/);
   if (match) {
     emitProgress(statusMessage, parseInt(match[1]));
@@ -169,7 +169,7 @@ function processCurlOutput (data, statusMessage) {
   }
 }
 
-async function downloadFile (source, destination, statusMessage) {
+async function downloadFile(source, destination, statusMessage) {
   return new Promise((resolve, reject) => {
     const downloadProcess = spawn('curl', ['-L', source, '-o', destination]);
     downloadProcess.stdout.setEncoding('utf8');
@@ -190,11 +190,9 @@ async function downloadFile (source, destination, statusMessage) {
   });
 }
 
-// download inside "resources and not resources/genomad_db"
-
-// async function downloadGenomad (destination, statusMessage) {
+// async function downloadGenomad(destination, statusMessage) {
 //   return new Promise((resolve, reject) => {
-//     const downloadProcess = spawn('genomad', ['download-database', destination]);
+//     const downloadProcess = spawn('genomad', ['download-database', destination]); //NO: DOWNLOAD FROM ZENODO
 //     downloadProcess.stdout.setEncoding('utf8');
 //     downloadProcess.stderr.setEncoding('utf8');
 //     downloadProcess.stdout.on('data', (data) => {
@@ -222,13 +220,12 @@ async function downloadFile (source, destination, statusMessage) {
 // }
 
 // download kraken db
-async function fetchKrakenDB (resourcesDir, platform) {
+async function fetchKrakenDB(resourcesDir, platform) {
   const krakenDir = path.join(resourcesDir, 'kraken2db');
   const krakenDB = 'k2_standard_08gb_20240904.tar.gz';
   const krakenDBPath = 'https://genome-idx.s3.amazonaws.com/kraken/k2_standard_08gb_20240904.tar.gz';
   const tarFilePath = path.join(krakenDir, krakenDB);
   try {
-    
     checkDir(krakenDir);
 
     if (fs.existsSync(tarFilePath)) {
@@ -262,15 +259,13 @@ async function fetchKrakenDB (resourcesDir, platform) {
 }
 
 // download virulence_finder db
-async function fetchVirulenceDB (resourcesDir, platform) {
+async function fetchVirulenceDB(resourcesDir, platform) {
   const vfDBDir = path.join(resourcesDir, 'virulencefinder_db');
   const vfDB = 'master.tar.gz';
   const vfDBPath = 'https://bitbucket.org/genomicepidemiology/virulencefinder_db/get/master.tar.gz';
   const tarFilePath = path.join(vfDBDir, vfDB);
   try {
-    if (!fs.existsSync(vfDBDir)) {
-      fs.mkdirSync(vfDBDir, { recursive: true });
-    }
+    checkDir(vfDBDir);
 
     if (fs.existsSync(tarFilePath)) {
       console.log(`Virulence finder db: ${vfDB} found in ${vfDBDir}. Skipping download`);
@@ -300,43 +295,61 @@ async function fetchVirulenceDB (resourcesDir, platform) {
   }
 }
 
-// download genomad db
-async function prepareGenomadDB (resourcesDir) {
+// download genomad_db into the resourcesDir, as it automatically creates the genomad_db directory
+async function fetchGenomadDB(resourcesDir) {
   const genomadDir = path.join(resourcesDir, 'genomad_db');
-  const controlFile = path.join(genomadDir, "genomad_db");
+  const genomadDB = "genomad_db_v1.9.tar.gz";
+  const genomadDBPath = "https://zenodo.org/records/14886553/files/genomad_db_v1.9.tar.gz";
+  const tarFilePath = path.join(genomadDir, genomadDB);
 
   try {
-    // probably dir not needed as it
-    checkDir(genomadDir);
+    checkDir(resourcesDir);
 
-    // if (fs.existsSync(controlFile)) {
-    //   console.log(`Genomad db found in ${genomadDir}. Skipping download`);
-    //   emitProgress('Genomad db already exists in folder. Skipping download', 100);
-    //   return;
-    // } else {
-    //   emitProgress('Downloading Genomad DB', 0);
-    //   await downloadGenomad(genomadDir, 'Downloading Genomad DB');
-    //   emitProgress('Downloading Genomad DB', 100);
-    // }
+    if (fs.existsSync(tarFilePath)) {
+      console.log(`Virulence finder db: ${genomadDB} found in ${genomadDir}. Skipping download`);
+      emitProgress('Virulence finder db already exists in folder. Skipping download', 50);
+      const files = fs.readdirSync(genomadDir);
+      if (files.length === 1 && files[0] === genomadDB) {
+        console.log('File zipped: unzipping...');
+        emitProgress('Unzipping...', 51);
+        //unzipFile(platform, tarFilePath, genomadDir);
+        spawnSync('tar', ['-xvf', tarFilePath, '-C', genomadDir, '--strip-components', '1'], { stdio: 'inherit' });
+        emitProgress('Unzipping Virulence Finder DB', 100);
+      } else {
+        console.log('Skipping unzip');
+        emitProgress('Virulence finder db already unzipped', 100);
+      }
+      console.log('Virulence finder done');
+      return;
+    } else {
+      await downloadFile(genomadDBPath, tarFilePath, 'Downloading VirulenceFinder DB');
+      emitProgress('Unzipping VirulenceFinder DB', 0);
+      spawnSync('tar', ['-xvf', tarFilePath, '-C', genomadDir, '--strip-components', '1'], { stdio: 'inherit' });
+      // unzipFile(platform, tarFilePath, genomadDir);
+      emitProgress('Unzipping VirulenceFinder DB', 100);
+    }
   } catch (error) {
     throw (error);
   }
 }
 
 function checkDir(directory) {
-  if(!fs.existsSync(directory)) {
+  if (!fs.existsSync(directory)) {
     fs.mkdirSync(directory, { recursive: true });
   }
 }
 
 // function to create container
-async function createContainer (imageName, containerName, snakemakePath) {
+async function createContainer(imageName, containerName, snakemakePath) {
   emitProgress(`Step 3: Creating container ${containerName}...`, 0);
   const toolsPath = path.join(snakemakePath, "tools");
-  const vfUSerPath = path.join(snakemakePath, "resources", "virulencefinder_db");
-  const containerVfPath = "/project/snakemake/resources/virulencefinder_db";
-  const genomadDir = path.join(snakemakePath, "resources", "genomad_db");
-  const containerGenomadPath = "/project/snakemake/resources/genomad_db";
+  const containerToolsPath = "/project/snakemake/tools";
+  const resourcesPath = path.join(snakemakePath, "resources");
+  const containerResPath = "/project/snakemake/resources";
+  // const vfUSerPath = path.join(snakemakePath, "resources", "virulencefinder_db");
+  // const containerVfPath = "/project/snakemake/resources/virulencefinder_db";
+  // const genomadDir = path.join(snakemakePath, "resources", "genomad_db");
+  // const containerGenomadPath = "/project/snakemake/resources/genomad_db";
   const amrfinderHostPath = path.join(snakemakePath, "resources", "amrfinder");
   const amrfinderVolume = '/opt/conda/envs/bacEnv/share/amrfinderplus';
 
@@ -355,38 +368,38 @@ async function createContainer (imageName, containerName, snakemakePath) {
       return;
     }
 
-    //prova a inserire a creazione lo scaricamento del db di amrfinder
-    //monta questa directory: /opt/conda/envs/bacEnv/share/amrfinderplus nelle resources del sistema host
+    // insert amrfinder db during container creation.
+    // Directory to mount (from the container to the resources of the host system): /opt/conda/envs/bacEnv/share/amrfinderplus
 
     await docker.createContainer({
       Image: imageName,
       name: containerName,
-      // at the moment server error while trying to fetch genomad
-      // Cmd: ['/bin/bash', '-c', `source /opt/conda/etc/profile.d/conda.sh &&
-      //   conda activate bacEnv &&
-      //   amrfinder -u &&
-      //   genomad download-database  ${containerGenomadPath} &&
-      //   while true; do sleep 30; done`],
       Cmd: ['/bin/bash', '-c', `source /opt/conda/etc/profile.d/conda.sh &&
         conda activate bacEnv &&
         amrfinder -u &&
         while true; do sleep 30; done`],
+
       // Volumes: {
       //   [`${containerVfPath}`]: {},
+      //   [`${amrfinderVolume}`]: {},
+      //   [`${containerGenomadPath}`]: {},
       // },
       Volumes: {
-        [`${containerVfPath}`]: {},
+        [`${containerToolsPath}`]: {},
         [`${amrfinderVolume}`]: {},
-        [`${containerGenomadPath}`]: {},
+        [`${containerResPath}`]: {},
       },
       HostConfig: {
         // Binds: [
         //   `${vfUSerPath}:${containerVfPath}`,
+        //   `${amrfinderHostPath}:${amrfinderVolume}`,
+        //   `${genomadDir}:${containerGenomadPath}`,
         // ],
+
         Binds: [
-          `${vfUSerPath}:${containerVfPath}`,
+          `${toolsPath}:${containerToolsPath}`,
           `${amrfinderHostPath}:${amrfinderVolume}`,
-          `${genomadDir}:${containerGenomadPath}`,
+          `${resourcesPath}:${containerResPath}`,
         ],
         RestartPolicy: { Name: 'no' },
       },
@@ -396,7 +409,6 @@ async function createContainer (imageName, containerName, snakemakePath) {
     console.log(`Container ${containerName} created`);
     const volumes = containerInfo.Mounts;
 
-    // Se non ci sono volumi, segnaliamo che non ci sono
     if (!volumes || volumes.length === 0) {
       console.log('No volumes mounted on this container.');
       return;
@@ -412,17 +424,17 @@ async function createContainer (imageName, containerName, snakemakePath) {
 }
 
 // call this function for second usage and further too, to start the container if it is not running
-async function startContainer (containerName) {
+async function startContainer(containerName) {
   try {
     emitProgress(`Step 4: Starting container...`, 0);
     await checkContainerRunning(containerName);
-  } catch(error) {
-    throw(error);
+  } catch (error) {
+    throw (error);
   }
 }
 
 // change the INPUT field in the config file of the container
-async function updateConfigFile (configFilePath) {
+async function updateConfigFile(configFilePath) {
   try {
     const config = yaml.load(fs.readFileSync(configFilePath, 'utf8'));
     config.INPUT = containerInput;
@@ -434,7 +446,7 @@ async function updateConfigFile (configFilePath) {
   }
 }
 
-export async function prepareSnakemakeCommand (containerName, userInput, snakefileDir) {
+export async function prepareSnakemakeCommand(containerName, userInput, snakefileDir) {
   const container = docker.getContainer(containerName);
   try {
     // await restartIfNeeded(container, containerName);
@@ -464,7 +476,7 @@ export async function prepareSnakemakeCommand (containerName, userInput, snakefi
 
 }
 
-async function mapIO (containerName, userInput, userConfigPath) {
+async function mapIO(containerName, userInput, userConfigPath) {
   const snakemakeDir = path.dirname(userConfigPath);
   const userOutput = path.join(userInput, 'output');
   const containerConfigPath = ('/project/snakemake/');
@@ -531,7 +543,7 @@ async function mapIO (containerName, userInput, userConfigPath) {
   }
 }
 
-function liveDemuxStream (stream, onStdout, onStderr, onEnd, checkRunning, timeoutRunning) {
+function liveDemuxStream(stream, onStdout, onStderr, onEnd, checkRunning, timeoutRunning) {
   timeoutRunning = timeoutRunning || 30000;
   let nextDataType = null;
   let nextDataLength = -1;
@@ -586,7 +598,7 @@ function liveDemuxStream (stream, onStdout, onStderr, onEnd, checkRunning, timeo
   }
 }
 
-async function demuxStream (stream, onStdout, onStderr, onEnd, checkRunning, timeoutRunning) {
+async function demuxStream(stream, onStdout, onStderr, onEnd, checkRunning, timeoutRunning) {
   timeoutRunning = timeoutRunning || 30000;
   return new Promise((resolve) => {
     liveDemuxStream(
@@ -638,7 +650,7 @@ async function updateContainer(containerName) {
         const code = (d) ? d.ExitCode : null;
         console.log(`Process exited with code: ${code}`);
         if (code !== 0) {
-          throw new Error (`Process exited with code: ${code}`);
+          throw new Error(`Process exited with code: ${code}`);
         }
       })().catch(console.error);
     },
@@ -647,10 +659,10 @@ async function updateContainer(containerName) {
       return !!(d && d.Running);
     }
   );
-  return;  
+  return;
 }
 
-export async function runAnalysis (containerName, reply, onError) {
+export async function runAnalysis(containerName, reply, onError) {
   const snakefileDir = '/project/snakemake';
   const containerConfigPath = '/project/snakemake/config.yaml';
   const container = docker.getContainer(containerName);
@@ -682,7 +694,7 @@ export async function runAnalysis (containerName, reply, onError) {
         } else if (code === 0) {
           const endMessage = `Workflow completed: Snakemake exited with code ${code}`;
           console.error();
-          reply({ stdout: null, stderr: endMessage});
+          reply({ stdout: null, stderr: endMessage });
         }
       })().catch(console.error);
     },
@@ -704,7 +716,7 @@ export async function produceReport(containerName, reply, onError, localConfigDi
   const coverage = config.COVERAGE;
   const reportFile = `project/user-input/output/${analysisName}_report.html`;
   const container = docker.getContainer(containerName);
-  
+
   const exec = await container.exec({
     Cmd: ['bash', '-c', `source /opt/conda/etc/profile.d/conda.sh && conda activate bacEnv && Rscript -e "rmarkdown::render('${report}', output_file='${reportFile}',
         output_dir = '${containerOutput}', params=list(path_output='${containerOutput}',

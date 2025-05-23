@@ -48,15 +48,17 @@ WORKDIR /project/scripts
 
 # Install other packages
 RUN echo "Installing packages..." && \
+    echo "RGI" && \
+    pip install git+https://github.com/arpcard/rgi.git && \
     echo "sccmec" && \
     git clone --recurse-submodules https://github.com/rpetit3/sccmec && \
     echo "fimtyper" && \
-    git clone https://bitbucket.org/genomicepidemiology/fimtyper.git \
-    cd fimtyper \
-    git clone https://bitbucket.org/genomicepidemiology/fimtyper_db.git \
-    make install \
-    echo "ClermonTyping" \
-    git clone https://github.com/happykhan/ClermonTyping.git \
+    git clone https://bitbucket.org/genomicepidemiology/fimtyper.git && \
+    cd fimtyper && \
+    git clone https://bitbucket.org/genomicepidemiology/fimtyper_db.git && \
+    make install && \
+    echo "ClermonTyping" && \
+    git clone https://github.com/happykhan/ClermonTyping.git && \
     echo "trim-galore" && \
     curl -L https://github.com/FelixKrueger/TrimGalore/archive/refs/heads/master.zip -o master.zip && \
     unzip master.zip && \
@@ -68,9 +70,10 @@ RUN echo "Installing packages..." && \
     gunzip usearch11.0.667_i86linux32.gz && \
     chmod 755 usearch11.0.667_i86linux32 && \
     echo "R packages" && \
-    Rscript -e 'install.packages("openxlsx", repos="https://cran.r-project.org/"); \
-                install.packages("DT", repos="https://cran.r-project.org/"); \
-                quit(save="no")'
+    Rscript -e "install.packages(c('openxlsx', 'DT', 'dplyr', 'circlize', 'stringr', 'kableExtra'), repos='https://cran.r-project.org/'); \
+                if (!require('BiocManager', quietly = TRUE)) install.packages('BiocManager', repos='https://cran.r-project.org/'); \
+                BiocManager::install('ComplexHeatmap'); \
+                quit(save='no')"
 
 WORKDIR /project
 
