@@ -457,8 +457,7 @@ ipcMain.handle('validate-folder', async (event, inputFolder, type) => {
     console.log("Invalid files: ", invalidFiles);
 
     const outputFolder = "output";
-    // AGGIUNGI IL FILE CREATO DA MAC
-    invalidFiles = invalidFiles.filter(file => !file.endsWith("Zone.Identifier"));
+    invalidFiles = invalidFiles.filter(file => !file.match(/(Zone.Identifier|DS_Store)/));
 
     if (invalidFiles.length > 0) {
       if (invalidFiles.includes(outputFolder)) {
