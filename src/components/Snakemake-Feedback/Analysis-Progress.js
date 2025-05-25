@@ -20,7 +20,7 @@ export default function AnalysisProg({progress, setProgress}) {
 
             if (data.stderr) {
                 console.log("Data.stderr: ", data.stderr);
-                if (data.stderr.match(/WorkflowError/) || data.stderr.match(/IncompleteFilesException/)) {
+                if (data.stderr.match(/(Error|Exception|Traceback)/)) {
                     setError({error: true, message: `Error: ${data.stderr}`});
                     console.log("STOPPED EXECUTION");
                     return;

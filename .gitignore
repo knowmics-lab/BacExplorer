@@ -1,5 +1,6 @@
 node_modules
 out
+release
 snakemake/resources/virulencefinder_db
 snakemake/resources/genomad_db
 snakemake/resources/kraken2db

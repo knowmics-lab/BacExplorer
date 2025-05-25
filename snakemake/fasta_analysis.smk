@@ -276,6 +276,7 @@ rule genomad:
             """)
         else:
             shell(f"""
+            mkdir -p {output.genomad}
             touch {output.genomad}/skipped.marker
             """)
 

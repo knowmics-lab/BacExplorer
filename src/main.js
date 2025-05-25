@@ -285,8 +285,8 @@ app.on('window-all-closed', () => {
 // })
 
 // save config file directly into userData
-const configPath = path.join(app.getPath('userData'), 'snakemake');
-const imageName = 'priviteragf/bacexplorer:latest';
+const backendPath = path.join(app.getPath('userData'), 'snakemake');
+const imageName = 'adrianacannata/bacexplorer:latest';
 const containerName = 'snakemakeContainer';
 
 // ipcMain.on('progress', (event, data) => {
@@ -331,28 +331,6 @@ ipcMain.handle('docker-running', async function () {
   }
 });
 
-// environment setup
-// ipcMain.handle('create-container', async function() {
-//   try {
-//     const response = await setupContainer(configPath, imageName, containerName);
-//     console.log("In main.js: ", response);
-//     return response;
-//   } catch (error) {
-//     throw (error);
-//   }
-// })
-
-// ipcMain.handle('check-image', async (event) => {
-//   try {
-//     const response = await pullDockerImage(imageName);
-//     console.log(response);
-//     return response;
-//   } catch (error) {
-//     console.error(error);
-//     throw(error);
-//   }
-// })
-
 function navigate(page) {
   console.log('From main process: navigating to', page);
   if (mainWindow && mainWindow.webContents) {
@@ -369,8 +347,8 @@ ipcMain.handle('navigate', (event, page) => {
 ipcMain.handle('create-container', async (event) => {
   try {
     console.log(
-      `Creating container with parameters: \nIMAGE NAME: ${imageName}\tFOLDER TO MOUNT: ${configPath}\tCONTAINER NAME: ${containerName}`);
-    const result = await setupContainer(imageName, configPath, containerName);
+      `Creating container with parameters: \nIMAGE NAME: ${imageName}\tFOLDER TO MOUNT: ${backendPath}\tCONTAINER NAME: ${containerName}`);
+    const result = await setupContainer(imageName, backendPath, containerName);
     console.log('Result:', result);
     return result;
   } catch (error) {
@@ -378,7 +356,7 @@ ipcMain.handle('create-container', async (event) => {
     if (error.message.includes('connect ENOENT')) {
       message = 'Run Docker first!';
     }
-    throw new Error(`Error creating container: ${message}`);
+    throw new Error(`${message}`);
   }
 });
 
@@ -415,8 +393,8 @@ function saveUserInput(configFile) {
 
 // launch analysis via snakemake
 ipcMain.handle('run-snakemake', async (event, userInput) => {
-  const configFile = path.join(configPath, 'config.yaml');
-  // salva correttamente nella cartella userData
+  const configFile = path.join(backendPath, 'config.yaml');
+  // save in folder userData
 
   if (!fs.existsSync(configFile)) {
     console.error(`Config file not found in: ${configFile}`);
@@ -458,7 +436,7 @@ ipcMain.on('launch-report', async (event) => {
   await produceReport(containerName,
     data => event.reply('report-output', data),
     data => event.reply('report-error', data),
-    configPath,
+    backendPath,
   );
 })
 
@@ -479,11 +457,20 @@ ipcMain.handle('validate-folder', async (event, inputFolder, type) => {
     console.log("Invalid files: ", invalidFiles);
 
     const outputFolder = "output";
+    // AGGIUNGI IL FILE CREATO DA MAC
     invalidFiles = invalidFiles.filter(file => !file.endsWith("Zone.Identifier"));
 
     if (invalidFiles.length > 0) {
       if (invalidFiles.includes(outputFolder)) {
         const message = "Output folders already exists: files will be overwritten";
+        // remove output folder
+        fs.unlink(outputFolder, err => {
+          console.log("Removing output folder...");
+          if (err) {
+            throw ("Error while removing output folder: ", err);
+          }
+          console.log("Output folder removed successfully");
+        })
         response.success = true;
         response.message = message;
         console.error(response);
@@ -509,7 +496,7 @@ ipcMain.handle('validate-folder', async (event, inputFolder, type) => {
 
 // save config file
 ipcMain.handle('save-file', async (event, yamlData) => {
-  const configFile = path.join(configPath, 'config.yaml');
+  const configFile = path.join(backendPath, 'config.yaml');
   try {
     fs.writeFileSync(configFile, yamlData, 'utf8');
     console.log('File saved as:', configFile);
@@ -525,7 +512,7 @@ ipcMain.handle('save-file', async (event, yamlData) => {
 
 // pick report dir
 ipcMain.handle('pick-rep-dir', async (event) => {
-  // const configFilePath = path.join(configPath, "config.yaml");
+  // const configFilePath = path.join(backendPath, "config.yaml");
   // const config = yaml.load(fs.readFileSync(configFilePath, 'utf8'));
   const analysisName = userAnalysisName;
   const inputFolder = originalConfigInput;
@@ -554,3 +541,53 @@ ipcMain.handle("create-temp-html-file", async (event, htmlContent) => {
 ipcMain.handle("open-html", (event, htmlFile) => {
   shell.openExternal(`file://${htmlFile}`);
 })
+
+
+ipcMain.handle('get-genus-species', async () => {
+  const appPath = app.getAppPath();
+  const filePath = path.join(appPath, 'snakemake', 'resources', 'Lista_mlst.csv');
+  try {
+    const data = await fs.promises.readFile(filePath, 'utf8');
+    const dict = {};
+
+    const lines = data.split('\n');
+
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+
+      const parts = line.split(/\,+/);
+      if (parts.length >= 2) {
+        const [rawGenus, rawSpecies] = parts[1].split('_');
+        const genus = rawGenus.replace(/"/g, '');
+        if (rawSpecies) {
+          const species = rawSpecies.replace(/"/g, '');
+          if (genus && species) {
+            if (!dict[genus]) {
+              dict[genus] = new Set();
+            }
+            dict[genus].add(species);
+            
+            if (!dict[genus].has(null)) {
+              dict[genus].add(null);
+            }
+          }
+        } else {
+          if (!dict[genus]) {
+            dict[genus] = new Set();
+          }
+          dict[genus].add("");
+        }
+      }
+    }
+
+    const genusSpeciesMap = {};
+    for (const genus in dict) {
+      genusSpeciesMap[genus] = Array.from(dict[genus]);
+    }
+    return genusSpeciesMap;
+  } catch (err) {
+    console.error('Error reading file:', err);
+    throw err;
+  }
+});

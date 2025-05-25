@@ -37,6 +37,8 @@ const containerConfigPath = "/project/snakemake/config.yaml";
 const containerResPath = "/project/snakemake/resources/";
 
 // function for second usage and further: check if snakemakeContainer is running, otherwise start it
+
+// TO DO: check if the downloaded image is the latest version. Otherwise produce a message to redirect to setup container
 export async function checkContainerRunning(containerName) {
   const container = docker.getContainer(containerName);
   try {
@@ -54,13 +56,14 @@ export async function checkContainerRunning(containerName) {
     throw error;
   }
 }
-export async function setupContainer(imageName, configPath, containerName) {
+export async function setupContainer(imageName, backendPath, containerName) {
   try {
     await pullImage(imageName);
-    await downloadDatabases(configPath);
-    await createContainer(imageName, containerName, configPath);
-    // await startContainer(containerName);
-    // await updateContainer(containerName);
+    await downloadDatabases(backendPath);
+    await fetchTrimGalore(backendPath);
+    await createContainer(imageName, containerName, backendPath);
+    await startContainer(containerName);
+    await updateContainer(containerName);
 
     return 'Container created successfully';
   } catch (error) {
@@ -133,9 +136,9 @@ async function pullImage(imageName) {
 }
 
 // download databases in the local machine
-async function downloadDatabases(configPath) {
+async function downloadDatabases(backendPath) {
   emitProgress('Step 2: Preparing to download databases...', 0);
-  const resourcesDir = path.join(configPath, 'resources');
+  const resourcesDir = path.join(backendPath, 'resources');
   try {
     if (!fs.existsSync(resourcesDir)) {
       fs.mkdirSync(resourcesDir, { recursive: true });
@@ -147,7 +150,6 @@ async function downloadDatabases(configPath) {
     emitProgress('Completed step 2/4', 100);
 
   } catch (error) {
-    // TODO: handle this error in renderer
     throw (error);
   }
 }
@@ -190,41 +192,13 @@ async function downloadFile(source, destination, statusMessage) {
   });
 }
 
-// async function downloadGenomad(destination, statusMessage) {
-//   return new Promise((resolve, reject) => {
-//     const downloadProcess = spawn('genomad', ['download-database', destination]); //NO: DOWNLOAD FROM ZENODO
-//     downloadProcess.stdout.setEncoding('utf8');
-//     downloadProcess.stderr.setEncoding('utf8');
-//     downloadProcess.stdout.on('data', (data) => {
-//       processCurlOutput(data, statusMessage);
-//     });
-//     downloadProcess.stderr.on('data', (data) => {
-//       processCurlOutput(data, statusMessage);
-//     });
-//     downloadProcess.on('exit', (code) => {
-//       if (code === 0) {
-//         resolve();
-//       } else {
-//         reject(new Error(`Download failed with code ${code}`));
-//       }
-//     });
-//   });
-// }
-
-// function unzipFile(platform, filePath, destPath) {
-//   if(platform === "win32") {
-//     spawnSync('tar', ['-xf', filePath, '-C', destPath], { stdio: 'inherit' });
-//   } else if (platform === "linux" || platform === "darwin") {
-//     spawnSync('unzip', [filePath, '-d', destPath], { stdio: 'inherit' });
-//   }
-// }
-
-// download kraken db
+// download kraken db in the "resources" directory
 async function fetchKrakenDB(resourcesDir, platform) {
   const krakenDir = path.join(resourcesDir, 'kraken2db');
   const krakenDB = 'k2_standard_08gb_20240904.tar.gz';
   const krakenDBPath = 'https://genome-idx.s3.amazonaws.com/kraken/k2_standard_08gb_20240904.tar.gz';
   const tarFilePath = path.join(krakenDir, krakenDB);
+
   try {
     checkDir(krakenDir);
 
@@ -251,14 +225,20 @@ async function fetchKrakenDB(resourcesDir, platform) {
       spawnSync('tar', ['-xvzf', tarFilePath, '-C', krakenDir], { stdio: 'inherit' });
       // execSync(`tar -xvzf '${tarFilePath}' -C '${krakenDir}'`, { stdio: 'inherit' });
       emitProgress('Unzipping Kraken2 DB', 100);
+      // fs.unlink(tarFilePath, err => {
+      //   console.log("Removing zipped Kraken db...");
+      //   if (err) {
+      //     throw ("Error while removing zipped file: ", err);
+      //   }
+      //   console.log("Zipped file removed successfully");
+      // })
     }
-
   } catch (error) {
-    throw (error);
+    throw ("Error in fetchkrakendb: ", error);
   }
 }
 
-// download virulence_finder db
+// download virulence_finder db in the "resources" directory
 async function fetchVirulenceDB(resourcesDir, platform) {
   const vfDBDir = path.join(resourcesDir, 'virulencefinder_db');
   const vfDB = 'master.tar.gz';
@@ -268,20 +248,20 @@ async function fetchVirulenceDB(resourcesDir, platform) {
     checkDir(vfDBDir);
 
     if (fs.existsSync(tarFilePath)) {
-      console.log(`Virulence finder db: ${vfDB} found in ${vfDBDir}. Skipping download`);
-      emitProgress('Virulence finder db already exists in folder. Skipping download', 50);
+      console.log(`VirulenceFinder db: ${vfDB} found in ${vfDBDir}. Skipping download`);
+      emitProgress('VirulenceFinder db already exists in folder.Skipping download', 50);
       const files = fs.readdirSync(vfDBDir);
       if (files.length === 1 && files[0] === vfDB) {
         console.log('File zipped: unzipping...');
         emitProgress('Unzipping...', 51);
         //unzipFile(platform, tarFilePath, vfDBDir);
         spawnSync('tar', ['-xvf', tarFilePath, '-C', vfDBDir, '--strip-components', '1'], { stdio: 'inherit' });
-        emitProgress('Unzipping Virulence Finder DB', 100);
+        emitProgress('Unzipping VirulenceFinder DB', 100);
       } else {
         console.log('Skipping unzip');
-        emitProgress('Virulence finder db already unzipped', 100);
+        emitProgress('VirulenceFinder db already unzipped', 100);
       }
-      console.log('Virulence finder done');
+      console.log('VirulenceFinder done');
       return;
     } else {
       await downloadFile(vfDBPath, tarFilePath, 'Downloading VirulenceFinder DB');
@@ -289,53 +269,98 @@ async function fetchVirulenceDB(resourcesDir, platform) {
       spawnSync('tar', ['-xvf', tarFilePath, '-C', vfDBDir, '--strip-components', '1'], { stdio: 'inherit' });
       // unzipFile(platform, tarFilePath, vfDBDir);
       emitProgress('Unzipping VirulenceFinder DB', 100);
+      // fs.unlink(tarFilePath, err => {
+      //   console.log("Removing zipped VirulenceFinder DB...");
+      //   if (err) {
+      //     throw ("Error while removing zipped file: ", err);
+      //   }
+      //   console.log("Zipped file removed successfully");
+      // })
     }
   } catch (error) {
-    throw (error);
+    throw ("Error in fetchvirulencefinderdb: ", error);
   }
 }
 
-// download genomad_db into the resourcesDir, as it automatically creates the genomad_db directory
+// download genomad_db in the "resources" directory
 async function fetchGenomadDB(resourcesDir) {
   const genomadDir = path.join(resourcesDir, 'genomad_db');
-  const genomadDB = "genomad_db_v1.9.tar.gz";
+  const genomadDB = "genomad_db.tar.gz";
   const genomadDBPath = "https://zenodo.org/records/14886553/files/genomad_db_v1.9.tar.gz";
   const tarFilePath = path.join(genomadDir, genomadDB);
 
   try {
-    checkDir(resourcesDir);
-
+    checkDir(genomadDir);
     if (fs.existsSync(tarFilePath)) {
-      console.log(`Virulence finder db: ${genomadDB} found in ${genomadDir}. Skipping download`);
-      emitProgress('Virulence finder db already exists in folder. Skipping download', 50);
+      console.log(`Genomad db: ${genomadDB} found in ${genomadDir}. Skipping download`);
+      emitProgress('Genomad db already exists in folder. Skipping download', 50);
       const files = fs.readdirSync(genomadDir);
       if (files.length === 1 && files[0] === genomadDB) {
         console.log('File zipped: unzipping...');
         emitProgress('Unzipping...', 51);
         //unzipFile(platform, tarFilePath, genomadDir);
         spawnSync('tar', ['-xvf', tarFilePath, '-C', genomadDir, '--strip-components', '1'], { stdio: 'inherit' });
-        emitProgress('Unzipping Virulence Finder DB', 100);
+        emitProgress('Unzipping Genomad DB', 100);
       } else {
         console.log('Skipping unzip');
-        emitProgress('Virulence finder db already unzipped', 100);
+        emitProgress('Genomad db already unzipped', 100);
       }
-      console.log('Virulence finder done');
+      console.log('Genomad done');
       return;
     } else {
-      await downloadFile(genomadDBPath, tarFilePath, 'Downloading VirulenceFinder DB');
-      emitProgress('Unzipping VirulenceFinder DB', 0);
+      await downloadFile(genomadDBPath, tarFilePath, 'Downloading Genomad DB');
+      emitProgress('Unzipping Genomad DB', 0);
       spawnSync('tar', ['-xvf', tarFilePath, '-C', genomadDir, '--strip-components', '1'], { stdio: 'inherit' });
       // unzipFile(platform, tarFilePath, genomadDir);
-      emitProgress('Unzipping VirulenceFinder DB', 100);
+      emitProgress('Unzipping Genomad DB', 100);
     }
   } catch (error) {
-    throw (error);
+    throw ("Error in fetchgenomaddb: ", error);
   }
 }
 
 function checkDir(directory) {
   if (!fs.existsSync(directory)) {
     fs.mkdirSync(directory, { recursive: true });
+  }
+}
+
+// download TrimGalore into the "tools" directory
+async function fetchTrimGalore(snakemakePath) {
+  const toolsPath = path.join(snakemakePath, 'tools');
+  const trimGaloreDir = path.join(toolsPath, 'TrimGalore-master');
+  const trimGalore = "master.zip";
+  const trimGaloreSource = "https://github.com/FelixKrueger/TrimGalore/archive/refs/heads/master.zip";
+  const tarFilePath = path.join(trimGaloreDir, trimGalore);
+
+  try {
+    checkDir(toolsPath);
+    checkDir(trimGaloreDir);
+    if (fs.existsSync(tarFilePath)) {
+      console.log(`TrimGalore: ${trimGalore} found in ${trimGaloreDir}. Skipping download`);
+      emitProgress('TrimGalore already exists in folder. Skipping download', 50);
+      const files = fs.readdirSync(trimGaloreDir);
+      if (files.length === 1 && files[0] === trimGalore) {
+        console.log('File zipped: unzipping...');
+        emitProgress('Unzipping...', 51);
+        //unzipFile(platform, tarFilePath, genomadDir);
+        spawnSync('tar', ['-xvf', tarFilePath, '-C', trimGaloreDir, '--strip-components', '1'], { stdio: 'inherit' });
+        emitProgress('Unzipping TrimGalore', 100);
+      } else {
+        console.log('Skipping unzip');
+        emitProgress('TrimGalore already unzipped', 100);
+      }
+      console.log('Genomad done');
+      return;
+    } else {
+      await downloadFile(trimGaloreSource, tarFilePath, 'Downloading TrimGalore');
+      emitProgress('Unzipping TrimGalore', 0);
+      spawnSync('tar', ['-xvf', tarFilePath, '-C', trimGaloreDir, '--strip-components', '1'], { stdio: 'inherit' });
+      // unzipFile(platform, tarFilePath, genomadDir);
+      emitProgress('Unzipping TrimGalore', 100);
+    }
+  } catch (error) {
+    throw ("Error in fetchTrimGalore: ", error);
   }
 }
 
@@ -352,6 +377,9 @@ async function createContainer(imageName, containerName, snakemakePath) {
   // const containerGenomadPath = "/project/snakemake/resources/genomad_db";
   const amrfinderHostPath = path.join(snakemakePath, "resources", "amrfinder");
   const amrfinderVolume = '/opt/conda/envs/bacEnv/share/amrfinderplus';
+  // volume for abricate and pubmlst databases
+  const dbsHostPath = path.join(snakemakePath, "resources", "dbs");
+  const dbsVolume = '/opt/conda/envs/bacEnv/db';
 
   try {
 
@@ -368,38 +396,23 @@ async function createContainer(imageName, containerName, snakemakePath) {
       return;
     }
 
-    // insert amrfinder db during container creation.
-    // Directory to mount (from the container to the resources of the host system): /opt/conda/envs/bacEnv/share/amrfinderplus
-
     await docker.createContainer({
       Image: imageName,
       name: containerName,
-      Cmd: ['/bin/bash', '-c', `source /opt/conda/etc/profile.d/conda.sh &&
-        conda activate bacEnv &&
-        amrfinder -u &&
-        while true; do sleep 30; done`],
+      Cmd: ['/bin/bash', '-c', `while true; do sleep 30; done`],
 
-      // Volumes: {
-      //   [`${containerVfPath}`]: {},
-      //   [`${amrfinderVolume}`]: {},
-      //   [`${containerGenomadPath}`]: {},
-      // },
       Volumes: {
         [`${containerToolsPath}`]: {},
         [`${amrfinderVolume}`]: {},
         [`${containerResPath}`]: {},
+        [`${dbsVolume}`]: {},
       },
       HostConfig: {
-        // Binds: [
-        //   `${vfUSerPath}:${containerVfPath}`,
-        //   `${amrfinderHostPath}:${amrfinderVolume}`,
-        //   `${genomadDir}:${containerGenomadPath}`,
-        // ],
-
         Binds: [
           `${toolsPath}:${containerToolsPath}`,
           `${amrfinderHostPath}:${amrfinderVolume}`,
           `${resourcesPath}:${containerResPath}`,
+          `${dbsHostPath}:${dbsVolume}`,
         ],
         RestartPolicy: { Name: 'no' },
       },
@@ -428,9 +441,78 @@ async function startContainer(containerName) {
   try {
     emitProgress(`Step 4: Starting container...`, 0);
     await checkContainerRunning(containerName);
+    emitProgress(`Step 4: Starting container...`, 100);
   } catch (error) {
     throw (error);
   }
+}
+
+async function updateContainer(containerName) {
+  emitProgress(`Step 5: Installing databases...`, 0);
+  const virulencefinderDbDir = "/project/snakemake/resources/virulencefinder_db";
+
+  const container = docker.getContainer(containerName);
+  const exec = await container.exec({
+    Cmd: ['bash', '-c', `. /opt/conda/etc/profile.d/conda.sh &&
+      conda activate bacEnv &&
+      cd ${virulencefinderDbDir} && 
+      python ${virulencefinderDbDir}/INSTALL.py &&
+      amrfinder -u &&
+      abricate-get_db --db card --force &&
+      abricate-get_db --db argannot --force &&
+      abricate-get_db --db resfinder --force &&
+      abricate-get_db --db ecoh --force &&
+      abricate-get_db --db vfdb --force &&
+      abricate-get_db --db plasmidfinder --force &&
+      abricate-get_db --db ecoli_vf --force &&
+      pubmlst_path="/opt/conda/envs/bacEnv/db/pubmlst" &&
+      mlst-download_pub_mlst -d $pubmlst_path &&
+      mlst-make_blast_db
+    `],
+    // Cmd: ['bash', '-c', `. /opt/conda/etc/profile.d/conda.sh &&
+    //   conda activate bacEnv &&
+    //   cd ${virulencefinderDbDir} && 
+    //   python ${virulencefinderDbDir}/INSTALL.py
+    // `],
+    AttachStdout: true,
+    AttachStderr: true,
+    AttachStdin: true,
+  });
+  const stream = await exec.start({ hijack: true, stdin: true });
+  let progress = 0;
+  await demuxStream(
+    stream,
+    (data) => {
+      console.log(`Stdout: ${data}`);
+      if (data.match(/(Done)/)) {
+        progress += 11;
+      }
+      emitProgress(data, progress);
+    },
+    (data) => {
+      console.error(`Stderr: ${data}`);
+      if (data.match(/(Done)/)) {
+        progress += 11;
+      }
+      emitProgress(data, progress);
+    },
+    () => {
+      (async () => {
+        const d = await exec.inspect();
+        const code = (d) ? d.ExitCode : null;
+        console.log(`Process exited with code: ${code}`);
+        if (code !== 0) {
+          throw new Error(`Process exited with code: ${code}`);
+        }
+      })().catch(console.error);
+    },
+    async () => {
+      const d = await exec.inspect();
+      return !!(d && d.Running);
+    }
+  );
+  emitProgress(`Step 5: Installing databases...`, 0);
+  return;
 }
 
 // change the INPUT field in the config file of the container
@@ -479,7 +561,7 @@ export async function prepareSnakemakeCommand(containerName, userInput, snakefil
 async function mapIO(containerName, userInput, userConfigPath) {
   const snakemakeDir = path.dirname(userConfigPath);
   const userOutput = path.join(userInput, 'output');
-  const containerConfigPath = ('/project/snakemake/');
+  const containerSnakemakePath = ('/project/snakemake/');
   const amrfinderHost = path.join(path.join(snakemakeDir, "resources", "amrfinder"));
   const amrfinderVolume = '/opt/conda/envs/bacEnv/share/amrfinderplus';
 
@@ -515,13 +597,13 @@ async function mapIO(containerName, userInput, userConfigPath) {
         Volumes: {
           [`${containerInput}`]: {},
           [`${containerOutput}`]: {},
-          [`${containerConfigPath}`]: {},
+          [`${containerSnakemakePath}`]: {},
         },
         HostConfig: {
           Binds: [
             `${userInput}:${containerInput}`,
             `${userOutput}:${containerOutput}`,
-            `${snakemakeDir}:${containerConfigPath}`,
+            `${snakemakeDir}:${containerSnakemakePath}`,
             `${amrfinderHost}:${amrfinderVolume}`,
           ],
         },
@@ -619,48 +701,6 @@ async function demuxStream(stream, onStdout, onStderr, onEnd, checkRunning, time
   });
 }
 
-
-async function updateContainer(containerName) {
-  // download amrFinder and update abricate and mlst.
-  // create volumes with paths to copy into the cloned container
-  const virulencefinderDbDir = "/project/snakemake/resources/virulencefinder_db";
-
-  const container = docker.getContainer(containerName);
-  const exec = await container.exec({
-    Cmd: ['bash', '-c', `source /opt/conda/etc/profile.d/conda.sh &&
-      conda activate bacEnv &&
-      cd ${virulencefinderDbDir} && 
-      python ${virulencefinderDbDir}/INSTALL.py`],
-    AttachStdout: true,
-    AttachStderr: true,
-    AttachStdin: true,
-  });
-  const stream = await exec.start({ hijack: true, stdin: true });
-  await demuxStream(
-    stream,
-    (data) => {
-      console.log(`Stdout: ${data}`);
-    },
-    (data) => {
-      console.error(`Stderr: ${data}`);
-    },
-    () => {
-      (async () => {
-        const d = await exec.inspect();
-        const code = (d) ? d.ExitCode : null;
-        console.log(`Process exited with code: ${code}`);
-        if (code !== 0) {
-          throw new Error(`Process exited with code: ${code}`);
-        }
-      })().catch(console.error);
-    },
-    async () => {
-      const d = await exec.inspect();
-      return !!(d && d.Running);
-    }
-  );
-  return;
-}
 
 export async function runAnalysis(containerName, reply, onError) {
   const snakefileDir = '/project/snakemake';
