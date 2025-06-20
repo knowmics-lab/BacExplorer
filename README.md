@@ -48,9 +48,23 @@ The installation of Docker is the only manual step for the usage of BacExplorer:
 
 ## USAGE
 1) **Input**  
-The user should put his input files in a specific folder, where the outputs are going to be saved. FASTQ file formats need to be either .fastq.gz or .fq.gz.
-Fasta file extension should be .fasta.
-2) **Parameters setting**  
+The user should put his input files in a specific folder, where the outputs are going to be saved.
+  FASTQ file formats need to be either for single-end
+- .fastq.gz
+- .fq.gz.
+  for paired-end
+- _1.fastq.gz _2.fastq.gz
+- _R1.fastq.gz _R2.fastq.gz
+- _R1_L001.fastq.gz _R2_L001.fastq.gz
+- _1.fq.gz _2.fq.gz
+- _R1.fq.gz _R2.fq.gz
+- _R1_L001.fq.gz _R2_L001.fq.gz
+  Fasta file extension should be
+- .fasta
+- .fa
+- .fna
+- .fsa
+3) **Parameters setting**  
 The user needs to set the following parameters for the analysis:
 - The analysis name, this will also be the name of the HTML report;
 - If all the samples belongs to the same Genus and Species, it is possible to specify them and the kraken2 taxonomy analysis will be skipped.
