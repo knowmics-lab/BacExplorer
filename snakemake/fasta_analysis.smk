@@ -1,17 +1,8 @@
+import json
+
 print(f"FASTA ANALYSIS STARTED")
 
-# MOVED TO PREPROCESSING
-# if type == "fasta":
-#     SAMPLES = [os.path.splitext(os.path.basename(f))[0] for f in glob.glob(f"{PATH_PROJECT}/*.fasta")]
-#     print(f"FASTA_SAMPLES: {SAMPLES}")
-
-
-# elif type == "fastq":
-#     SAMPLES = [os.path.splitext(os.path.basename(f))[0] for f in glob.glob(f"{PATH_PROJECT}/fasta_output/*.fasta")]
-#     PATH_PROJECT = os.path.join(PATH_PROJECT, "fasta_output")
-#     print(f"FASTA_SAMPLES: {SAMPLES}")
-
-# change PATH_PROJECT for correct evaluation in rule quality_assessment
+# change PATH_PROJECT for correct evaluation in quality_assessment
 if type == "fastq":
     SAMPLES = [os.path.splitext(os.path.basename(f))[0] for f in glob.glob(f"{PATH_PROJECT}/fasta_output/*.fasta")]
     PATH_PROJECT = os.path.join(PATH_PROJECT, "fasta_output")
@@ -21,13 +12,13 @@ GENOMAD_ANALYSIS = config["GENOMAD_ANALYSIS"]
 
 rule all:
     input:
-        expand(os.path.join(PATH_OUTPUT, "quast_results/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "quality_assessment/quast_results/{sample}"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "kraken2/{sample}_kraken2.txt"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "kraken2/{sample}_result.txt"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "mlst/{sample}.txt"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "mlst/{sample}_result.txt"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "amrfinder/{sample}_amrfinder.txt"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "genomad/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "genomad/{sample}"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "virulencefinder/{sample}"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "meningotype/{sample}"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "fimtyper/{sample}"), sample=SAMPLES),
@@ -45,51 +36,39 @@ rule all:
         expand(os.path.join(PATH_OUTPUT, "legsta/{sample}"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "pbptyper/{sample}"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "hicap/{sample}"), sample=SAMPLES)
+    # params:
+    #     # report_file = os.path.join(PATH_OUTPUT, f"{ANALYSIS_NAME}_report.html"),
+    #     # report = os.path.join(PATH_SCRIPT, "scripts/report.Rmd"),
+    #     post_processing = os.path.join(PATH_SCRIPT, "scripts/post_processing.py")
+    # shell:
+    #     '''
+    #     echo "Execution complete\nPostprocessing..."
+    #     PATH_OUTPUT="{PATH_OUTPUT}" python {params.post_processing}
+    #     echo 'Workflow complete'
+    #     '''
     params:
-        # report_file = os.path.join(PATH_OUTPUT, f"{ANALYSIS_NAME}_report.html"),
-        # report = os.path.join(PATH_SCRIPT, "scripts/report.Rmd"),
+        genomad = "genomad.py",
         post_processing = os.path.join(PATH_SCRIPT, "scripts/post_processing.py")
-    shell:
-        '''
+    run:
+    #gestire l'errore in modo che l'esecuzione non si blocchi
+        if GENOMAD_ANALYSIS == "yes":
+            shell(f'''
+            PATH_OUTPUT="{PATH_OUTPUT}" PATH_GENOMAD="{PATH_GENOMAD}" PATH_PROJECT="{PATH_PROJECT}" SAMPLES='{json.dumps(SAMPLES)}' python {params.genomad}
+            ''')
+        shell(f'''
         echo "Execution complete\nPostprocessing..."
         PATH_OUTPUT="{PATH_OUTPUT}" python {params.post_processing}
         echo 'Workflow complete'
-        '''
+        ''')
+                
 
 # Rscript -e "rmarkdown::render('{params.report}', output_file='{params.report_file}',
 #         output_dir = '{PATH_OUTPUT}', params=list(path_output='{PATH_OUTPUT}',
 #         identity={IDENTITY}, coverage={COVERAGE}))"
 
-rule quality_assessment:
-    input:
-        fasta_file = lambda wildcards: os.path.join(PATH_PROJECT, f"{wildcards.sample}.fasta")
-    output:
-        quast = directory(os.path.join(PATH_OUTPUT, "quast_results/{sample}"))
-    run:
-        # if type == "fasta":
-        #     shell(f"""
-        #     quast.py {wildcards.sample} -o {PATH_QUAST} -t {THREADS_NUMBER}
-        #     # mv report.tsv > {wildcards.sample}_report.tsv
-        #     """)
-        # elif type == "fastq":
-        #     shell(f"""
-        #     quast.py {wildcards.sample} -o {PATH_QUAST} -t {THREADS_NUMBER} -1 {PATH_PROJECT}/fasta_output/{sample}_R1_val_1.fq.gz -2 {PATH_PROJECT}/fasta_output/{sample}_R2_val_2.fq.gz
-        #     mv report.tsv > {wildcards.sample}_report.tsv
-        #     """)
-
-        # AT THE MOMENT WE ONLY PERFORM QUALITY ASSESSMENT ON FASTA FILES
-        
-        # COMMENT THE FOLLOWING CODE IF QUALITY ASSESSMENT IS PERFORMED DIFFERENTLY ON FASTQ AND FASTA FILES
-        print(f"Performing QUAST")
-        shell(f"""
-            mkdir -p {output.quast}
-            quast.py {input.fasta_file} -o {output.quast} -t {THREADS_NUMBER}
-            mv {output.quast}/report.tsv {output.quast}/{wildcards.sample}_report.tsv
-        """)
-
 rule mlst:
     input:
-        fasta_file = os.path.join(PATH_PROJECT, "{sample}.fasta")
+        fasta_file = lambda wildcards: os.path.join(PATH_PROJECT, f"{wildcards.sample}.fasta")
     output:
         mlst_output = os.path.join(PATH_OUTPUT, "mlst/{sample}.txt"),
         genus_species = os.path.join(PATH_OUTPUT, "mlst/{sample}_result.txt")
@@ -258,27 +237,27 @@ rule abricate:
         abricate {input.fasta_input} --db megares > {output.abricate}/{wildcards.sample}_megares.txt
         """
 
-rule genomad:
-    input:
-        fasta_input = os.path.join(PATH_PROJECT, "{sample}.fasta"),
-        kraken = os.path.join(PATH_OUTPUT, "kraken2/{sample}_result.txt")
-    output:
-        genomad = directory(os.path.join(PATH_OUTPUT, "genomad/{sample}"))
-    threads: 8
-    resources:
-        mem_mb=16000
-    run:
-        if GENOMAD_ANALYSIS == "yes":
-            shell(f"""
-            echo "Performing Genomad"
-            mkdir -p {output.genomad}
-            genomad end-to-end --cleanup --splits 16 {input.fasta_input} {output.genomad} {PATH_GENOMAD}
-            """)
-        else:
-            shell(f"""
-            mkdir -p {output.genomad}
-            touch {output.genomad}/skipped.marker
-            """)
+# rule genomad:
+#     input:
+#         fasta_input = os.path.join(PATH_PROJECT, "{sample}.fasta"),
+#         kraken = os.path.join(PATH_OUTPUT, "kraken2/{sample}_result.txt")
+#     output:
+#         genomad = directory(os.path.join(PATH_OUTPUT, "genomad/{sample}"))
+#     threads: 8
+#     resources:
+#         mem_mb=16000
+#     run:
+#         if GENOMAD_ANALYSIS == "yes":
+#             shell(f"""
+#             echo "Performing Genomad"
+#             mkdir -p {output.genomad}
+#             genomad end-to-end --cleanup --splits 16 {input.fasta_input} {output.genomad} {PATH_GENOMAD}
+#             """)
+#         else:
+#             shell(f"""
+#             mkdir -p {output.genomad}
+#             touch {output.genomad}/skipped.marker
+#             """)
 
 rule check_genus:
     input:

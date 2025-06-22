@@ -21,6 +21,7 @@ ANALYSIS_NAME = config["NAME"]
 GENUS = config["GENUS"]
 SPECIES = config["SPECIES"]
 paired = config["PAIRED"]
+GENOMAD_ANALYSIS = config["GENOMAD_ANALYSIS"]
 
 # PATH_PROJECT is the input folder provided by the user
 # PATH_ENV = os.path.join(info["envs_dirs"], "bacEnv")
@@ -37,7 +38,7 @@ FASTQ_SAMPLES = []
 
 DIRS_LIST = ["abricate", "abricate_ecoli", "agrvate", "amrfinder", "ectyper", "emmtyper", "genomad", "hicap", "kleborate",
 "kleborate_escherichia", "kraken2", "legsta", "lissero", "mlst", "pbptyper", "shigatyper", "spatyper", "sccmec", "fimtyper",
-"virulencefinder", "trim", "shigeifinder", "ngmaster", "ClermonTyping", "pasty", "meningotype", "quast_results"]
+"virulencefinder", "trim", "shigeifinder", "ngmaster", "ClermonTyping", "pasty", "meningotype", "quality_assessment"]
 
 if not os.path.exists(PATH_PROJECT):
     raise ValueError(f"Path {PATH_PROJECT} does not exist!")
@@ -56,20 +57,20 @@ for d in DIRS_LIST:
         f.write("Done\n")
 
 
-def update_databases():
-    print("Updating databases...")
+# def update_databases():
+#     print("Updating databases...")
 
-    command = '''
-    echo "Installing amrfinder db..." &&
-    amrfinder -u
-    '''
+#     command = '''
+#     echo "Installing amrfinder db..." &&
+#     amrfinder -u
+#     '''
 
-    try:
-        subprocess.run(command, shell=True, check=True)
-        print("Database updated successfully.")
-    except subprocess.CalledProcessError as e:
-        print(f"Error while updating databases: {e}")
-        raise
+#     try:
+#         subprocess.run(command, shell=True, check=True)
+#         print("Database updated successfully.")
+#     except subprocess.CalledProcessError as e:
+#         print(f"Error while updating databases: {e}")
+#         raise
 
 # update_databases()
 
@@ -105,9 +106,14 @@ if type == "fastq":
     os.makedirs(os.path.join(PATH_PROJECT, "fastq"), exist_ok=True)
     include: "fastq_analysis.smk"
     include: "fasta_analysis.smk"
+    include: "quality_assessment.smk"
 elif type == "fasta":
     include: "fasta_analysis.smk"
+    include: "quality_assessment.smk"
 else:
     raise ValueError(f"Type: {type} not supported")
 
-# include: "quality_check.smk"
+fasta_checkpoint = os.path.join(PATH_OUTPUT, "fasta_analysis_checkpoint.txt")
+
+# if GENOMAD_ANALYSIS == "yes" and os.path.exists(fasta_checkpoint):
+#     include: "genomad.smk"
