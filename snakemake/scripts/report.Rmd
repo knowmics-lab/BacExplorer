@@ -44,7 +44,7 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
 
 ```
 
-![](/home/adriana/bacExplorer/BacExplorer/snakemake/scripts/logo.png)
+![](logo.png)
 
 
 #### Analysis performed on `r format(Sys.time(), '%d/%m/%y')`
@@ -86,7 +86,7 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
   args=commandArgs(trailingOnly = TRUE)
 
   try({
-    fastqc <- list.files(path=paste0(path_output, "/fastqc/"), pattern="_data", full.names=TRUE, recursive=TRUE)
+    fastqc <- list.files(path=paste0(path_output, "/quality_assessnent/fastqc/"), pattern="_data", full.names=TRUE, recursive=TRUE)
   
     fastqc_function <- function(i){
       fq <- read.csv(i, sep= "\t")
@@ -132,7 +132,7 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
   args=commandArgs(trailingOnly = TRUE)
 
   try({
-    quast <- list.files(path=paste0(path_output, "/quast_results/"), pattern="_report.tsv", full.names=TRUE, recursive=TRUE)
+    quast <- list.files(path=paste0(path_output, "/quality_assessnent/quast_results/"), pattern="_report.tsv", full.names=TRUE, recursive=TRUE)
     aq <- grep("transposed_", quast)
     quast <- quast[-c(aq)]
     
