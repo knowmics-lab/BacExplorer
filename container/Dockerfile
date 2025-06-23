@@ -46,6 +46,10 @@ RUN mkdir -p scripts
 
 WORKDIR /project/scripts
 
+# change row 34 from rU to r in ngmaster
+RUN sed -i '34s/rU/r/' \
+    /opt/conda/envs/bacEnv/lib/python3.12/site-packages/ngmaster/utils.py
+
 # Install other packages
 RUN echo "Installing packages..." && \
     echo "RGI" && \
@@ -66,7 +70,7 @@ RUN echo "Installing packages..." && \
     gunzip usearch11.0.667_i86linux32.gz && \
     chmod 755 usearch11.0.667_i86linux32 && \
     echo "R packages" && \
-    Rscript -e "install.packages(c('downloadthis', 'DT', 'openxlsx'), repos='https://cran.r-project.org/'); \
+    Rscript -e "install.packages(c('stringr', 'downloadthis', 'DT', 'openxlsx'), repos='https://cran.r-project.org/'); \
     if (!require('BiocManager', quietly = TRUE)) install.packages('BiocManager', repos='https://cran.r-project.org/'); \
     BiocManager::install('ComplexHeatmap'); \
     quit(save='no')"

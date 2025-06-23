@@ -24,7 +24,6 @@ paired = config["PAIRED"]
 GENOMAD_ANALYSIS = config["GENOMAD_ANALYSIS"]
 
 # PATH_PROJECT is the input folder provided by the user
-# PATH_ENV = os.path.join(info["envs_dirs"], "bacEnv")
 PATH_ENV = os.path.join(info["envs_dirs"][0])
 PATH_PROJECT = config["INPUT"]
 PATH_OUTPUT = os.path.join(PATH_PROJECT, "output")
@@ -36,17 +35,18 @@ PATH_GENOMAD = os.path.join(PATH_SCRIPT, "resources/genomad_db")
 SAMPLES = []
 FASTQ_SAMPLES = []
 
-DIRS_LIST = ["abricate", "abricate_ecoli", "agrvate", "amrfinder", "ectyper", "emmtyper", "genomad", "hicap", "kleborate",
-"kleborate_escherichia", "kraken2", "legsta", "lissero", "mlst", "pbptyper", "shigatyper", "spatyper", "sccmec", "fimtyper",
-"virulencefinder", "trim", "shigeifinder", "ngmaster", "ClermonTyping", "pasty", "meningotype", "quality_assessment"]
-
-if not os.path.exists(PATH_PROJECT):
-    raise ValueError(f"Path {PATH_PROJECT} does not exist!")
-
 print(f"PATH_SCRIPT: {PATH_SCRIPT}")
 print(f"PATH_PROJECT: {PATH_PROJECT}")
 print(f"PATH_OUTPUT: {PATH_OUTPUT}")
 print(f"PATH_ENV: {PATH_ENV}")
+
+# create directories in the output folder
+DIRS_LIST = ["abricate", "abricate_ecoli", "agrvate", "amrfinder", "ectyper", "emmtyper", "genomad", "hicap", "kleborate",
+"kleborate_escherichia", "kraken2", "legsta", "lissero", "mlst", "pbptyper", "shigatyper", "spatyper", "sccmec", "fimtyper",
+"virulencefinder", "shigeifinder", "ngmaster", "ClermonTyping", "pasty", "meningotype", "quality_assessment"]
+
+if not os.path.exists(PATH_PROJECT):
+    raise ValueError(f"Path {PATH_PROJECT} does not exist!")
 
 os.makedirs(PATH_OUTPUT, exist_ok=True)
 
@@ -56,6 +56,12 @@ for d in DIRS_LIST:
     with open(done_file, 'w') as f:
         f.write("Done\n")
 
+# create "trim" folder only for fastq analyses
+if type == "fastq":
+    os.makedirs(os.path.join(PATH_OUTPUT, "trim"), exist_ok=True)
+    done_file = os.path.join(PATH_OUTPUT, d, '.done')
+    with open(done_file, 'w') as f:
+        f.write("Done\n")
 
 # def update_databases():
 #     print("Updating databases...")
@@ -73,32 +79,6 @@ for d in DIRS_LIST:
 #         raise
 
 # update_databases()
-
-# def pre_processing():
-#     command = f'''
-#     PATH_SCRIPT="{PATH_SCRIPT}" PATH_PROJECT="{PATH_PROJECT}" type="{type}" SAMPLES="{SAMPLES}" FASTQ_SAMPLES="{FASTQ_SAMPLES}" python {PATH_SCRIPT}/scripts/pre_processing.py
-#     '''
-
-#     try:
-#         subprocess.run(command, shell=True, check=True)
-#         print("Preprocessing completed")
-#     except subprocess.CalledProcessError as e:
-#         print(f"Error during preprocessing: {e}")
-#         raise
-
-# def quality_check():
-#     print("Performing quality check...")
-
-#     command = f'''
-#     PATH_OUTPUT="{PATH_OUTPUT}" PATH_PROJECT="{PATH_PROJECT}" PATH_SCRIPT="{PATH_SCRIPT}" SAMPLES="{SAMPLES}" THREADS_NUMBER="{THREADS_NUMBER}" python {PATH_SCRIPT}/scripts/quality_check.py
-#     '''
-
-#     try:
-#         subprocess.run(command, shell=True, check=True)
-#         print("Quality check completed")
-#     except subprocess.CalledProcessError as e:
-#         print(f"Error during quality check: {e}")
-#         raise
 
 include: "pre_processing.smk"
 
