@@ -32,21 +32,21 @@ It can be performed both with .fasta and .fastq files, with the following requir
 ### Storage:
 BacExplorer comes with a large amount of data due to the many databases of the softwares used for the analyses.
 The whole app data is found in the following directories:
-- **Linux Users**: /home/<user>/.config/BacExplorer
+- **Linux Users**: /home/< user >/.config/BacExplorer
 - **MacOS Users**: ~/Library/Application Support/BacExplorer
-- **Windows Users**: C:\Users\<user>\AppData\Roaming\BacExplorer
+- **Windows Users**: C:\Users\< user >\AppData\Roaming\BacExplorer
 
 ## INSTALLATION
 An UNIX environment is required to make Snakemake able to perform. To ensure this, the entire Snakemake pipeline runs into a Docker container, whether your OS is Linux, macOS or Windows Professional.
-**Step 1 (OPTIONAL): Install Docker**
+#### **Step 1 (OPTIONAL): Install Docker**
 Docker is essential to run the application, so for the first usage you will be able to check whether Docker or Docker Desktop is already installed on your machine.
 In case it is not, the link to Docker will be provided to you.
 In case you still want to download it before getting started with the application itself, check the version for your platform here: https://www.docker.com/.
-**Step 2: Download the tool**
+#### **Step 2: Download the tool**
 Visit the following link and download the latest release: https://github.com/knowmics-lab/BacExplorer/releases. You will find the one that suits your OS in the **Assets** menu.
-**Step 3: Run Docker and start BacExplorer**
+#### **Step 3: Run Docker and start BacExplorer**
 Docker or Docker Desktop **must be running** throughout the whole usage of the application.
-**Step 4: Home page**
+#### Step 4: Home page
 You are now finished with the installation process and ready for your first analysis. Be sure to click on **Go to setup** if this is your first usage.
 Read the following paragraph and let us guide you through all the steps.
 
