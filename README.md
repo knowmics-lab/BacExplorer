@@ -32,9 +32,9 @@ It can be performed both with .fasta and .fastq files, with the following requir
 ### Storage:
 BacExplorer comes with a large amount of data due to the many databases of the softwares used for the analyses.
 The whole app data is found in the following directories:
-- **Linux Users**: /home/< user >/.config/BacExplorer
+- **Linux Users**: /home/user/.config/BacExplorer
 - **MacOS Users**: ~/Library/Application Support/BacExplorer
-- **Windows Users**: C:\Users\< user >\AppData\Roaming\BacExplorer
+- **Windows Users**: C:\Users\user\AppData\Roaming\BacExplorer
 
 ## INSTALLATION
 An UNIX environment is required to make Snakemake able to perform. To ensure this, the entire Snakemake pipeline runs into a Docker container, whether your OS is Linux, macOS or Windows Professional.
@@ -53,19 +53,20 @@ Read the following paragraph and let us guide you through all the steps.
 
 ![App setup](https://github.com/user-attachments/assets/eec116f4-2993-432f-854a-0fc53c3a7991)
 
-## SETUP
+## SETUP (FOR FIRTS USAGE ONLY)
 1) If you have not downloaded Docker yet, click on **Check**. If not found, the system will provide you the link to download the correct version for your platform.
 2) Start Docker or Docker Desktop.
 3) Run the **Environment Setup**. It will take some time to automatically set up the container and eventually run it. The entire process, which requires **no manual intervention**, consists of the following steps:
-   - pull the Docker image of the container;
-   - download external resources. Databases will be stored in the app data directory, BacExplorer/snakemake/resources, and other tools will be stored in BacExplorer/snakemake/tools. Please **do not move any of these directories**, since they are mounted on the container as a volume;
+   - pull from Docker Hub (https://hub.docker.com/r/adrianacannata/bacexplorer) the image of the container;
+   - download external resources. Databases will be stored in the app data directory, BacExplorer/snakemake/resources, and other tools will be stored in BacExplorer/snakemake/tools. Please **do not move any of these folders**, since they are mounted on the container as a volume;
    - create the container and start it;
    - update databases inside the container. 
-Once the Environment Setup is finished, you can move on to the analysis page.
-
-INSERIRE IMMAGINE DEL SETUP COMPLETATO
 
 ![Docker setup](https://github.com/user-attachments/assets/3b5d3af5-a311-49d0-b590-f3d03b5292c6)
+
+Once the Environment Setup is finished, you can move on to the analysis page.
+
+**Please note that the procedure is necessary ONLY for your first usage of the application. In all the other cases, it is sufficient to click on START CONTAINER on the Home page and then navigate to the Analysis page.**
 
 ## USAGE
 1) **Input**  
@@ -179,6 +180,8 @@ Fasta samples to test BacExplorer can be found in "test_data" folder in this rep
 - FimTyper - https://bitbucket.org/genomicepidemiology/fimtyper/src/master/
 - ClermonTyping - https://github.com/A-BN/ClermonTyping
 - pasty - https://github.com/rpetit3/pasty
+- QUAST - https://github.com/ablab/quast
+- FastQC - https://github.com/s-andrews/FastQC
 
 # Database
 - CARD - https://card.mcmaster.ca/
