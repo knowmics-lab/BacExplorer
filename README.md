@@ -148,7 +148,7 @@ Inside the input folder the system will create an output folder with several sub
 
 ### FASTQ
 To test BacExplorer with fastq samples it is possible to download:
-- *Klebsiella pnaumoniae* samples from https://www.ncbi.nlm.nih.gov/bioproject/PRJNA1125320 and from https://www.ncbi.nlm.nih.gov/bioproject/PRJNA1193841
+- *Klebsiella pneumoniae* samples from https://www.ncbi.nlm.nih.gov/bioproject/PRJNA1125320 and from https://www.ncbi.nlm.nih.gov/bioproject/PRJNA1193841
 - *Staphylococcus aureus* sample from https://www.ncbi.nlm.nih.gov/bioproject/PRJNA912391
 
 ### FASTA
@@ -192,6 +192,6 @@ Fasta samples to test BacExplorer can be found in "test_data" folder in this rep
 - PubMLST - https://pubmlst.org/
   
 ## Citation 
-- BacExplorer - Privitera GF, Cannata AA, Campanile F, Alaimo S, Bongiorno D, Pulvirenti A. BacExplorer (2025). Available at [https://github.com/gretep/BacExplorer](https://github.com/AdrianaCannata/BacExplorer)
+- BacExplorer - Privitera GF, Cannata AA, Campanile F, Alaimo S, Bongiorno D, Pulvirenti A. BacExplorer (2025). Available at [https://github.com/knowmics-lab/BacExplorer](https://github.com/knowmics-lab/BacExplorer)
 
 
