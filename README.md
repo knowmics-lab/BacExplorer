@@ -74,7 +74,8 @@ The user should put the input files in a specific folder, where the outputs are 
   FASTQ file formats need to be either for single-end
 - .fastq.gz
 - .fq.gz
-  for paired-end
+  <br>
+  <br> for paired-end
 - _1.fastq.gz _2.fastq.gz
 - _R1.fastq.gz _R2.fastq.gz
 - _R1_L001.fastq.gz _R2_L001.fastq.gz
