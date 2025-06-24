@@ -74,7 +74,6 @@ The user should put the input files in a specific folder, where the outputs are 
   FASTQ file formats need to be either for single-end
 - .fastq.gz
 - .fq.gz
-  <br>
   <br> for paired-end
 - _1.fastq.gz _2.fastq.gz
 - _R1.fastq.gz _R2.fastq.gz
@@ -82,7 +81,7 @@ The user should put the input files in a specific folder, where the outputs are 
 - _1.fq.gz _2.fq.gz
 - _R1.fq.gz _R2.fq.gz
 - _R1_L001.fq.gz _R2_L001.fq.gz
-  Fasta file extension should be
+  <br> Fasta file extension should be
 - .fasta
 - .fa
 - .fna
