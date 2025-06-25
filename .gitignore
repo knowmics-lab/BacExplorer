@@ -3,3 +3,4 @@ out
 .webpack
 .idea
 .DS_Store
+snakemake/resources
