@@ -20,7 +20,7 @@ export default function AnalysisProg({progress, setProgress}) {
 
             if (data.stderr) {
                 console.log("Data.stderr: ", data.stderr);
-                if (data.stderr.match(/WorkflowError/) || data.stderr.match(/IncompleteFilesException/)) {
+                if (data.stderr.match(/(Error|Exception|Traceback)/)) {
                     setError({error: true, message: `Error: ${data.stderr}`});
                     console.log("STOPPED EXECUTION");
                     return;
@@ -61,10 +61,10 @@ export default function AnalysisProg({progress, setProgress}) {
             if (data.stderr) {
                 console.log("Data.stderr: ", data.stderr);
                 if (data.stderr.match(/Execution halted/)) {
-                    console.log("STOPPED EXECUTION");
-                    setErrorReport({error: true, message: `Error in report production: ${data.stderr}`});
+                    console.err("STOPPED EXECUTION");
+                    setError({error: true, message: `Error in producing report: ${data.stderr}`});
                 }
-                if (data.stderr.match(/output file/)) {
+                if (data.stderr.match(/Output created/)) {
                     console.log("REPORT PRODUCED");
                     setReportCreated(true);
                 }

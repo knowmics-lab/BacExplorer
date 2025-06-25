@@ -1,34 +1,43 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Form from 'react-bootstrap/Form';
+import Select from "react-select";
 import ImportGroup, { InputGroup } from 'react-bootstrap';
 
-export default function GenusSpe({formData, setFormData}){
-    const genusSpeciesMap = {
-        Undefined: ["undefined"],
-        Escherichia: ["", "coli"],
-        Klebsiella: ["", "pneumoniae", "aerogenes", "oxytoca"],
-        Streptococcus: ["", "pyogenes", "pneumoniae"],
-        Haemophilus: ["", "influenzae"],
-        Staphylococcus: ["", "aureus"],
-        Shigella: [""],
-        Listeria: [""],
-        Legionella: ["pneumophyla", ""],
-        Neisseria: ["gonorrhoeae", "meningitidis"],
-        Acinetobacter: ["baumannii"],
-        Burkholderia: ["cepacia", "pseudomallei"],
-        Citrobacter: ["freundii"],
-        Clostridioides: ["difficile"],
-        Enterobacter: ["cloacae", "asburiae"],
-        Enterococcus: ["faecalis", "faecium"],
-        Pseudomonas: ["aeruginosa"],
-        Serratia: ["marcescens"],
-        Vibrio: ["cholerae", "vulfinicus", "parahaemolyticus"],
-        Campylobacter: [""],
-        Salmonella: [""]
-    }
+export default function GenusSpe({ formData, setFormData }) {
+    const [genusDict, setGenusDict] = useState({ "": "" });
+    const [error, setError] = useState(false);
 
-    const genusOptions = Object.keys(genusSpeciesMap);
-    const speciesOptions = formData.GENUS ? genusSpeciesMap[formData.GENUS] : [];
+    useEffect(() => {
+        window.api.openGenusList()
+            .then(result => setGenusDict(prev => ({ "": "", ...result })))
+            .catch(err => {
+                console.error(err);
+                setError(true);
+            });            
+    }, []);
+
+    if (!genusDict) return <div>Loading Dictionary... </div>
+    if (error) return <div>Error in loading Dictionary: {error}</div>
+
+    const genusOptions = Object.keys(genusDict);
+    const speciesOptions = formData.GENUS ? genusDict[formData.GENUS] : [];
+
+    // const options = genusOptions.map(genus => ({ value: genus, label: genus }));
+
+    // console.log("Options: ", options);
+    
+    // const selectedGenusOption = options.find(opt => opt.value === formData.GENUS) || null;
+    // // selectedGenusOption = selectedGenusOption.value;
+    // console.log("SelectedGenusOptions: ", selectedGenusOption);
+
+    // const handleChange = selectedOption => {
+    //     setFormData(prevData => ({
+    //         ...prevData,
+    //         GENUS: selectedOption ? selectedOption.value : null,
+    //         SPECIES: "",
+    //     }));
+    // };
+    
 
     const handleGenusChange = e => {
         const {value} = e.target;
@@ -48,8 +57,8 @@ export default function GenusSpe({formData, setFormData}){
     return(
         <>
             <h1 className='pb-3 text-header'>Select genus and species</h1>
-            <div>Fill if all your files refer to the same Genus and Species. Otherwise leave blank.</div>
-            
+            <div className="text-secondary">Fill if all your files refer to the same Genus and Species. Otherwise leave blank.</div>
+
             <InputGroup className="mt-3">
                 <InputGroup.Text>Genus</InputGroup.Text>
                 <Form.Select className="z-0" aria-label="Genus" value={formData.GENUS} onChange={handleGenusChange}>
@@ -59,9 +68,34 @@ export default function GenusSpe({formData, setFormData}){
                     </option>
                     ))}
                 </Form.Select>
+                
+                {/* problema con lo stile: non visualizza il genere selezionato */}
+                {/* <InputGroup.Text>Genus</InputGroup.Text>
+                <Select
+                    options={options}
+                    value={selectedGenusOption}
+                    onChange={handleChange}
+                    placeholder="Select Genus..."
+                    styles={{
+                        control: (base) => ({
+                        ...base,
+                        minHeight: 38,
+                        backgroundColor: 'white',
+                        }),
+                        singleValue: (base) => ({
+                        ...base,
+                        color: 'black',   
+                        }),
+                        menu: (base) => ({
+                        ...base,
+                        zIndex: 9999,
+                        }),
+                    }}
+                    /> */}
+
 
                 <InputGroup.Text>Species</InputGroup.Text>
-                <Form.Select className="z-0" aria-label="Species" value={formData.SPECIES} onChange={handleSpecChange} disabled={formData.GENUS == "Undefined"}>
+                <Form.Select className="z-0" aria-label="Species" value={formData.SPECIES} onChange={handleSpecChange} disabled={!formData.GENUS} >
                     {speciesOptions.map((species) => (
                     <option key={species} value={species}>
                         {species}

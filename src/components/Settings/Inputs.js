@@ -4,7 +4,8 @@ import GenusSpe                             from './Genus-Species';
 import Type                                 from './Type';
 import FolderSel                            from './Select-Folder';
 import ReportParams                         from './Report-Params';
-import AnalysisName                         from './Analysis-Name';
+import AnalysisName from './Analysis-Name';
+import TecnhicalSettings from './Technical-Settings';
 import ParametersAlert                      from './Parameters-Alert';
 import AnalysisProg                         from '../Snakemake-Feedback/Analysis-Progress';
 import InvalidFolderAlert from './Invalid-Folder-Alert';
@@ -12,13 +13,15 @@ import InvalidFolderAlert from './Invalid-Folder-Alert';
 export default function Inputs () {
   const [formData, setFormData] = useState({
     NAME: '',
-    GENUS: '',
+    GENUS: null,
     SPECIES: '',
     TYPE: '',
     PAIRED: '',
     INPUT: 'No Folder Selected',
     IDENTITY: 90,
     COVERAGE: 90,
+    THREADS_NUMBER: 2,
+    GENOMAD_ANALYSIS: 'yes',
   });
 
   const [validated, setValidated] = useState(false);
@@ -173,6 +176,10 @@ export default function Inputs () {
 
           <FormGroup className="form-box py-3">
             <ReportParams formData={formData} setFormData={setFormData}/>
+          </FormGroup>
+
+          <FormGroup className="form-box py-3">
+            <TecnhicalSettings formData={formData} setFormData={setFormData}/>
           </FormGroup>
 
           <FormGroup className="form-box white py-3">

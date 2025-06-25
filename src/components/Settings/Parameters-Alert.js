@@ -1,6 +1,8 @@
 import React from "react";
 import { Alert, Button } from "react-bootstrap";
 
+//insert warning: if output already exists, output will be overwritten
+
 export default function ParametersAlert({formData, setShowAlert, onButtonClick}) {
     return(
         <Alert variant="secondary" className="text-start">
@@ -14,7 +16,9 @@ export default function ParametersAlert({formData, setShowAlert, onButtonClick})
             TYPE: {formData.TYPE} <br/>
             {formData.TYPE == "fastq" ? <>PAIRED: {formData.PAIRED} <br/></> : <></>}
             IDENTITY: {formData.IDENTITY} <br/>
-            COVERAGE: {formData.COVERAGE}
+            COVERAGE: {formData.COVERAGE} <br />
+            THREADS_NUMBER: {formData.THREADS_NUMBER} <br />
+            GENOMAD_ANALYSIS: {formData.GENOMAD_ANALYSIS} <br />   
             </p>
             <hr />
             <div className="d-flex gap-3 justify-content-center z-1000">
