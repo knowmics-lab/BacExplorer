@@ -50,7 +50,6 @@ rule all:
         genomad = "genomad.py",
         post_processing = os.path.join(PATH_SCRIPT, "scripts/post_processing.py")
     run:
-    #gestire l'errore in modo che l'esecuzione non si blocchi
         if GENOMAD_ANALYSIS == "yes":
             shell(f'''
             PATH_OUTPUT="{PATH_OUTPUT}" PATH_GENOMAD="{PATH_GENOMAD}" PATH_PROJECT="{PATH_PROJECT}" SAMPLES='{json.dumps(SAMPLES)}' python {params.genomad}
@@ -59,7 +58,7 @@ rule all:
         echo "Execution complete\nPostprocessing..."
         PATH_OUTPUT="{PATH_OUTPUT}" python {params.post_processing}
         echo 'Workflow complete'
-        ''')
+        ''') 
                 
 
 # Rscript -e "rmarkdown::render('{params.report}', output_file='{params.report_file}',

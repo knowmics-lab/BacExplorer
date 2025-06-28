@@ -543,8 +543,8 @@ ipcMain.handle("open-html", (event, htmlFile) => {
 
 
 ipcMain.handle('get-genus-species', async () => {
-  const appPath = app.getAppPath();
-  const filePath = path.join(appPath, 'snakemake', 'resources', 'Lista_mlst.csv');
+  //const appPath = app.getAppPath();
+  const filePath = path.join(backendPath, 'resources', 'Lista_mlst.csv');
   try {
     const data = await fs.promises.readFile(filePath, 'utf8');
     const dict = {};

@@ -28,14 +28,14 @@ library(openxlsx)
 library(stringr)
 
 #for Rstudio testing
-# path_output <- "/Users/adria/Desktop/Uni/Magistrale/Tirocinio/test/output"
-# identity <- 90
-# coverage <- 90
-# type <- "Fasta"
+path_output <- "/Users/adria/Desktop/Uni/BacExplorer_prove/Prova1/output"
+identity <- 90
+coverage <- 90
+type <- "Fasta"
 
-path_output <- params$path_output
-identity <- params$identity
-coverage <- params$coverage
+# path_output <- params$path_output
+# identity <- params$identity
+# coverage <- params$coverage
 # type <- params$Type
 path_excel <- paste0(path_output, "/file")
 
@@ -86,7 +86,7 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
   args=commandArgs(trailingOnly = TRUE)
 
   try({
-    fastqc <- list.files(path=paste0(path_output, "/quality_assessnent/fastqc/"), pattern="_data", full.names=TRUE, recursive=TRUE)
+    fastqc <- list.files(path=paste0(path_output, "/quality_assessment/fastqc_results/"), pattern="_data", full.names=TRUE, recursive=TRUE)
   
     fastqc_function <- function(i){
       fq <- read.csv(i, sep= "\t")
@@ -107,16 +107,20 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
     
     fq_tab <- as.data.frame(do.call(rbind, lapply(fastqc, fastqc_function)))
     rownames(fq_tab) <- NULL
-    
-    print(kable(fq_tab) %>%
-      kable_styling(bootstrap_options = c("striped", "hover","responsive")) %>%
-        scroll_box(width = "100%", height = "330px"))
+    if(dim(fq_tab)[1] != 0){ 
+      print(kable(fq_tab) %>%
+        kable_styling(bootstrap_options = c("striped", "hover","responsive")) %>%
+          scroll_box(width = "100%", height = "330px"))
+  
 
-    if(dim(fq_tab)[1] != 0){
       wbf <- createWorkbook()
       addWorksheet(wbf, "fastqc")
       writeData(wbf, sheet = "FastQC", fq_tab) 
       saveWorkbook(wbf, file=paste0(path_excel, "/FastQC_table.xlsx"), overwrite = TRUE)
+  
+    } else {
+      print(kable(fq_tab) %>%
+      kable_styling(bootstrap_options = c("striped", "hover","responsive")))
     }
   }, silent = TRUE)
 ```
@@ -132,7 +136,7 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
   args=commandArgs(trailingOnly = TRUE)
 
   try({
-    quast <- list.files(path=paste0(path_output, "/quality_assessnent/quast_results/"), pattern="_report.tsv", full.names=TRUE, recursive=TRUE)
+    quast <- list.files(path=paste0(path_output, "/quality_assessment/quast_results/"), pattern="_report.tsv", full.names=TRUE, recursive=TRUE)
     aq <- grep("transposed_", quast)
     quast <- quast[-c(aq)]
     
@@ -191,7 +195,7 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
     
     if(dim(quast_tab)[1] != 0){
       wbq <- createWorkbook()
-      addWorksheet(wb, "quast")
+      addWorksheet(wbq, "quast")
       writeData(wbq, sheet = "quast", quast_tab) 
       saveWorkbook(wbq, file=paste0(path_excel, "/Quast_table.xlsx"), overwrite = TRUE)
     }
@@ -1896,3 +1900,7 @@ Tools used in BacExplorer:
 | hicap v1.0.4          | [SC Watts](https://github.com/scwatts/hicap) |
 | SISTR v1.1.2          | [C Yoshida](https://github.com/phac-nml/sistr_cmd) |
 | geNomad v.1.11.0  | [AP Camargo et al., 2023](https://doi.org/10.1038/s41587-023-01953-y) |
+| ShigEiFinder v.1.3.5 | [X Zhang et al., 2021](https://doi.org/10.1099/mgen.0.000704) |
+| meningotype v.0.8.5 | [JC Kwong et al.](https://github.com/MDU-PHL/meningotype) |
+| ngmaster v.0.5.8 | [JC Kwong et al., 2016](https://doi.org/10.1099/mgen.0.000076) |
+| pasty v.2.2.1 | [RA Petit III](https://github.com/rpetit3/pasty?tab=readme-ov-file) |
