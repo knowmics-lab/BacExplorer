@@ -327,13 +327,13 @@ rule check_genus:
             kleborate -a {input.fasta_input} -o {output.kleborate_escherichia} -p escherichia
 
             echo "Performing fimtyper"
-            cd {PATH_ENV}/fimtyper
+            cd {PATH_TOOLS}/fimtyper
             perl fimtyper.pl -d fimtyper_db/ -b {PATH_ENV} -i {input.fasta_input} -k 95.00 -l 0.60 -o {output.fimtyper}
             mv {output.fimtyper}/results_tab.txt {output.fimtyper}/{wildcards.sample}_tab.txt
             cd {PATH_PROJECT}
 
             echo "Performing ClermonTyping"
-            {PATH_ENV}/ClermonTyping/clermonTyping.sh --fasta {input.fasta_input}
+            {PATH_TOOLS}/ClermonTyping/clermonTyping.sh --fasta {input.fasta_input}
             
             if compgen -G "{PATH_PROJECT}/analysis_*" > /dev/null; then
                 mv {PATH_PROJECT}/analysis_* {output.ClermonTyping}
@@ -475,7 +475,7 @@ rule check_genus_species:
         mkdir -p {output.pasty}
         if [[ "$genus" == "Pseudomonas" && "$species" == "aeruginosa" ]]; then
             echo "Performing pasty"
-            camlhmp-blast-regions --input {input.fasta_input} --outdir {output.pasty} --prefix {wildcards.sample} -y {PATH_ENV}/bin/../share/pasty/pa-osa.yaml -t {PATH_ENV}/bin/../share/pasty/pa-osa.fasta
+            camlhmp-blast-regions --input {input.fasta_input} --outdir {output.pasty} --prefix {wildcards.sample} -y {PATH_ENV}/share/pasty/pa-osa.yaml -t {PATH_ENV}/share/pasty/pa-osa.fasta
         else
             touch {output.pasty}/skipped.marker
         fi

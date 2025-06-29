@@ -367,8 +367,8 @@ async function fetchTrimGalore(snakemakePath) {
 // function to create container
 async function createContainer(imageName, containerName, snakemakePath) {
   emitProgress(`Step 3: Creating container ${containerName}...`, 0);
-  const toolsPath = path.join(snakemakePath, "tools");
-  const containerToolsPath = "/project/snakemake/tools";
+  const TrimGalorePath = path.join(snakemakePath, "tools", "TrimGalore-master");
+  const containerTrimGalorePath = "/project/snakemake/tools/TrimGalore-master";
   const resourcesPath = path.join(snakemakePath, "resources");
   const containerResPath = "/project/snakemake/resources";
   // const vfUSerPath = path.join(snakemakePath, "resources", "virulencefinder_db");
@@ -377,6 +377,7 @@ async function createContainer(imageName, containerName, snakemakePath) {
   // const containerGenomadPath = "/project/snakemake/resources/genomad_db";
   const amrfinderHostPath = path.join(snakemakePath, "resources", "amrfinder");
   const amrfinderVolume = '/opt/conda/envs/bacEnv/share/amrfinderplus';
+
   // volume for abricate and pubmlst databases
   const dbsHostPath = path.join(snakemakePath, "resources", "dbs");
   const dbsVolume = '/opt/conda/envs/bacEnv/db';
@@ -402,14 +403,14 @@ async function createContainer(imageName, containerName, snakemakePath) {
       Cmd: ['/bin/bash', '-c', `while true; do sleep 30; done`],
 
       Volumes: {
-        [`${containerToolsPath}`]: {},
+        [`${containerTrimGalorePath}`]: {},
         [`${amrfinderVolume}`]: {},
         [`${containerResPath}`]: {},
         [`${dbsVolume}`]: {},
       },
       HostConfig: {
         Binds: [
-          `${toolsPath}:${containerToolsPath}`,
+          `${TrimGalorePath}:${containerTrimGalorePath}`,
           `${amrfinderHostPath}:${amrfinderVolume}`,
           `${resourcesPath}:${containerResPath}`,
           `${dbsHostPath}:${dbsVolume}`,
@@ -472,7 +473,8 @@ async function updateContainer(containerName) {
     // Cmd: ['bash', '-c', `. /opt/conda/etc/profile.d/conda.sh &&
     //   conda activate bacEnv &&
     //   cd ${virulencefinderDbDir} && 
-    //   python ${virulencefinderDbDir}/INSTALL.py
+    //   python ${virulencefinderDbDir}/INSTALL.py &&
+    //   amrfinder -u
     // `],
     AttachStdout: true,
     AttachStderr: true,

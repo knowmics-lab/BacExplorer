@@ -28,15 +28,15 @@ library(openxlsx)
 library(stringr)
 
 #for Rstudio testing
-path_output <- "/Users/adria/Desktop/Uni/BacExplorer_prove/Prova1/output"
-identity <- 90
-coverage <- 90
-type <- "Fasta"
+#path_output <- "/Users/adria/Desktop/Uni/BacExplorer_prove/Prova1/output"
+#identity <- 90
+#coverage <- 90
+#type <- "Fasta"
 
-# path_output <- params$path_output
-# identity <- params$identity
-# coverage <- params$coverage
-# type <- params$Type
+path_output <- params$path_output
+identity <- params$identity
+coverage <- params$coverage
+type <- params$Type
 path_excel <- paste0(path_output, "/file")
 
 dir.create(file.path(path_excel), showWarnings = FALSE)

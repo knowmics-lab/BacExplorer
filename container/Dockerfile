@@ -2,11 +2,30 @@ FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && \
-    apt-get install software-properties-common \
-    && add-apt-repository ppa:ubuntu-toolchain-r/test \
+# RUN apt-get update && \
+#     # apt-get install software-properties-common \
+#     # && add-apt-repository ppa:ubuntu-toolchain-r/test \
+#     && apt-get install -y \
+#     # gcc-4.9 \
+#     wget \
+#     curl \
+#     git \
+#     build-essential \
+#     python3-pip \
+#     python3-dev \
+#     r-base \
+#     libcurl4-openssl-dev \
+#     libssl-dev \
+#     libxml2-dev \
+#     libcurl4-openssl-dev \
+#     unzip \
+#     cpanminus \
+#     # && apt-get upgrade libstdc++6 \
+#     # && apt-get dist-upgrade \
+#     && apt-get clean
+
+RUN apt-get update \
     && apt-get install -y \
-    gcc-4.9 \
     wget \
     curl \
     git \
@@ -20,14 +39,11 @@ RUN apt-get update && \
     libcurl4-openssl-dev \
     unzip \
     cpanminus \
-    && apt-get upgrade libstdc++6 \
-    && apt-get dist-upgrade \
     && apt-get clean
 
 RUN curl -L https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -o miniconda.sh && \
     bash miniconda.sh -b -u -p /opt/conda && \
     rm miniconda.sh
-    # source ~/miniconda3/bin/activate
 
 ENV PATH=/opt/conda/bin:$PATH
 
@@ -40,20 +56,21 @@ COPY bacEnv.yml /tmp/
 
 RUN conda env create -f /tmp/bacEnv.yml
 
-COPY . /project
-
-WORKDIR /project
-
 # Activate conda env
 SHELL ["conda", "run", "-n", "bacEnv", "/bin/bash", "-c"]
 
-RUN mkdir -p scripts
+COPY . /project
 
-WORKDIR /project/scripts
+# WORKDIR /project
+
+# RUN mkdir -p scripts
 
 # change row 34 from rU to r in ngmaster
 RUN sed -i '34s/rU/r/' \
     /opt/conda/envs/bacEnv/lib/python3.12/site-packages/ngmaster/utils.py
+
+# install packages in the following directory
+WORKDIR /project/tools
 
 # Install other packages
 RUN echo "Installing packages..." && \
@@ -66,6 +83,7 @@ RUN echo "Installing packages..." && \
     cd fimtyper && \
     git clone https://bitbucket.org/genomicepidemiology/fimtyper_db.git && \
     make install && \
+    cd .. && \
     echo "ClermonTyping" && \
     git clone https://github.com/happykhan/ClermonTyping.git && \
     echo "metaMLST" && \
@@ -105,8 +123,14 @@ WORKDIR /project
 #     mlst-download_pub_mlst -d $pubmlst_path && \
 #     mlst-make_blast_db &&
 
-# to build Docker image, run the following in your terminal:
+# to build Docker image, run the following:
 # docker build -t bacexplorer .
+
+# to tag the image:
+# docker tag <image name> adrianacannata/bacexplorer:latest
+
+# push on Docker Hub:
+# docker push adrianacannata/bacexplorer:latest
 
 # for distribution:
 # docker save -o bacexplorer.tar bacexplorer

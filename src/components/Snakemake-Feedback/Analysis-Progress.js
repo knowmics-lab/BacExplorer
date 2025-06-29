@@ -9,7 +9,7 @@ export default function AnalysisProg({progress, setProgress}) {
     const [output, setOutput] = useState("");
     const [error, setError] = useState({error: false, message: ""});
     const [analysisCompleted, setAnalysisCompleted] = useState(false);
-    const [errorReport, setErrorReport] = useState({error: false, message: ""})
+    // const [errorReport, setErrorReport] = useState({ error: false, message: "" });
     const [reportCreated, setReportCreated] = useState(false);
 
     useEffect(() => {
@@ -25,8 +25,12 @@ export default function AnalysisProg({progress, setProgress}) {
                     console.log("STOPPED EXECUTION");
                     return;
                 }
+                if (data.stderr.match(/(Error in library|markdown)/)) {
+                    setError({ error: false, message: "" });
+                }
                 if (data.stderr.match(/Workflow completed: Snakemake exited with code 0/)) {
                     setOutput(`${data.stderr}`);
+                    setError(false);
                     console.log("ANALYSIS COMPLETED. Producing report...");
                     setAnalysisCompleted(true);
                     window.api.launchReport();
@@ -37,7 +41,6 @@ export default function AnalysisProg({progress, setProgress}) {
                 const progressMatch = data.stderr.match(/(\d+)%/);
                 if (progressMatch) {
                     console.log("Progress match: ", progressMatch);
-                    console.log("Progress match[1]: ", progressMatch[1]);
                     if (progressMatch[1]) {
                         const percentage = parseInt(progressMatch[1], 10);
                         setProgress(percentage);

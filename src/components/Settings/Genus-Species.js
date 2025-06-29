@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Form from 'react-bootstrap/Form';
-import Select from "react-select";
-import ImportGroup, { InputGroup } from 'react-bootstrap';
+import { InputGroup } from 'react-bootstrap';
 
 export default function GenusSpe({ formData, setFormData }) {
     const [genusDict, setGenusDict] = useState({ "": "" });
@@ -20,24 +19,7 @@ export default function GenusSpe({ formData, setFormData }) {
     if (error) return <div>Error in loading Dictionary: {error}</div>
 
     const genusOptions = Object.keys(genusDict);
-    const speciesOptions = formData.GENUS ? genusDict[formData.GENUS] : [];
-
-    // const options = genusOptions.map(genus => ({ value: genus, label: genus }));
-
-    // console.log("Options: ", options);
-    
-    // const selectedGenusOption = options.find(opt => opt.value === formData.GENUS) || null;
-    // // selectedGenusOption = selectedGenusOption.value;
-    // console.log("SelectedGenusOptions: ", selectedGenusOption);
-
-    // const handleChange = selectedOption => {
-    //     setFormData(prevData => ({
-    //         ...prevData,
-    //         GENUS: selectedOption ? selectedOption.value : null,
-    //         SPECIES: "",
-    //     }));
-    // };
-    
+    const speciesOptions = formData.GENUS ? genusDict[formData.GENUS] : [];  
 
     const handleGenusChange = e => {
         const {value} = e.target;
@@ -68,31 +50,6 @@ export default function GenusSpe({ formData, setFormData }) {
                     </option>
                     ))}
                 </Form.Select>
-                
-                {/* problema con lo stile: non visualizza il genere selezionato */}
-                {/* <InputGroup.Text>Genus</InputGroup.Text>
-                <Select
-                    options={options}
-                    value={selectedGenusOption}
-                    onChange={handleChange}
-                    placeholder="Select Genus..."
-                    styles={{
-                        control: (base) => ({
-                        ...base,
-                        minHeight: 38,
-                        backgroundColor: 'white',
-                        }),
-                        singleValue: (base) => ({
-                        ...base,
-                        color: 'black',   
-                        }),
-                        menu: (base) => ({
-                        ...base,
-                        zIndex: 9999,
-                        }),
-                    }}
-                    /> */}
-
 
                 <InputGroup.Text>Species</InputGroup.Text>
                 <Form.Select className="z-0" aria-label="Species" value={formData.SPECIES} onChange={handleSpecChange} disabled={!formData.GENUS} >
