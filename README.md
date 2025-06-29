@@ -56,7 +56,7 @@ Read the following paragraph and let us guide you through all the steps.
 ## SETUP (FOR FIRTS USAGE ONLY)
 1) If you have not downloaded Docker yet, click on **Check**. If not found, the system will provide you the link to download the correct version for your platform.
 2) Start Docker or Docker Desktop.
-3) Run the **Environment Setup**. It will take some time to automatically set up the container and eventually run it. The entire process, which requires **no manual intervention**, consists of the following steps:
+3) Run the **Environment Setup**. Depending on your network speed, it will take approximately 45 to 60 minutes to automatically set up the container and eventually run it. The entire process, which requires **no manual intervention**, consists of the following steps:
    - pull from Docker Hub (https://hub.docker.com/r/adrianacannata/bacexplorer) the image of the container;
    - download external resources. Databases will be stored in the app data directory, BacExplorer/snakemake/resources, and other tools will be stored in BacExplorer/snakemake/tools. Please **do not move any of these folders**, since they are mounted on the container as a volume;
    - create the container and start it;
@@ -64,7 +64,7 @@ Read the following paragraph and let us guide you through all the steps.
 
 ![Docker setup](https://github.com/user-attachments/assets/3b5d3af5-a311-49d0-b590-f3d03b5292c6)
 
-Once the Environment Setup is finished, you can move on to the analysis page.
+Once the Environment Setup is done, you can move on to the analysis page.
 
 **Please note that the procedure is necessary ONLY for your first usage of the application. In all the other cases, it is sufficient to click on START CONTAINER on the Home page and then navigate to the Analysis page.**
 
