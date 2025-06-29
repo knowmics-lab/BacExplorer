@@ -1,9 +1,12 @@
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && \
-    apt-get install -y \
+    apt-get install software-properties-common \
+    && add-apt-repository ppa:ubuntu-toolchain-r/test \
+    && apt-get install -y \
+    gcc-4.9 \
     wget \
     curl \
     git \
@@ -17,6 +20,8 @@ RUN apt-get update && \
     libcurl4-openssl-dev \
     unzip \
     cpanminus \
+    && apt-get upgrade libstdc++6 \
+    && apt-get dist-upgrade \
     && apt-get clean
 
 RUN curl -L https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -o miniconda.sh && \
