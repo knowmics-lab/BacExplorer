@@ -8,7 +8,8 @@ Welcome to BacExplorer, a bacterial analysis tool with an user-friendly GUI.
 BacExplorer is a software system for the analysis of Microbial data. Its aim is to annotate Bacterial genome with information about Antimicrobial resistance, virulence factor, plasmids, serotypings and so on. The analysis is developed with the workflow management system Snakemake.
 BacExplorer permits to analyze both raw fastq data and fasta.
 
-![BacExcplorer_Fig1](https://github.com/user-attachments/assets/b381b644-75eb-49b2-a53f-98b271af7fe1)
+![BacExcplorer_Fig1](https://github.com/user-attachments/assets/340271eb-3113-454e-a6fc-ad7e6a93b07a)
+
 
 
 Please read the following guide for a correct installation and usage.
@@ -94,7 +95,9 @@ The user needs to set the following parameters for the analysis:
 - Identity and Coverage value for the filtering of AMR and virulence factor results. The default parameter is 90% for both;
 - The folder with the data to be analyzed.
 
-![Parameters_setting](https://github.com/user-attachments/assets/0865b1fb-63ce-41b7-b792-509d1f853410)
+![schermata_app](https://github.com/user-attachments/assets/e511df0f-1605-4e17-97b4-775fd2f8fa7b)
+
+
 
 3) Output organization
 Inside the input folder the system will create an output folder with several subfolders:
@@ -134,7 +137,8 @@ Inside the input folder the system will create an output folder with several sub
 4) Report page
 
 
-![immagine](https://github.com/user-attachments/assets/db3fe1ee-f254-4bad-8fe4-f05975e0bec6)
+![immagine](https://github.com/user-attachments/assets/427aca9d-014a-489c-b282-8eadd043e5e9)
+
 
 
 ![immagine](https://github.com/user-attachments/assets/701aeba7-3081-4ab1-a0c7-279f349233b7)
