@@ -15,7 +15,7 @@ if type == "fasta":
             mv {output.quast}/report.tsv {output.quast}/{wildcards.sample}_report.tsv
             """)
             
-elif type == "fastq":
+if type == "fastq":
     rule quality_assessment_fastq:
         input:
             fasta_file = os.path.join(PATH_PROJECT, "{sample}.fasta"),
@@ -37,8 +37,9 @@ elif type == "fastq":
                 fastqc {PATH_OUTPUT}/trim/{wildcards.sample}_R2_001_val_2.fq.gz
                 unzip -d {output.fastqc} {PATH_OUTPUT}/trim/{wildcards.sample}_R2_001_val_2_fastqc.zip
                 """)
+            print(f"Performing QUAST")
             shell(f"""
-            echo "Performing QUAST"
-            quast.py {input.fasta_file} -o {output.quast} -t {THREADS_NUMBER} -1 {PATH_OUTPUT}/trim/{wildcards.sample}_R1_001_val_1.fq.gz -2 {PATH_OUTPUT}/trim/{wildcards.sample}_R2_001_val_2.fq.gz
+            mkdir -p {output.quast}
+            quast.py {input.fasta_file} -o {output.quast} -t {THREADS_NUMBER}
             mv {output.quast}/report.tsv {output.quast}/{wildcards.sample}_report.tsv
             """)
