@@ -254,7 +254,6 @@ async function fetchVirulenceDB(resourcesDir, platform) {
       if (files.length === 1 && files[0] === vfDB) {
         console.log('File zipped: unzipping...');
         emitProgress('Unzipping...', 51);
-        //unzipFile(platform, tarFilePath, vfDBDir);
         spawnSync('tar', ['-xvf', tarFilePath, '-C', vfDBDir, '--strip-components', '1'], { stdio: 'inherit' });
         emitProgress('Unzipping VirulenceFinder DB', 100);
       } else {
@@ -267,7 +266,6 @@ async function fetchVirulenceDB(resourcesDir, platform) {
       await downloadFile(vfDBPath, tarFilePath, 'Downloading VirulenceFinder DB');
       emitProgress('Unzipping VirulenceFinder DB', 0);
       spawnSync('tar', ['-xvf', tarFilePath, '-C', vfDBDir, '--strip-components', '1'], { stdio: 'inherit' });
-      // unzipFile(platform, tarFilePath, vfDBDir);
       emitProgress('Unzipping VirulenceFinder DB', 100);
       // fs.unlink(tarFilePath, err => {
       //   console.log("Removing zipped VirulenceFinder DB...");
@@ -298,7 +296,6 @@ async function fetchGenomadDB(resourcesDir) {
       if (files.length === 1 && files[0] === genomadDB) {
         console.log('File zipped: unzipping...');
         emitProgress('Unzipping...', 51);
-        //unzipFile(platform, tarFilePath, genomadDir);
         spawnSync('tar', ['-xvf', tarFilePath, '-C', genomadDir, '--strip-components', '1'], { stdio: 'inherit' });
         emitProgress('Unzipping Genomad DB', 100);
       } else {
@@ -311,7 +308,6 @@ async function fetchGenomadDB(resourcesDir) {
       await downloadFile(genomadDBPath, tarFilePath, 'Downloading Genomad DB');
       emitProgress('Unzipping Genomad DB', 0);
       spawnSync('tar', ['-xvf', tarFilePath, '-C', genomadDir, '--strip-components', '1'], { stdio: 'inherit' });
-      // unzipFile(platform, tarFilePath, genomadDir);
       emitProgress('Unzipping Genomad DB', 100);
     }
   } catch (error) {
@@ -343,7 +339,6 @@ async function fetchTrimGalore(snakemakePath) {
       if (files.length === 1 && files[0] === trimGalore) {
         console.log('File zipped: unzipping...');
         emitProgress('Unzipping...', 51);
-        //unzipFile(platform, tarFilePath, genomadDir);
         spawnSync('tar', ['-xvf', tarFilePath, '-C', trimGaloreDir, '--strip-components', '1'], { stdio: 'inherit' });
         emitProgress('Unzipping TrimGalore', 100);
       } else {
@@ -356,7 +351,6 @@ async function fetchTrimGalore(snakemakePath) {
       await downloadFile(trimGaloreSource, tarFilePath, 'Downloading TrimGalore');
       emitProgress('Unzipping TrimGalore', 0);
       spawnSync('tar', ['-xvf', tarFilePath, '-C', trimGaloreDir, '--strip-components', '1'], { stdio: 'inherit' });
-      // unzipFile(platform, tarFilePath, genomadDir);
       emitProgress('Unzipping TrimGalore', 100);
     }
   } catch (error) {
@@ -756,13 +750,13 @@ export async function produceReport(containerName, reply, onError, localConfigDi
   const analysisName = config.NAME;
   const identity = config.IDENTITY;
   const coverage = config.COVERAGE;
+  const type = config.TYPE;
   const reportFile = `project/user-input/output/${analysisName}_report.html`;
   const container = docker.getContainer(containerName);
 
   const exec = await container.exec({
-    Cmd: ['bash', '-c', `source /opt/conda/etc/profile.d/conda.sh && conda activate bacEnv && Rscript -e "rmarkdown::render('${report}', output_file='${reportFile}',
-        output_dir = '${containerOutput}', params=list(path_output='${containerOutput}',
-        identity=${identity}, coverage=${coverage}))"`],
+    Cmd: ['bash', '-c', `source /opt/conda/etc/profile.d/conda.sh && conda activate bacEnv && Rscript -e "rmarkdown::render('${report}', output_file='${reportFile}', output_dir = '${containerOutput}', params=list(path_output='${containerOutput}',
+    identity=${identity}, coverage=${coverage}, type='${type}'))"`],
     AttachStdout: true,
     AttachStderr: true,
     AttachStdin: true,
