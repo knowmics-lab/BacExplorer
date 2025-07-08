@@ -16,7 +16,7 @@ export default function Inputs () {
     GENUS: null,
     SPECIES: '',
     TYPE: '',
-    PAIRED: '',
+    PAIRED: 'yes',
     INPUT: 'No Folder Selected',
     IDENTITY: 90,
     COVERAGE: 90,

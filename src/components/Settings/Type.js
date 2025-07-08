@@ -36,9 +36,9 @@ export default function Type({formData, setFormData}){
                 <InputGroup.Text>Paired</InputGroup.Text>
                 <div className="d-flex gap-3">
                     <Form.Check className="z-0" type='radio' id='Yes' label='Yes' value="yes" onChange={handlePairedSet}
-                    checked={formData.PAIRED==="yes"} disabled={formData.TYPE === 'fasta' || formData.TYPE === ""}/>
+                    checked={formData.PAIRED==="yes"} disabled={formData.TYPE === 'fasta' || formData.TYPE === ""} defaultChecked/>
                     <Form.Check className="z-0" type='radio' id='No' label='No' value="no" onChange={handlePairedSet}
-                    checked={formData.PAIRED === "no"}disabled={formData.TYPE === 'fasta' || formData.TYPE === ""}/>
+                    checked={formData.PAIRED === "no"} disabled={formData.TYPE === 'fasta' || formData.TYPE === ""}/>
                 </div>
                 
             </InputGroup>

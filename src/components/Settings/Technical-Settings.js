@@ -32,7 +32,7 @@ export default function TecnhicalSettings({formData, setFormData}){
                 <InputGroup.Text>Genomad Analysis</InputGroup.Text>
                 <div className="d-flex gap-3">
                     <Form.Check className="z-0" type='radio' id='Yes' label='Yes' value="yes" onChange={handleGenomadChange}
-                    checked={formData.GENOMAD_ANALYSIS==="yes"}/>
+                    checked={formData.GENOMAD_ANALYSIS==="yes"} defaultChecked/>
                     <Form.Check className="z-0" type='radio' id='No' label='No' value="no" onChange={handleGenomadChange}
                     checked={formData.GENOMAD_ANALYSIS === "no"}/>
                 </div>
