@@ -26,10 +26,14 @@ module.exports = {
       name: '@electron-forge/maker-deb', //Linux
       config: {},
     },
-    // {
-    //   name: '@electron-forge/maker-rpm',
-    //   config: {},
-    // },
+    {
+      name: '@electron-forge/maker-rpm',
+      config: {},
+    },
+    {
+      name: '@electron-forge/maker-zip',
+      platforms: ['linux'],
+    },
   ],
   hooks: "require:hooks.js",
   plugins: [
