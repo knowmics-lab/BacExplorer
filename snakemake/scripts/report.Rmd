@@ -1050,61 +1050,60 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
 
 ```
 
-## Viruses {.tabset #vir}
-
-### geNomad
-
+## Viruses {.tabset .tabset-fade .tabset-pills #vir}
+ 
+### geNomad {.tabset}
+ 
 ```{r geNomad viruses, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
   genomad_virus <- list.files(path=paste0(path_output, "/genomad/"), pattern = "_virus_summary.tsv", full.names=TRUE, recursive=TRUE)
-
-  genomad_virus_function <- function(i){
-    gv <- read.csv(i, sep= "\t")
-    if(nrow(gv) > 0) {
-      n <- gsub("virus_summary", "virus_genes", i)
-      gvg <- read.csv(n, sep= "\t")
-      gv$Sample <- gsub("_virus_summary","",basename(tools::file_path_sans_ext(i)))
-      gv <- gv[,c(12, 1:11)]
-      gvg$seq_name <- gsub("^([^,]_[^,])_.*", "\\1", gvg$gene)
-      colnames(gvg)[4] <- "Gene_lenght"
-      gva <- merge(gv, gvg)
-      gv$seq_name <- gsub("\\|", "_", gv$seq_name)
-      names(gv) <- c("Sample", "Virus name", "Length", "Topology", "Coordinates", "Number of Genes", "Genetic code", "Score", "FDR", "Number of Hallmarks", "Marker Enrichment", "Taxonomy")
-      vng <- list(gv, gva)
-      return(vng)
+ 
+    genomad_virus_function <- function(i){
+      gv <- read.csv(i, sep= "\t")
+      if(nrow(gv) > 0) {
+        n <- gsub("virus_summary", "virus_genes", i)
+        gvg <- read.csv(n, sep= "\t")
+        gv$Sample <- gsub("_virus_summary","",basename(tools::file_path_sans_ext(i)))
+        gv <- gv[,c(12, 1:11)]
+        gvg$seq_name <- gsub("^([^,]*_[^,]*)_.*", "\\1", gvg$gene)
+        colnames(gvg)[4] <- "Gene_lenght"
+        gva <- merge(gv, gvg)
+        gv$seq_name <- gsub("\\|", "_", gv$seq_name)
+        names(gv) <- c("Sample", "Virus name", "Length", "Topology", "Coordinates", "Number of Genes", "Genetic code", "Score", "FDR", "Number of Hallmarks", "Marker Enrichment", "Taxonomy")
+        vng <- list(gv, gva)
+        return(vng)
+      }
     }
-  }
-
+ 
    
-  gv_tab <- lapply(genomad_virus, genomad_virus_function)
+    gv_tab <- lapply(genomad_virus, genomad_virus_function)
 
-  if(length(gv_tab) != 0){
-    gv_tab1 <- list()
-    gv_tab2 <- list()
-    for(ls in 1:length(gv_tab)) {
-      ex <- gv_tab[[ls]][1]
-      gv_tab1 <- c(gv_tab1,ex)
-      ex1 <- gv_tab[[ls]][2]
-      gv_tab2 <- c(gv_tab2,ex1)
-    }
-    gv_tab1 <- gv_tab1[!sapply(gv_tab1,is.null)]
-    gv_tab1 <- gv_tab1[sapply(gv_tab1, nrow)>0]
-
-    for (i in 1:length(gv_tab1)) {
-      cat("####", as.data.frame(gv_tab1[i])$Sample[1], "<br>", "\n")
-      print(kable(as.data.frame(gv_tab1[i]), row.names = FALSE) %>%
+    if(length(gv_tab) != 0){
+      gv_tab1 <- list()
+      gv_tab2 <- list()
+      for(ls in 1:length(gv_tab)) {
+        ex <- gv_tab[[ls]][1]
+        gv_tab1 <- c(gv_tab1,ex)
+        ex1 <- gv_tab[[ls]][2]
+        gv_tab2 <- c(gv_tab2,ex1)
+      }
+      gv_tab1 <- gv_tab1[!sapply(gv_tab1,is.null)]
+      gv_tab1 <- gv_tab1[sapply(gv_tab1, nrow)>0]
+ 
+      for (i in 1:length(gv_tab1)) {
+        cat("####", as.data.frame(gv_tab1[i])$Sample[1], "<br>", "\n")
+        print(kable(as.data.frame(gv_tab1[i]), row.names = FALSE) %>%
         kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
           scroll_box(width = "100%", height = "300px"))
-      cat("\n", "<br>", "\n\n")
-    }
-
-    gv_tab2 <- as.data.frame(do.call(rbind, gv_tab2))
+        cat("\n", "<br>", "\n\n")
+      }
+ 
+      gv_tab2 <- as.data.frame(do.call(rbind, gv_tab2))
   
-    wbv <- createWorkbook()
-    addWorksheet(wbv, "geNomad")
-    writeData(wbv, sheet = "geNomad", gv_tab2)
-    saveWorkbook(wbv, file=paste0(path_excel, "/Virus_table.xlsx"), overwrite = TRUE)
-  }
-   
+      wbv <- createWorkbook()
+      addWorksheet(wbv, "geNomad")
+      writeData(wbv, sheet = "geNomad", gv_tab2)
+      saveWorkbook(wbv, file=paste0(path_excel, "/Virus_table.xlsx"), overwrite = TRUE)
+    }
   
 ```
 
