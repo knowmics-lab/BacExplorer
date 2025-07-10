@@ -176,7 +176,7 @@ app.on('ready', () => {
   if (process.env.NODE_ENV === 'production') {
     sourceFolder = path.join(process.resourcesPath, 'snakemake');
   } else {
-    sourceFolder = path.join(__dirname, '../../../snakemake');
+    sourceFolder = path.join(__dirname, '../../snakemake');
   }
 
   console.log('Target folder: ', targetFolder);
