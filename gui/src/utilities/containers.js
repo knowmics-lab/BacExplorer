@@ -84,7 +84,7 @@ function emitProgress(status, progress) {
 // pull docker image
 async function pullImage(imageName) {
   return new Promise((resolve, reject) => {
-    docker.pull(imageName, (err, stream) => {
+    docker.pull(imageName, { platform: 'linux/amd64' }, (err, stream) => {
       if (err) {
         return reject(err);
       }

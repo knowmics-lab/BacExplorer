@@ -566,7 +566,7 @@ ipcMain.handle('get-genus-species', async () => {
               dict[genus] = new Set();
             }
             dict[genus].add(species);
-            
+
             if (!dict[genus].has(null)) {
               dict[genus].add(null);
             }

@@ -5,31 +5,36 @@ import OutputModal from "./Output-Modal";
 import ErrorModal from "./Error-Modal";
 import SuccessModal from "./Success-Modal";
 
-export default function AnalysisProg({progress, setProgress}) {
+export default function AnalysisProg({ progress, setProgress }) {
     const [output, setOutput] = useState("");
-    const [error, setError] = useState({error: false, message: ""});
+    const [error, setError] = useState({ error: false, message: "" });
+    const [genomadError, setGenomadError] = useState({ error: false, message: "" });
     const [analysisCompleted, setAnalysisCompleted] = useState(false);
-    const [errorReport, setErrorReport] = useState({error: false, message: ""})
     const [reportCreated, setReportCreated] = useState(false);
 
     useEffect(() => {
         window.api.onSnakemakeOutput((data) => {
             if (data) {
-            console.log('Data properties:', data);
+                console.log('Data properties:', data);
             }
 
             if (data.stderr) {
                 console.log("Data.stderr: ", data.stderr);
-                if (data.stderr.match(/(Error|Exception|Traceback)/)) {
-                    setError({error: true, message: `Error: ${data.stderr}`});
-                    console.log("STOPPED EXECUTION");
+                if (data.stderr.match(/(Error|Exception|Traceback)/) && !data.stderr.match(/(Error in library|markdown)/)) {
+                    setError({ error: true, message: `Error: ${data.stderr}` });
+                    console.error("STOPPED EXECUTION");
+                    if (data.stderr.match(/(genomad.py)/)) {
+                        setGenomadError({ error: true, message: "Analysis was successfull, but genomad will be omitted in report." });
+                    }
                     return;
                 }
                 if (data.stderr.match(/Workflow completed: Snakemake exited with code 0/)) {
                     setOutput(`${data.stderr}`);
+                    setError({ error: false, message: "" });
                     console.log("ANALYSIS COMPLETED. Producing report...");
                     setAnalysisCompleted(true);
                     window.api.launchReport();
+                    return;
                 }
                 else {
                     setOutput(`${data.stderr}`);
@@ -48,7 +53,7 @@ export default function AnalysisProg({progress, setProgress}) {
                 console.log("Data.stdout: ", data.stdout);
                 setOutput(`${data.stdout}`);
             }
-            if(analysisCompleted) {
+            if (analysisCompleted) {
                 window.api.launchReport();
             }
         });
@@ -57,12 +62,12 @@ export default function AnalysisProg({progress, setProgress}) {
             if (data) {
                 console.log('Data properties:', data);
             }
-        
+
             if (data.stderr) {
                 console.log("Data.stderr: ", data.stderr);
                 if (data.stderr.match(/Execution halted/)) {
-                    console.err("STOPPED EXECUTION");
-                    setError({error: true, message: `Error in producing report: ${data.stderr}`});
+                    console.error("STOPPED EXECUTION");
+                    setError({ error: true, message: `Error in producing report: ${data.stderr}` });
                 }
                 if (data.stderr.match(/Output created/)) {
                     console.log("REPORT PRODUCED");
@@ -77,22 +82,26 @@ export default function AnalysisProg({progress, setProgress}) {
 
     }, []);
 
-    return(
+    return (
         <>
-        <div className="mt-3">
-            <OutputModal output={output} />
+            <div className="mt-3">
+                <OutputModal output={output} />
 
-            <h5>Progress: {progress}%</h5>
-            <ProgressBar animated now={progress} label={`${progress}%`} variant="primary" />
+                <h5>Progress: {progress}%</h5>
+                <ProgressBar animated now={progress} label={`${progress}%`} variant="primary" />
 
-            {error.error && (
-                <ErrorModal message={error.message} />
-            )}
+                {error.error && (
+                    <ErrorModal message={error.message} errorType="General error" />
+                )}
 
-            {typeof progress === 'number' && progress === 100 && (
-                <SuccessModal reportCreated={reportCreated}/>
-            )}
-        </div>
+                {genomadError.error && (
+                    <ErrorModal message={genomadError.message} errorType="Genomad" />
+                )}
+
+                {typeof progress === 'number' && progress === 100 && (
+                    <SuccessModal reportCreated={reportCreated} />
+                )}
+            </div>
         </>
     )
 }
