@@ -58,7 +58,7 @@ Read the following paragraph and let us guide you through all the steps.
 
 ![App setup](https://github.com/user-attachments/assets/eec116f4-2993-432f-854a-0fc53c3a7991)
 
-## SETUP (FOR FIRTS USAGE ONLY)
+## SETUP (FOR FIRST USAGE ONLY)
 1) If you have not downloaded Docker yet, click on **Check**. If not found, the system will provide you the link to download the correct version for your platform.
 2) Start Docker or Docker Desktop.
 3) Run the **Environment Setup**. Depending on your network speed, it will take approximately 45 to 60 minutes to automatically set up the container and eventually run it. The entire process, which requires **no manual intervention**, consists of the following steps:
@@ -79,6 +79,7 @@ The user should put the input files in a specific folder, where the outputs are 
   FASTQ file formats need to be either for single-end
 - .fastq.gz
 - .fq.gz
+
   <br> for paired-end
 - _1.fastq.gz _2.fastq.gz
 - _R1.fastq.gz _R2.fastq.gz
@@ -96,17 +97,17 @@ The user should put the input files in a specific folder, where the outputs are 
 
 2) **Parameters Setting**  
 The user needs to set the following parameters for the analysis:
-- The analysis name, this will also be the name of the HTML report;
-- If all the samples belongs to the same Genus and Species, it is possible to specify them. In this case, the kraken2 taxonomy analysis will be skipped;
-- Identity and Coverage value for the filtering of AMR and virulence factor results. The default parameter is 90% for both;
-- The folder with the data to be analyzed.
+- The **analysis name** (OPTIONAL), this will also be the name of the HTML report. If not provided, a default name will be assigned;
+- If all the samples belong to the same **Genus** and **Species**, it is possible to specify them. In this case, the kraken2 taxonomy analysis will be skipped;
+- **Identity** and **Coverage** values to filter AMR and virulence factor results. The default parameter is 90% for both;
+- The **input folder** with the data to be analyzed.
 
 ![schermata_app](https://github.com/user-attachments/assets/e511df0f-1605-4e17-97b4-775fd2f8fa7b)
 
 
 
 3) **Output organization**
-<br> Inside the input folder the system will create an output folder with several subfolders:
+<br> Inside the input folder the system will create an output folder with several subfolders and the html of the final report:
 - abricate
 - abricate_ecoli
 - agrvate
@@ -115,7 +116,7 @@ The user needs to set the following parameters for the analysis:
 - ectyper
 - emmtyper
 - fasta_output - *only in fastq analysis*
-- file
+- file - *folder with files produced by the report*
 - fimtyper
 - genomad
 - hicap
@@ -162,10 +163,10 @@ To test BacExplorer with fastq samples it is possible to download:
 - *Staphylococcus aureus* sample from https://www.ncbi.nlm.nih.gov/bioproject/PRJNA912391
 
 ### FASTA
-Fasta samples to test BacExplorer can be found in "test_data" folder in this repository.
+Fasta samples to test BacExplorer can be found in the "test_data" folder in this repository.
 
-## Software and Database
-# Software
+## Softwares and Databases
+# Softwares
 - TrimGalore - https://github.com/FelixKrueger/TrimGalore
 - SPAdes - https://github.com/ablab/spades
 - Kraken2 - https://github.com/DerrickWood/kraken2
@@ -193,7 +194,7 @@ Fasta samples to test BacExplorer can be found in "test_data" folder in this rep
 - QUAST - https://github.com/ablab/quast
 - FastQC - https://github.com/s-andrews/FastQC
 
-# Database
+# Databases
 - CARD - https://card.mcmaster.ca/
 - Megares - https://db.meglab.org/
 - Arg-annot - https://www.mediterranee-infection.com/acces-ressources/base-de-donnees/arg-annot-2/
