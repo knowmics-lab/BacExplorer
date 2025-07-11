@@ -5,8 +5,8 @@ Welcome to BacExplorer, a bacterial analysis tool with an user-friendly GUI.
 ![BACEXPLORER](https://github.com/user-attachments/assets/694f612f-8645-45bf-85c2-5ec00efdc1a6)
 
 
-BacExplorer is a software system for the analysis of Microbial data. Its aim is to annotate Bacterial genome with information about Antimicrobial resistance, virulence factor, plasmids, serotypings and so on. The analysis is developed with the workflow management system Snakemake.
-BacExplorer permits to analyze both raw fastq data and fasta.
+BacExplorer is a software system for the analysis of Microbial data. Its aim is to annotate Bacterial genome with information about Antimicrobial resistance, virulence factor, plasmids, serotypings and so on. The analysis is developed with Bash and wrapped in a Snakemake workflow.
+BacExplorer permits to analyze both raw fastq and fasta data.
 
 ![BacExcplorer_Fig1](https://github.com/user-attachments/assets/340271eb-3113-454e-a6fc-ad7e6a93b07a)
 
@@ -28,7 +28,11 @@ sudo apt install xdg-utils
 It can be performed both with .fasta and .fastq files, with the following requirements:
 - at least 36 GB of storage space;
 - FASTA: at least 8 GB of RAM to analyze one sample;
-- FASTQ: at least 8 GB of RAM to analyze one sample;
+- FASTQ: at least 8 GB of RAM to analyze one sample.
+
+<br>**Tools requirements**:<br>
+- Kraken2: at least 8 GB of RAM required. Otherwise, the workflow will skip Kraken;
+- geNomad: the tool only works on x86 CPUs. It will be skipped on ARM architectures.
 
 ### Storage:
 BacExplorer comes with a large amount of data due to the many databases of the softwares used for the analyses.
@@ -82,11 +86,13 @@ The user should put the input files in a specific folder, where the outputs are 
 - _1.fq.gz _2.fq.gz
 - _R1.fq.gz _R2.fq.gz
 - _R1_L001.fq.gz _R2_L001.fq.gz
+
   <br> Fasta file extension should be
 - .fasta
 - .fa
 - .fna
 - .fsa
+
 
 2) **Parameters Setting**  
 The user needs to set the following parameters for the analysis:
@@ -99,8 +105,8 @@ The user needs to set the following parameters for the analysis:
 
 
 
-3) Output organization
-Inside the input folder the system will create an output folder with several subfolders:
+3) **Output organization**
+<br> Inside the input folder the system will create an output folder with several subfolders:
 - abricate
 - abricate_ecoli
 - agrvate
@@ -134,7 +140,7 @@ Inside the input folder the system will create an output folder with several sub
 - Report.html
 
 
-4) Report page
+4) **Report page**
 
 
 ![immagine](https://github.com/user-attachments/assets/427aca9d-014a-489c-b282-8eadd043e5e9)
