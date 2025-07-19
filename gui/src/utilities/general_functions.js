@@ -1,6 +1,7 @@
 import { spawn } from 'child_process';
 import fs from 'fs-extra';
 import path from 'path';
+import yaml from 'js-yaml';
 import { BrowserWindow } from 'electron';
 
 // handle feedback to send to frontend
@@ -196,7 +197,7 @@ export async function makeGenusDictionary(filePath) {
       }
 }
 
-export function saveUserInput(configFile, originalConfigInput) {
+export function saveUserInput(configFile, originalConfigInput, userAnalysisName) {
   const originalConfig = yaml.load(fs.readFileSync(configFile, 'utf8'));
   originalConfigInput = originalConfig.INPUT;
   userAnalysisName = originalConfig.NAME;

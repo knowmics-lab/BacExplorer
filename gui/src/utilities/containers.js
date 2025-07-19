@@ -543,9 +543,9 @@ async function mapIO(containerName, userInput, userConfigPath) {
   console.log(`Working on: (name) ${containerName} container ${container}`);
 
   try {
-    stopContainer(containerName);
+    await stopContainer(containerName);
     
-    // const containerInfo = await container.inspect();
+    const containerInfo = await container.inspect();
 
     // if (containerInfo.State.Status === 'running') {
     //   console.log(`Stopping container ${containerName}...`);
@@ -559,7 +559,6 @@ async function mapIO(containerName, userInput, userConfigPath) {
 
     console.log(`Recreating container ${containerName} with updated volumes...`);
     try {
-      const containerInfo = await container.inspect();
       await docker.createContainer({
         Image: containerInfo.Config.Image,
         name: containerName,
@@ -593,8 +592,8 @@ async function mapIO(containerName, userInput, userConfigPath) {
     return newContainer;
 
   } catch (error) {
-    console.error('Error while dynamic binding of volumes: ', error);
-    throw ('Error while dynamic binding of volumes: ', error.message);
+    console.error('Error during dynamic binding of volumes: ', error);
+    throw ('Error during dynamic binding of volumes: ', error.message);
   }
 }
 

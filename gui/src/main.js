@@ -378,7 +378,7 @@ ipcMain.handle('save-file', async (event, yamlData) => {
     fs.writeFileSync(configFile, yamlData, 'utf8');
     console.log('File saved as:', configFile);
 
-    saveUserInput(configFile, originalConfigInput);
+    saveUserInput(configFile, originalConfigInput, userAnalysisName);
 
     return { success: true, filePath: configFile };
   } catch (err) {
@@ -437,6 +437,7 @@ ipcMain.on('launch-report', async (event) => {
 })
 
 ipcMain.handle('pick-rep-dir', async (event) => {
+  // CHECK TO HANDLE ENOENT
   const analysisName = userAnalysisName;
   const inputFolder = originalConfigInput;
   const reportPath = path.join(inputFolder, "output", `${analysisName}_report.html`);
