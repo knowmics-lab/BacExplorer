@@ -9,7 +9,6 @@ contextBridge.exposeInMainWorld('api', {
         const validChannels = ['progress', 'error', 'navigate'];
         if (validChannels.includes(channel)) {
             ipcRenderer.on(channel, (event, data) => callback(data));
-            // console.log("From preload: Progress...", data.progress);
         }
     },
     off: (channel, callback) => {

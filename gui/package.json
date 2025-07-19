@@ -1,7 +1,7 @@
 {
   "name": "bacexplorer",
   "productName": "BacExplorer",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A tool for bacterial analysis",
   "main": ".webpack/main",
   "scripts": {

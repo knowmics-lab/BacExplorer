@@ -86,7 +86,7 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
   args=commandArgs(trailingOnly = TRUE)
 
   try({
-    fastqc <- list.files(path=paste0(path_output, "/quality_assessnent/fastqc/"), pattern="_data", full.names=TRUE, recursive=TRUE)
+    fastqc <- list.files(path=paste0(path_output, "/quality_assessment/fastqc_results/"), pattern="_data", full.names=TRUE, recursive=TRUE)
   
     fastqc_function <- function(i){
       fq <- read.csv(i, sep= "\t")
@@ -100,23 +100,26 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
         fq <- as.data.frame(t(fq))
         colnames(fq) <- fq[1,]
         fq <- fq[-1,]
+        colnames(fq)[1] <- "Basic Statistics"
+        fq <- fq[,-10]
         return(fq)
       }
-      
     }
-    
-    fq_tab <- as.data.frame(do.call(rbind, lapply(fastqc, fastqc_function)))
-    rownames(fq_tab) <- NULL
-    
-    print(kable(fq_tab) %>%
-      kable_styling(bootstrap_options = c("striped", "hover","responsive")) %>%
-        scroll_box(width = "100%", height = "330px"))
 
-    if(dim(fq_tab)[1] != 0){
+    fq_tab <- as.data.frame(do.call(bind_rows, lapply(fastqc, fastqc_function)))
+    rownames(fq_tab) <- NULL
+    if(dim(fq_tab)[1] != 0){ 
+      print(kable(fq_tab) %>%
+        kable_styling(bootstrap_options = c("striped", "hover","responsive")) %>%
+          scroll_box(width = "100%", height = "330px"))
+  
       wbf <- createWorkbook()
-      addWorksheet(wbf, "fastqc")
+      addWorksheet(wbf, "FastQC")
       writeData(wbf, sheet = "FastQC", fq_tab) 
       saveWorkbook(wbf, file=paste0(path_excel, "/FastQC_table.xlsx"), overwrite = TRUE)
+    } else {
+      print(kable(fq_tab) %>%
+      kable_styling(bootstrap_options = c("striped", "hover","responsive")))
     }
   }, silent = TRUE)
 ```

@@ -1,15 +1,12 @@
 import { app, BrowserWindow, screen, dialog, ipcMain, Menu, shell } from 'electron';
 import started from 'electron-squirrel-startup';
-import { spawn, execSync, exec } from 'child_process';
 import os from 'os';
 import fs from 'fs';
 import fsExtra from 'fs-extra';
 import path from 'path';
-import yaml from 'js-yaml';
-import { checkDockerInstalled, checkDockerRunning } from './utilities/functions.js';
-import { setupContainer, prepareSnakemakeCommand, runAnalysis, produceReport, checkContainerRunning } from './utilities/containers.js';
-// per testare su container giocattolo
-// import { prepareSnakemakeCommand } from './utilities/docker_utils.js';
+import { checkDockerInstalled, checkDockerRunning } from './utilities/docker_utils.js';
+import { setupContainer, prepareSnakemakeCommand, runAnalysis, produceReport, checkContainerRunning, stopContainer } from './utilities/containers.js';
+import { makeGenusDictionary, outputFolderExists, saveUserInput, validateFormat } from './utilities/general_functions.js';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -42,7 +39,7 @@ const createWindowsMenu = () => {
             label: 'GitHub',
             click: () => {
               const { shell } = require('electron');
-              shell.openExternal('https://github.com/AdrianaCannata/bacExplorer/tree/main');
+              shell.openExternal('https://github.com/knowmics-lab/BacExplorer/tree/main');
             },
           },
         ],
@@ -171,43 +168,6 @@ app.on('ready', () => {
 
   const userDataPath = app.getPath('userData');
 
-  // const appPath = app.getPath()
-
-  // console.log("App path: ", appPath);
-
-  // var copyFileOutsideOfElectronAsar = function (sourceInAsarArchive, destOutsideAsarArchive) {
-  //   console.log("In function to extract asar...");
-  //   if (fs.existsSync(path.join(app.getAppPath(), sourceInAsarArchive))) {
-
-  //       // file will be copied
-  //       // if (fs.statSync(app.getAppPath() + "/" + sourceInAsarArchive).isFile()) {
-  //       if (fs.statSync(path.join(app.getAppPath(), sourceInAsarArchive)).isFile()) {
-  //           let file = destOutsideAsarArchive; 
-  //           let dir = path.dirname(file);
-  //           if (!fs.existsSync(dir)) {
-  //               fs.mkdirSync(dir, { recursive: true });
-  //           }
-
-  //           //fs.writeFileSync(file, fs.readFileSync(app.getAppPath() + "/" + sourceInAsarArchive));
-  //           fs.writeFileSync(file, fs.readFileSync(path.join(app.getAppPath(), sourceInAsarArchive)));
-
-  //       }
-
-  //       // dir is browsed
-  //       // else if (fs.statSync(app.getAppPath() + "/" + sourceInAsarArchive).isDirectory()) {
-  //       else if (fs.statSync(path.join(app.getAppPath(), sourceInAsarArchive)).isDirectory()) {
-
-  //           // fs.readdirSync(app.getAppPath() + "/" + sourceInAsarArchive).forEach(function (fileOrFolderName) {
-  //           fs.readdirSync(path.join(app.getAppPath(), sourceInAsarArchive)).forEach(function (fileOrFolderName) {
-  //             console.log("Copying...", fileOrFolderName);
-  //             copyFileOutsideOfElectronAsar(path.join(sourceInAsarArchive, fileOrFolderName), path.join(destOutsideAsarArchive, fileOrFolderName));  
-  //             // copyFileOutsideOfElectronAsar(sourceInAsarArchive + "/" + fileOrFolderName, destOutsideAsarArchive + "/" + fileOrFolderName);
-  //           });
-  //       }
-  //   }
-
-  // }
-
   const targetFolder = path.join(userDataPath, 'snakemake');
   let sourceFolder = '';
   if (process.env.NODE_ENV === 'production') {
@@ -227,37 +187,10 @@ app.on('ready', () => {
   try {
     fsExtra.copySync(sourceFolder, targetFolder);
     console.log('Files successfully copied!');
-    // const sourceOutput = execSync(`dir ${sourceFolder}`);
-    // console.log(`In source folder: ${sourceOutput}`);
-    // const targetOutput = execSync(`dir ${targetFolder}`);
-    // console.log(`In target folder: ${targetOutput}`);
   } catch (err) {
     console.error('Error while copying:', err);
     throw (err);
   }
-
-  // if (process.env.NODE_ENV === 'production' || app.getAppPath().includes('.asar')) {
-  //   copyFileOutsideOfElectronAsar(sourceFolder, targetFolder);
-  // }
-
-  // if (process.env.NODE_ENV !== 'production') {
-  //   if (!fs.existsSync(targetFolder)) {
-  //     fs.mkdirSync(targetFolder, { recursive: true });
-  //     console.log(`Updating userData. Creating folder: ${targetFolder}`);
-  //   }
-
-  //   try {
-  //     fsExtra.copySync(sourceFolder, targetFolder);
-  //     console.log('Files successfully copied!');
-  //     // const sourceOutput = execSync(`dir ${sourceFolder}`);
-  //     // console.log(`In source folder: ${sourceOutput}`);
-  //     // const targetOutput = execSync(`dir ${targetFolder}`);
-  //     // console.log(`In target folder: ${targetOutput}`);
-  //   } catch (err) {
-  //     console.error('Error while copying:', err);
-  //     throw(err);
-  //   }
-  // }
 
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
@@ -277,26 +210,26 @@ app.on('window-all-closed', () => {
   }
 });
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and import them here.
-
-// ipcMain.on("open-error-dialog", function(){
-//   dialog.showErrorBox("An Error Message", "Demo of an error message");
-// })
-
-// save config file directly into userData
-const backendPath = path.join(app.getPath('userData'), 'snakemake');
+// variables to set up the container
 const imageName = 'adrianacannata/bacexplorer:latest';
 const containerName = 'snakemakeContainer';
 
-// ipcMain.on('progress', (event, data) => {
-//   const mainWindow = BrowserWindow.getAllWindows()[0];
-//   if (mainWindow) {
-//       console.log("in main.js: ", data);
-//       mainWindow.webContents.send('progress', data);
-//   }
-// });
+// use the userData path as the backend path to mount it as a volume on the container
+const backendPath = path.join(app.getPath('userData'), 'snakemake');
 
+// stop container when closing the app
+app.on('will-quit', async (event) => {
+  event.preventDefault();
+  await stopContainer(containerName);
+  app.exit(0);
+})
+
+// In this file you can include the rest of your app's specific main process
+// code. You can also put them in separate files and import them here.
+
+// NAVIGATION FUNCTIONS
+
+// open external docker link
 ipcMain.handle('open-external', () => {
   let url = '';
   const platform = os.platform();
@@ -311,7 +244,21 @@ ipcMain.handle('open-external', () => {
   shell.openExternal(url);
 });
 
-// docker check
+// navigate between pages within the app
+function navigate(page) {
+  console.log('From main process: navigating to', page);
+  if (mainWindow && mainWindow.webContents) {
+    mainWindow.webContents.send('navigate', page);
+  } else {
+    console.error('mainWindow or webContents not available');
+  }
+}
+
+ipcMain.handle('navigate', (event, page) => {
+  navigate(page);
+});
+
+// FUNCTIONS TO MANAGE DOCKER AND CONTAINERS
 ipcMain.handle('docker-installed', async () => {
   try {
     const dockerStatus = await checkDockerInstalled();
@@ -329,19 +276,6 @@ ipcMain.handle('docker-running', async function () {
   } catch (error) {
     throw (error);
   }
-});
-
-function navigate(page) {
-  console.log('From main process: navigating to', page);
-  if (mainWindow && mainWindow.webContents) {
-    mainWindow.webContents.send('navigate', page);
-  } else {
-    console.error('mainWindow o webContents non disponibile');
-  }
-}
-
-ipcMain.handle('navigate', (event, page) => {
-  navigate(page);
 });
 
 ipcMain.handle('create-container', async (event) => {
@@ -370,7 +304,20 @@ ipcMain.handle('check-container', async (event) => {
   }
 })
 
-// select input folder
+// FUNCTIONS TO PREPARE SNAKEMAKE ANALYSIS:
+
+// 1) dinamically handle mapping of genus and species for the Select in frontend
+ipcMain.handle('get-genus-species', async () => {
+  const appPath = app.getAppPath();
+  const filePath = path.join(appPath, 'snakemake', 'resources', 'Lista_mlst.csv');
+  try {
+    return makeGenusDictionary(filePath);
+  } catch (error) {
+    throw (error);
+  }
+});
+
+// 2) input folder selection
 ipcMain.handle('dialog:select-folder', async function (event) {
   const { canceled, filePaths } = await dialog.showOpenDialog({
     properties: ['openDirectory'],
@@ -383,18 +330,67 @@ ipcMain.handle('dialog:select-folder', async function (event) {
 let originalConfigInput = "";
 let userAnalysisName = "";
 
-function saveUserInput(configFile) {
-  const originalConfig = yaml.load(fs.readFileSync(configFile, 'utf8'));
-  originalConfigInput = originalConfig.INPUT;
-  userAnalysisName = originalConfig.NAME;
-  console.log("Analysis name: ", userAnalysisName);
-  console.log("Input folder: ", originalConfigInput);
-}
+// 3) input folder validation
+ipcMain.handle('validate-folder', async (event, inputFolder, type) => {
+  const response = { success: false, message: "" };
+  try {
+    const files = fs.readdirSync(inputFolder);
+    const invalidFiles = validateFormat(files, type);
+    // if (type === "fasta" || type === "Fasta") {
+    //   invalidFiles = files.filter(file => path.extname(file).toLowerCase() !== `.${type}`);
+    // } else if (type === "fastq" || type === "Fastq") {
+    //   invalidFiles = files.filter(file =>
+    //     !file.toLowerCase().endsWith(".fq.gz") &&
+    //     !file.toLowerCase().endsWith(".fastq.gz")
+    //   );
+    // }
+    // console.log("Invalid files: ", invalidFiles);
 
-// launch analysis via snakemake
-ipcMain.handle('run-snakemake', async (event, userInput) => {
+    // invalidFiles = invalidFiles.filter(file => !file.match(/(Zone.Identifier|DS_Store)/));
+
+    const outputFolder = "output";
+
+    if (invalidFiles.length > 0) {
+      // overwrite ouput folder if it already exists
+      const message = outputFolderExists(invalidFiles, outputFolder);
+      response.success = true;
+      response.message = message;
+      console.error(response);
+    } else {
+      const message = "Input files format does not match specified type";
+      response.success = false;
+      response.message = message;
+      console.error(response);
+    }
+    return response;
+  } catch (error) {
+    console.error("Error: ", error);
+    response.success = false;
+    response.message = error.message;
+    return response;
+  }
+})
+
+// 4) config file saving
+ipcMain.handle('save-file', async (event, yamlData) => {
   const configFile = path.join(backendPath, 'config.yaml');
+  try {
+    fs.writeFileSync(configFile, yamlData, 'utf8');
+    console.log('File saved as:', configFile);
+
+    saveUserInput(configFile, originalConfigInput);
+
+    return { success: true, filePath: configFile };
+  } catch (err) {
+    console.error('Error during file saving:', err);
+    return { success: false, error: err.message };
+  }
+});
+
+// FUNCTIONS TO RUN SNAKEMAKE ANALYSIS
+ipcMain.handle('run-snakemake', async (event, userInput) => {
   // save in folder userData
+  const configFile = path.join(backendPath, 'config.yaml');
 
   if (!fs.existsSync(configFile)) {
     console.error(`Config file not found in: ${configFile}`);
@@ -431,7 +427,7 @@ ipcMain.on('launch-analysis', async (event) => {
   );
 });
 
-// launch the report
+// FUNCTIONS TO PRODUCE AND VISUALIZE REPORT
 ipcMain.on('launch-report', async (event) => {
   await produceReport(containerName,
     data => event.reply('report-output', data),
@@ -440,79 +436,7 @@ ipcMain.on('launch-report', async (event) => {
   );
 })
 
-// validate input folder
-ipcMain.handle('validate-folder', async (event, inputFolder, type) => {
-  const response = { success: false, message: "" };
-  try {
-    const files = fs.readdirSync(inputFolder);
-    let invalidFiles = [];
-    if (type === "fasta" || type === "Fasta") {
-      invalidFiles = files.filter(file => path.extname(file).toLowerCase() !== `.${type}`);
-    } else if (type === "fastq" || type === "Fastq") {
-      invalidFiles = files.filter(file =>
-        !file.toLowerCase().endsWith(".fq.gz") &&
-        !file.toLowerCase().endsWith(".fastq.gz")
-      );
-    }
-    console.log("Invalid files: ", invalidFiles);
-
-    const outputFolder = "output";
-    invalidFiles = invalidFiles.filter(file => !file.match(/(Zone.Identifier|DS_Store)/));
-
-    if (invalidFiles.length > 0) {
-      if (invalidFiles.includes(outputFolder)) {
-        const message = "Output folders already exists: files will be overwritten";
-        // remove output folder
-        fs.unlink(outputFolder, err => {
-          console.log("Removing output folder...");
-          if (err) {
-            throw ("Error while removing output folder: ", err);
-          }
-          console.log("Output folder removed successfully");
-        })
-        response.success = true;
-        response.message = message;
-        console.error(response);
-      } else {
-        const message = "Input files format does not match specified type";
-        response.success = false;
-        response.message = message;
-        console.error(response);
-      }
-      return response;
-    }
-
-    response.success = true;
-    response.message = "Ok";
-    return response;
-  } catch (error) {
-    console.error("Error: ", error);
-    response.success = false;
-    response.message = error.message;
-    return response;
-  }
-})
-
-// save config file
-ipcMain.handle('save-file', async (event, yamlData) => {
-  const configFile = path.join(backendPath, 'config.yaml');
-  try {
-    fs.writeFileSync(configFile, yamlData, 'utf8');
-    console.log('File saved as:', configFile);
-
-    saveUserInput(configFile);
-
-    return { success: true, filePath: configFile };
-  } catch (err) {
-    console.error('Error during file saving:', err);
-    return { success: false, error: err.message };
-  }
-});
-
-// pick report dir
 ipcMain.handle('pick-rep-dir', async (event) => {
-  // const configFilePath = path.join(backendPath, "config.yaml");
-  // const config = yaml.load(fs.readFileSync(configFilePath, 'utf8'));
   const analysisName = userAnalysisName;
   const inputFolder = originalConfigInput;
   const reportPath = path.join(inputFolder, "output", `${analysisName}_report.html`);
@@ -540,53 +464,3 @@ ipcMain.handle("create-temp-html-file", async (event, htmlContent) => {
 ipcMain.handle("open-html", (event, htmlFile) => {
   shell.openExternal(`file://${htmlFile}`);
 })
-
-
-ipcMain.handle('get-genus-species', async () => {
-  const appPath = app.getAppPath();
-  const filePath = path.join(appPath, 'snakemake', 'resources', 'Lista_mlst.csv');
-  try {
-    const data = await fs.promises.readFile(filePath, 'utf8');
-    const dict = {};
-
-    const lines = data.split('\n');
-
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (!line) continue;
-
-      const parts = line.split(/\,+/);
-      if (parts.length >= 2) {
-        const [rawGenus, rawSpecies] = parts[1].split('_');
-        const genus = rawGenus.replace(/"/g, '');
-        if (rawSpecies) {
-          const species = rawSpecies.replace(/"/g, '');
-          if (genus && species) {
-            if (!dict[genus]) {
-              dict[genus] = new Set();
-            }
-            dict[genus].add(species);
-
-            if (!dict[genus].has(null)) {
-              dict[genus].add(null);
-            }
-          }
-        } else {
-          if (!dict[genus]) {
-            dict[genus] = new Set();
-          }
-          dict[genus].add("");
-        }
-      }
-    }
-
-    const genusSpeciesMap = {};
-    for (const genus in dict) {
-      genusSpeciesMap[genus] = Array.from(dict[genus]);
-    }
-    return genusSpeciesMap;
-  } catch (err) {
-    console.error('Error reading file:', err);
-    throw err;
-  }
-});

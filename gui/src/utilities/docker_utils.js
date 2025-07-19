@@ -1,6 +1,5 @@
 // utils to check Docker installation
 
-import { exec, execSync } from 'child_process';
 import os                 from 'os';
 import Docker             from 'dockerode';
 
@@ -28,7 +27,6 @@ async function connectToDocker () {
 export async function checkDockerInstalled () {
   try {
     await connectToDocker();
-    // execSync("docker --version", { stdio: "ignore" });
     const response = 'Docker is installed';
     console.log(response);
     return response;
