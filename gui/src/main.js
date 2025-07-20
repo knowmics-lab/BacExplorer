@@ -7,6 +7,7 @@ import path from 'path';
 import { checkDockerInstalled, checkDockerRunning } from './utilities/docker_utils.js';
 import { setupContainer, prepareSnakemakeCommand, runAnalysis, produceReport, checkContainerRunning, stopContainer } from './utilities/containers.js';
 import { isDirEmpty, makeGenusDictionary, outputFolderExists, saveUserInput, validateFormat } from './utilities/general_functions.js';
+import { appVariables, containerVariables, flags, userVariables } from './utilities/global_variables.js';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -210,17 +211,10 @@ app.on('window-all-closed', () => {
   }
 });
 
-// variables to set up the container
-const imageName = 'adrianacannata/bacexplorer:latest';
-const containerName = 'snakemakeContainer';
-
-// use the userData path as the backend path to mount it as a volume on the container
-const backendPath = path.join(app.getPath('userData'), 'snakemake');
-
 // stop container when closing the app
 app.on('will-quit', async (event) => {
   event.preventDefault();
-  await stopContainer(containerName);
+  await stopContainer(containerVariables.containerName);
   app.exit(0);
 })
 
@@ -281,8 +275,8 @@ ipcMain.handle('docker-running', async function () {
 ipcMain.handle('create-container', async (event) => {
   try {
     console.log(
-      `Creating container with parameters: \nIMAGE NAME: ${imageName}\tFOLDER TO MOUNT: ${backendPath}\tCONTAINER NAME: ${containerName}`);
-    const result = await setupContainer(imageName, backendPath, containerName);
+      `Creating container with parameters: \nIMAGE NAME: ${containerVariables.imageName}\tFOLDER TO MOUNT: ${appVariables.backendPath}\tCONTAINER NAME: ${containerVariables.containerName}`);
+    const result = await setupContainer(containerVariables.imageName, appVariables.backendPath, containerVariables.containerName);
     console.log('Result:', result);
     return result;
   } catch (error) {
@@ -296,7 +290,7 @@ ipcMain.handle('create-container', async (event) => {
 
 ipcMain.handle('check-container', async (event) => {
   try {
-    const result = await checkContainerRunning(containerName);
+    const result = await checkContainerRunning(containerVariables.containerName);
     console.log("Container status: ", result);
     return result;
   } catch (error) {
@@ -327,10 +321,6 @@ ipcMain.handle('dialog:select-folder', async function (event) {
   return canceled ? null : filePaths;
 });
 
-let originalConfigInput = "";
-let userAnalysisName = "";
-let outputExists = false;
-
 // 3) input folder validation
 ipcMain.handle('validate-folder', async (event, inputFolder, type) => {
   const response = { success: false, message: "" };
@@ -350,8 +340,8 @@ ipcMain.handle('validate-folder', async (event, inputFolder, type) => {
     invalidFiles = validateFormat(files, invalidFiles, type);
     
     // check if output folder already exists
-    outputExists = outputFolderExists(invalidFiles, "output");
-    if (outputExists) {
+    outputFolderExists(invalidFiles, "output");
+    if (flags.outputExists) {
       invalidFiles = invalidFiles.filter(file => !file.match(/(output)/));
     }
     console.log("Invalid files: ", invalidFiles);
@@ -379,14 +369,16 @@ ipcMain.handle('validate-folder', async (event, inputFolder, type) => {
 
 // 4) config file saving
 ipcMain.handle('save-file', async (event, yamlData) => {
-  const configFile = path.join(backendPath, 'config.yaml');
+  // const configFile = path.join(appVariables.backendPath, 'config.yaml');
   try {
-    fs.writeFileSync(configFile, yamlData, 'utf8');
-    console.log('File saved as:', configFile);
+    fs.writeFileSync(appVariables.configFile, yamlData, 'utf8');
+    console.log('File saved as:', appVariables.configFile);
 
-    saveUserInput(configFile, originalConfigInput, userAnalysisName, outputExists);
+    // update config file with parameters set by the user and update userAnalysisName:
+    // prevents ENOENT in 'pick-rep-dir' in case it is the default name
+    saveUserInput(appVariables.configFile, flags.outputExists);
 
-    return { success: true, filePath: configFile };
+    return { success: true, filePath: appVariables.configFile };
   } catch (err) {
     console.error('Error during file saving:', err);
     return { success: false, error: err.message };
@@ -396,15 +388,15 @@ ipcMain.handle('save-file', async (event, yamlData) => {
 // FUNCTIONS TO RUN SNAKEMAKE ANALYSIS
 ipcMain.handle('run-snakemake', async (event, userInput) => {
   // save in folder userData
-  const configFile = path.join(backendPath, 'config.yaml');
+ //  const configFile = path.join(appVariables.backendPath, 'config.yaml');
 
-  if (!fs.existsSync(configFile)) {
-    console.error(`Config file not found in: ${configFile}`);
-    event.reply('setting-error', { stderr: `Config file not found: ${configFile}. Unable to proceed.`, code: 404 });
+  if (!fs.existsSync(appVariables.configFile)) {
+    console.error(`Config file not found in: ${appVariables.configFile}`);
+    event.reply('setting-error', { stderr: `Config file not found: ${appVariables.configFile}. Unable to proceed.`, code: 404 });
     return;
   }
 
-  const snakefileDir = path.dirname(configFile);
+  const snakefileDir = path.dirname(appVariables.configFile);
   try {
     const dirContent = fs.readdirSync(snakefileDir);
     if (!dirContent.includes('Snakefile')) {
@@ -417,17 +409,17 @@ ipcMain.handle('run-snakemake', async (event, userInput) => {
   }
   console.log('SnakefileDir: ', snakefileDir);
 
-  const newContainer = await prepareSnakemakeCommand(containerName, userInput, snakefileDir);
+  const newContainer = await prepareSnakemakeCommand(containerVariables.containerName, userInput, snakefileDir);
 
   console.log('New container created: ', newContainer);
 
-  console.log('Running Snakemake with config file:', configFile);
+  console.log('Running Snakemake with config file:', appVariables.configFile);
 
 });
 
 ipcMain.on('launch-analysis', async (event) => {
   await runAnalysis(
-    containerName,
+    containerVariables.containerName,
     (data) => event.reply('snakemake-output', data),
     (data) => event.reply('snakemake-error', data),
   );
@@ -435,18 +427,17 @@ ipcMain.on('launch-analysis', async (event) => {
 
 // FUNCTIONS TO PRODUCE AND VISUALIZE REPORT
 ipcMain.on('launch-report', async (event) => {
-  await produceReport(containerName,
+  await produceReport(containerVariables.containerName,
     data => event.reply('report-output', data),
     data => event.reply('report-error', data),
-    backendPath,
+    appVariables.backendPath,
   );
 })
 
 ipcMain.handle('pick-rep-dir', async (event) => {
   // CHECK TO HANDLE ENOENT
-  const analysisName = userAnalysisName;
-  const inputFolder = originalConfigInput;
-  const reportPath = path.join(inputFolder, "output", `${analysisName}_report.html`);
+  const reportPath = path.join(userVariables.originalConfigInput, "output", `${userVariables.userAnalysisName}_report.html`);
+  console.log(`Report dir for analysis ${userVariables.userAnalysisName} is ${reportPath}`);
   return reportPath;
 })
 

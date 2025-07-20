@@ -3,6 +3,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import yaml from 'js-yaml';
 import { BrowserWindow } from 'electron';
+import { flags, userVariables } from './global_variables';
 
 // handle feedback to send to frontend
 export function emitProgress(status, progress) {
@@ -197,14 +198,14 @@ export async function makeGenusDictionary(filePath) {
       }
 }
 
-export function saveUserInput(configFile, originalConfigInput, userAnalysisName, outputExists) {
+export function saveUserInput(configFile, outputExists) {
   const originalConfig = yaml.load(fs.readFileSync(configFile, 'utf8'));
-  originalConfigInput = originalConfig.INPUT;
-  userAnalysisName = originalConfig.NAME;
-  console.log("Analysis name: ", userAnalysisName);
-  console.log("Input folder: ", originalConfigInput);
+  userVariables.originalConfigInput = originalConfig.INPUT;
+  userVariables.userAnalysisName = originalConfig.NAME;
+  console.log("Analysis name: ",  userVariables.userAnalysisName);
+  console.log("Input folder: ", userVariables.originalConfigInput);
   if (outputExists) {
-    const outputFolder = path.join(originalConfigInput, "output");
+    const outputFolder = path.join(userVariables.originalConfigInput, "output");
     removeOutputFolder(outputFolder);
   }
 }
@@ -236,10 +237,11 @@ export function outputFolderExists(files, outputFolder) {
   // returns false if output folder does not exist, true if it does.
   if (files.includes(outputFolder)) {
     console.log("Output folder already exists: will be overwritten.");
-    return true;
+    flags.outputExists = true;
+    return;
   }
   console.log("Output folder does not exist.");
-  return false;
+  flags.outputExists = false;
 }
 
 function removeOutputFolder(outputFolder) {

@@ -1,4 +1,4 @@
-import { useState, useEffect }       from 'react';
+import React, { useState, useEffect }       from 'react';
 import { Button, Form, FormGroup, Spinner } from 'react-bootstrap';
 import GenusSpe                             from './Genus-Species';
 import Type                                 from './Type';

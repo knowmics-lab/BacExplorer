@@ -135,7 +135,7 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
   args=commandArgs(trailingOnly = TRUE)
 
   try({
-    quast <- list.files(path=paste0(path_output, "/quality_assessnent/quast_results/"), pattern="_report.tsv", full.names=TRUE, recursive=TRUE)
+    quast <- list.files(path=paste0(path_output, "/quality_assessment/quast_results/"), pattern="_report.tsv", full.names=TRUE, recursive=TRUE)
     aq <- grep("transposed_", quast)
     quast <- quast[-c(aq)]
     
