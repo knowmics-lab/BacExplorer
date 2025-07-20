@@ -5,13 +5,18 @@ import TechReq from "./Technical_Requirements";
 import NavGuide from "./Nav-Guide";
 import CheckInstalled from "./Docker-Configuration/Check-Installed";
 import DockerConfig from "./Docker-Configuration/Docker-Config";
+import OngoingAnalysis from "../Ongoing-Analysis";
 
-export default function Guide(){
+export default function Guide({ ongoingAnalysis }) {
+    //when ongoingAnalysis show a button to redirect to analysis page
     return(
         <div className='custom-container'>
             <div className="container">
                 <div className="nav-col">
                     <NavGuide />
+                    {ongoingAnalysis &&
+                        <OngoingAnalysis />
+                    }
                 </div>
                 <div className="content-col">
                     <div className="row">

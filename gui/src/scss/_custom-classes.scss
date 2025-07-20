@@ -1,7 +1,7 @@
 .custom-container {
     width: 100%;
     height: auto;
-    background: #F8F8F8;
+    background: $dark-white;
     padding: 0;
     box-sizing: border-box;
   }
@@ -22,7 +22,7 @@
 }
   
 .nav-col {
-    background-color: #F8F8F8;
+    background-color: $dark-white;
     font-size: larger;
     font-weight: bolder;
     position: sticky;
@@ -36,24 +36,24 @@
   
 .content-col {
     display: grid;
-    grid-template-rows: repeat(3, auto); /* 3 righe, ognuna con altezza automatica */
+    grid-template-rows: repeat(3, auto);
     gap: 20px;
 }
 
  
 .row {
-    background-color: #FDFDFD;
+    background-color: $clear-white;
     padding: 15px;
     border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Aggiungi ombre per un effetto visivo */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .custom-col {
-    background-color: #FDFDFD;
+    background-color: $clear-white;
     padding: 30px;
     margin:20px;
     border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Aggiungi ombre per un effetto visivo */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
   
 h2 {
@@ -71,7 +71,7 @@ h2 {
 }
 
 .white {
-    background-color: #FDFDFD;
+    background-color: $clear-white;
 }
 
 .text-container {
@@ -116,6 +116,11 @@ h2 {
 .text-emphasis {
     text-decoration: underline;
     color: $secondary;
+}
+
+.text-primary {
+    font-size: 32px;
+    color: $primary;
 }
 
 .text-secondary {

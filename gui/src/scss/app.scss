@@ -1,6 +1,8 @@
 $primary: #2c6a66;
 $secondary: #df5193;
+$clear-white: #FDFDFD;
+$dark-white: #F8F8F8;
 
 @import 'style';
-@import 'custom-container';
+@import 'custom-classes';
 @import "~bootstrap/scss/bootstrap";

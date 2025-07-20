@@ -22,7 +22,7 @@ contextBridge.exposeInMainWorld('api', {
     },
     openErrorDialog: () => ipcRenderer.send("open-error-dialog"),
     selectFolder: () => ipcRenderer.invoke('dialog:select-folder'),
-    onNavigate: (page) => {
+    navigate: (page) => {
         if (typeof page === 'string') {
             ipcRenderer.invoke('navigate', page);
         } else {

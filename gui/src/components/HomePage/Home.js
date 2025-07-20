@@ -1,16 +1,15 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import logo from './logo.png';
 import { Stack, Col, Button } from "react-bootstrap";
+import OngoingAnalysis from "../Ongoing-Analysis";
 
-export default function Home() {
-
-    const [containerRunning, setContainerRunning] = useState(false);
+export default function Home({containerRunning, setContainerRunning, ongoingAnalysis}) {
     const [containerMessage, setContainerMessage] = useState("");
     const [defaultButton, setDefaultButton] = useState(true);
 
     const navigate = (page) =>{
-        console.log(`Navigando verso ${page}`);
-        window.api.onNavigate(page);
+        console.log(`Navigating towards ${page}`);
+        window.api.navigate(page);
     }
 
     const handleClick = async () => {
@@ -29,11 +28,19 @@ export default function Home() {
         }
     }
 
+    useEffect(() => {
+        if (containerRunning)
+            setDefaultButton(false);
+    }, []);
+
     return(
         <div className='custom-container home'>
             <img className="img-fluid cover" src={logo} alt="LOGO"/>
             <div className='text-container'>
                 <h1 className='text-header'>Welcome to BacExplorer!</h1>
+                {ongoingAnalysis &&
+                    <OngoingAnalysis />
+                }
             </div>
             <Stack direction="horizontal" gap="3" className="justify-content-md-center px-5">
                 <Col className="custom-col justify-content-md-center py-5 px-5 mx-5">

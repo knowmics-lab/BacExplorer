@@ -5,11 +5,9 @@ import NavLink from 'react-bootstrap/NavLink';
 import { Dropdown, DropdownItem } from 'react-bootstrap';
 
 export default function NavGuide() {
-  const [show, setShow] = useState(false);
-  
   const navigate = (page) =>{
     console.log(`Navigando verso ${page}`);
-    window.api.onNavigate(page);
+    window.api.navigate(page);
   }
 
   return (
@@ -27,7 +25,7 @@ export default function NavGuide() {
             <Nav.Link href="#params">Parameters setting</Nav.Link>
           </Dropdown.Menu>
       </Dropdown>
-      <hr className='line' style={{border:"dotted"}}/>
+      {/* <hr className='line' style={{border:"solid", color: "$primary"}} /> */}
       <NavLink onClick={() => navigate("settings")}>Analysis</NavLink>
 
     </Nav>
