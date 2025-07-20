@@ -5,6 +5,9 @@ console.log('Preload script loaded successfully!');
 import { contextBridge, ipcRenderer } from 'electron';
 
 contextBridge.exposeInMainWorld('api', {
+    send: (channel, data) => {
+        ipcRenderer.send(channel, data);
+    },
     on: (channel, callback) => {
         const validChannels = ['progress', 'error', 'navigate'];
         if (validChannels.includes(channel)) {
@@ -18,7 +21,7 @@ contextBridge.exposeInMainWorld('api', {
         }
     },
     removeAllListeners: () => {
-    ipcRenderer.removeAllListeners();
+        ipcRenderer.removeAllListeners();
     },
     openErrorDialog: () => ipcRenderer.send("open-error-dialog"),
     selectFolder: () => ipcRenderer.invoke('dialog:select-folder'),
@@ -26,7 +29,7 @@ contextBridge.exposeInMainWorld('api', {
         if (typeof page === 'string') {
             ipcRenderer.invoke('navigate', page);
         } else {
-            console.error("Valore di 'page' non valido:", page);
+            console.error(page, " is not valid");
         }
     },
     prepareSnakemake: async (userInput) => ipcRenderer.invoke('run-snakemake', userInput),
@@ -34,12 +37,12 @@ contextBridge.exposeInMainWorld('api', {
     onSnakemakeOutput: (callback) => {
         ipcRenderer.on('snakemake-output', (event, data) => {
             console.error('Received data in preload:', data);
-            if(data.stdout) {
+            if (data.stdout) {
                 callback({ stdout: data.stdout, stderr: null });
             } else if (data.stderr) {
                 callback({ stdout: null, stderr: data.stderr });
             }
-            
+
         });
 
         ipcRenderer.on('setting-error', (event, data) => {
@@ -52,14 +55,15 @@ contextBridge.exposeInMainWorld('api', {
         console.log("Setting up report listener in preload...");
         ipcRenderer.on('report-output', (event, data) => {
             console.error('Received in preload: ', data);
-            if(data.stdout) {
+            if (data.stdout) {
                 callback({ stdout: data.stdout, stderr: null });
             } else if (data.stderr) {
                 callback({ stdout: null, stderr: data.stderr });
             }
         });
     },
-    validateInputFolder: async (inputFolder, type) => {const response = await ipcRenderer.invoke('validate-folder', inputFolder, type);
+    validateInputFolder: async (inputFolder, type) => {
+        const response = await ipcRenderer.invoke('validate-folder', inputFolder, type);
         console.log("From preload: ", response);
         return response;
     },
