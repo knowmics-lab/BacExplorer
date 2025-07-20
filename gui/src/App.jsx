@@ -1,23 +1,24 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Guide from './components/Guide/Guide.js';
 import Inputs from './components/Settings/Inputs.js';
+import Report from './components/Report.js';
 import "./renderer.js";
 import DockerConfig from './components/Guide/Docker-Configuration/Docker-Config.js';
 import Home from './components/HomePage/Home.js';
-import AnalysisPage from './components/Snakemake-Feedback/Analysis-Page.js';
 
 export default function App() {
     const [currentPage, setCurrentPage] = useState('home');
 
+
     useEffect(() => {
-        const handleNavigate = (event) => {
+        const handleNavigate = (event) => {    
             if (event) {
                 setCurrentPage(event);
             } else {
-                console.error("Error: Page is undefined!");
+                console.error("Errore: Page è undefined!");
             }
         };
-
+    
         window.api.on('navigate', handleNavigate);
 
         return () => {
@@ -29,7 +30,7 @@ export default function App() {
     }, [currentPage]);
 
     const renderContent = () => {
-        switch (currentPage) {
+        switch(currentPage) {
             case 'home':
                 return <Home />;
             case 'guide':
@@ -38,8 +39,6 @@ export default function App() {
                 return <DockerConfig />;
             case 'settings':
                 return <Inputs />;
-            // case 'analysis':
-            //     return <AnalysisPage />;
             // case 'report':
             //     return <Report />;
             default:
@@ -47,7 +46,7 @@ export default function App() {
         }
     }
 
-    return (
-        <>{renderContent()}</>
+    return(
+        <>{renderContent()}</>     
     )
 }

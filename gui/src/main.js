@@ -6,7 +6,7 @@ import fsExtra from 'fs-extra';
 import path from 'path';
 import { checkDockerInstalled, checkDockerRunning } from './utilities/docker_utils.js';
 import { setupContainer, prepareSnakemakeCommand, runAnalysis, produceReport, checkContainerRunning, stopContainer } from './utilities/containers.js';
-import { isDirEmpty, makeGenusDictionary, outputFolderExists, saveUserInput, validateFormat } from './utilities/general_functions.js';
+import { makeGenusDictionary, outputFolderExists, saveUserInput, validateFormat } from './utilities/general_functions.js';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -335,16 +335,6 @@ ipcMain.handle('validate-folder', async (event, inputFolder, type) => {
   const response = { success: false, message: "" };
   try {
     const files = fs.readdirSync(inputFolder);
-    // check if directory is empty
-    const isEmpty = isDirEmpty(files);
-    if (isEmpty) {
-      const message = "Directory is empty!";
-      response.success = false;
-      response.message = message;
-      return response;
-    }
-
-    // check if any file in folder does not match the input type
     const invalidFiles = validateFormat(files, type);
     // if (type === "fasta" || type === "Fasta") {
     //   invalidFiles = files.filter(file => path.extname(file).toLowerCase() !== `.${type}`);
@@ -358,10 +348,10 @@ ipcMain.handle('validate-folder', async (event, inputFolder, type) => {
 
     // invalidFiles = invalidFiles.filter(file => !file.match(/(Zone.Identifier|DS_Store)/));
 
-    // overwrite ouput folder if it already exists
     const outputFolder = "output";
 
     if (invalidFiles.length > 0) {
+      // overwrite ouput folder if it already exists
       const message = outputFolderExists(invalidFiles, outputFolder);
       response.success = true;
       response.message = message;

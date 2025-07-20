@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
-export default function Report() {
+export default function Report(){
     const [htmlContent, setHtmlContent] = useState("");
 
     useEffect(() => {
@@ -11,15 +11,15 @@ export default function Report() {
                 const content = await window.api.readHtmlFile(reportPath);
                 console.log("html content: ", content);
                 setHtmlContent(content);
-
+                
                 const tempFilePath = await window.api.createTempHtmlFile(content);
 
                 await window.api.openHtmlFile(tempFilePath);
 
                 // shell.openExternal(`file://${tempFilePath}`);
-            } catch (error) {
+            } catch(error) {
                 console.error("Error in fetching report: ", error);
-                throw (error);
+                throw(error);
             }
         }
         fetchReport();

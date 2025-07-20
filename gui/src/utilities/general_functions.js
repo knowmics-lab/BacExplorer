@@ -131,17 +131,17 @@ export async function downloadFile(source, destination, statusMessage) {
 
 // create directory if not found
 export function checkDir(directory) {
-  try {
-    if (!fs.existsSync(directory)) {
-      console.log("Creating ", directory);
-      fs.mkdirSync(directory, { recursive: true });
+    try {
+        if (!fs.existsSync(directory)) {
+            console.log("Creating ", directory);
+            fs.mkdirSync(directory, { recursive: true });
+        }
+        else 
+            console.log("Directory: ", directory, " exitst");
+    } catch (error) {
+        throw(error);
     }
-    else
-      console.log("Directory: ", directory, " exitst");
-  } catch (error) {
-    throw (error);
-  }
-
+  
 }
 
 // return host machine architecture
@@ -151,50 +151,50 @@ export function checkArchitecture() {
 }
 
 export async function makeGenusDictionary(filePath) {
-  try {
-    const data = await fs.promises.readFile(filePath, 'utf8');
-    const dict = {};
-
-    const lines = data.split('\n');
-
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (!line) continue;
-
-      const parts = line.split(/\,+/);
-      if (parts.length >= 2) {
-        const [rawGenus, rawSpecies] = parts[1].split('_');
-        const genus = rawGenus.replace(/"/g, '');
-        if (rawSpecies) {
-          const species = rawSpecies.replace(/"/g, '');
-          if (genus && species) {
-            if (!dict[genus]) {
-              dict[genus] = new Set();
-            }
-            dict[genus].add(species);
-
-            if (!dict[genus].has(null)) {
-              dict[genus].add(null);
+    try {
+        const data = await fs.promises.readFile(filePath, 'utf8');
+        const dict = {};
+    
+        const lines = data.split('\n');
+    
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line) continue;
+    
+          const parts = line.split(/\,+/);
+          if (parts.length >= 2) {
+            const [rawGenus, rawSpecies] = parts[1].split('_');
+            const genus = rawGenus.replace(/"/g, '');
+            if (rawSpecies) {
+              const species = rawSpecies.replace(/"/g, '');
+              if (genus && species) {
+                if (!dict[genus]) {
+                  dict[genus] = new Set();
+                }
+                dict[genus].add(species);
+    
+                if (!dict[genus].has(null)) {
+                  dict[genus].add(null);
+                }
+              }
+            } else {
+              if (!dict[genus]) {
+                dict[genus] = new Set();
+              }
+              dict[genus].add("");
             }
           }
-        } else {
-          if (!dict[genus]) {
-            dict[genus] = new Set();
-          }
-          dict[genus].add("");
         }
+    
+        const genusSpeciesMap = {};
+        for (const genus in dict) {
+          genusSpeciesMap[genus] = Array.from(dict[genus]);
+        }
+        return genusSpeciesMap;
+      } catch (err) {
+        console.error('Error reading file:', err);
+        throw err;
       }
-    }
-
-    const genusSpeciesMap = {};
-    for (const genus in dict) {
-      genusSpeciesMap[genus] = Array.from(dict[genus]);
-    }
-    return genusSpeciesMap;
-  } catch (err) {
-    console.error('Error reading file:', err);
-    throw err;
-  }
 }
 
 export function saveUserInput(configFile, originalConfigInput, userAnalysisName) {
@@ -205,44 +205,36 @@ export function saveUserInput(configFile, originalConfigInput, userAnalysisName)
   console.log("Input folder: ", originalConfigInput);
 }
 
-export function isDirEmpty(files) {
-  if (files.length === 0) {
-    console.error("Directory is empty!");
-    return true;
-  }
-  return false;
-}
-
 export function validateFormat(files, type) {
-  let invalidFiles = [];
-  if (type === "fasta" || type === "Fasta") {
-    invalidFiles = files.filter(file => path.extname(file).toLowerCase() !== `.${type}`);
-  } else if (type === "fastq" || type === "Fastq") {
-    invalidFiles = files.filter(file =>
-      !file.toLowerCase().endsWith(".fq.gz") &&
-      !file.toLowerCase().endsWith(".fastq.gz")
-    );
-  }
-  console.log("Invalid files: ", invalidFiles);
+    let invalidFiles = [];
+    if (type === "fasta" || type === "Fasta") {
+        invalidFiles = files.filter(file => path.extname(file).toLowerCase() !== `.${type}`);
+    } else if (type === "fastq" || type === "Fastq") {
+        invalidFiles = files.filter(file =>
+            !file.toLowerCase().endsWith(".fq.gz") &&
+            !file.toLowerCase().endsWith(".fastq.gz")
+        );
+    }
+    console.log("Invalid files: ", invalidFiles);
 
-  invalidFiles = invalidFiles.filter(file => !file.match(/(Zone.Identifier|DS_Store)/));
-  return invalidFiles;
+    invalidFiles = invalidFiles.filter(file => !file.match(/(Zone.Identifier|DS_Store)/));
+    return invalidFiles;
 }
 
 export function outputFolderExists(invalidFiles, outputFolder) {
-  let message = "";
-  if (invalidFiles.includes(outputFolder)) {
-    message = "Output folders already exists: files will be overwritten";
-    // remove output folder
-    fs.unlink(outputFolder, err => {
-      console.log("Removing output folder...");
-      if (err) {
-        throw ("Error while removing output folder: ", err);
-      }
-      console.log("Output folder removed successfully");
-    })
-  } else {
-    message = "Ouput folder not found";
-  }
-  return message;
+    let message = "";
+    if (invalidFiles.includes(outputFolder)) {
+        message = "Output folders already exists: files will be overwritten";
+        // remove output folder
+        fs.unlink(outputFolder, err => {
+          console.log("Removing output folder...");
+          if (err) {
+            throw ("Error while removing output folder: ", err);
+          }
+          console.log("Output folder removed successfully");
+        })
+    } else {
+        message = "Ouput folder not found";
+    }
+    return message;
 }
