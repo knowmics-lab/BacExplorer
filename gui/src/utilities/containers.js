@@ -524,7 +524,6 @@ export async function prepareSnakemakeCommand(containerName, userInput, snakefil
     console.error('Error in cloning container: ', error);
     throw (error);
   }
-
 }
 
 async function mapIO(containerName, userInput, userConfigPath) {
@@ -628,7 +627,7 @@ export async function runAnalysis(containerName, reply, onError) {
         const code = (d) ? d.ExitCode : null;
         console.log(`Snakemake process exited with code ${code}`);
         if (code !== 0) {
-          onError({ stdout: null, stderr: `Snakemake exited with code ${code}` });
+          onError({ stdout: null, stderr: `Snakemake exited with code ${code}`, code: code });
         } else if (code === 0) {
           const endMessage = `Workflow completed: Snakemake exited with code ${code}`;
           console.error();
@@ -685,7 +684,7 @@ export async function produceReport(containerName, reply, onError, localConfigDi
         const code = (d) ? d.ExitCode : null;
         console.log(`Report exited with code ${code}`);
         if (code !== 0) {
-          onError({ stdout: null, stderr: `Report exited with code ${code}` });
+          onError({ stdout: null, stderr: `Report exited with code ${code}`, code: code });
         }
       })().catch(console.error);
     },

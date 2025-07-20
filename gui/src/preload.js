@@ -35,17 +35,22 @@ contextBridge.exposeInMainWorld('api', {
         ipcRenderer.on('snakemake-output', (event, data) => {
             console.error('Received data in preload:', data);
             if(data.stdout) {
-                callback({ stdout: data.stdout, stderr: null });
+                callback({ stdout: data.stdout, stderr: null, isError: false });
             } else if (data.stderr) {
-                callback({ stdout: null, stderr: data.stderr });
+                callback({ stdout: null, stderr: data.stderr, isError: false });
             }
             
         });
 
-        ipcRenderer.on('setting-error', (event, data) => {
-            console.error('Error in preparation: ', data.stderr);
-            callback({ isError: true, errorCode: data.code, stderr: data.stderr });
-        })
+        ipcRenderer.on('snakemake-error', (event, data) => {
+            console.error('Received data in preload:', data);
+            callback({ ...data, isError: true });
+        });
+
+        // ipcRenderer.on('setting-error', (event, data) => {
+        //     console.error('Error in preparation: ', data.stderr);
+        //     callback(data);
+        // })
     },
     launchReport: async () => ipcRenderer.send('launch-report'),
     onReportOutput: (callback) => {
@@ -57,6 +62,11 @@ contextBridge.exposeInMainWorld('api', {
             } else if (data.stderr) {
                 callback({ stdout: null, stderr: data.stderr });
             }
+        });
+
+        ipcRenderer.on('report-error', (event, data) => {
+            console.error('Received in preload: ', data);
+            callback({ ...data, isError: true });
         });
     },
     validateInputFolder: async (inputFolder, type) => {const response = await ipcRenderer.invoke('validate-folder', inputFolder, type);

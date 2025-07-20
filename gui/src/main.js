@@ -392,8 +392,9 @@ ipcMain.handle('run-snakemake', async (event, userInput) => {
 
   if (!fs.existsSync(appVariables.configFile)) {
     console.error(`Config file not found in: ${appVariables.configFile}`);
-    event.reply('setting-error', { stderr: `Config file not found: ${appVariables.configFile}. Unable to proceed.`, code: 404 });
-    return;
+    throw new Error(`Config file not found: ${appVariables.configFile}. Unable to proceed.`);
+    // event.reply('setting-error', { isError: true, stderr: `Config file not found: ${appVariables.configFile}. Unable to proceed.`, code: 404 });
+    // return;
   }
 
   const snakefileDir = path.dirname(appVariables.configFile);
@@ -401,20 +402,24 @@ ipcMain.handle('run-snakemake', async (event, userInput) => {
     const dirContent = fs.readdirSync(snakefileDir);
     if (!dirContent.includes('Snakefile')) {
       console.error(`Snakefile not found in: ${snakefileDir}`);
-      event.reply('setting-error',
-        { stderr: `Snakefile not found in: ${snakefileDir}. Unable to proceed.`, code: 404 });
+      throw new Error(`Snakefile not found in: ${snakefileDir}. Unable to proceed.`)
+      // event.reply('setting-error',
+      //   { isError: true, stderr: `Snakefile not found in: ${snakefileDir}. Unable to proceed.`, code: 404 });
     }
   } catch (error) {
-    event.reply('setting-error', { stderr: error.message, code: 500 });
+    console.log(error);
+    throw new Error(error);
+    // event.reply('setting-error', { isError: true, stderr: error.message, code: 500 });
   }
   console.log('SnakefileDir: ', snakefileDir);
 
-  const newContainer = await prepareSnakemakeCommand(containerVariables.containerName, userInput, snakefileDir);
-
-  console.log('New container created: ', newContainer);
-
+  try {
+    const newContainer = await prepareSnakemakeCommand(containerVariables.containerName, userInput, snakefileDir);
+    console.log('New container created: ', newContainer);
+  } catch (error) {
+    throw new Error(error);
+  }
   console.log('Running Snakemake with config file:', appVariables.configFile);
-
 });
 
 ipcMain.on('launch-analysis', async (event) => {
