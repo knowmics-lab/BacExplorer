@@ -197,44 +197,57 @@ export async function makeGenusDictionary(filePath) {
       }
 }
 
-export function saveUserInput(configFile, originalConfigInput, userAnalysisName) {
+export function saveUserInput(configFile, originalConfigInput, userAnalysisName, outputExists) {
   const originalConfig = yaml.load(fs.readFileSync(configFile, 'utf8'));
   originalConfigInput = originalConfig.INPUT;
   userAnalysisName = originalConfig.NAME;
   console.log("Analysis name: ", userAnalysisName);
   console.log("Input folder: ", originalConfigInput);
+  if (outputExists) {
+    const outputFolder = path.join(originalConfigInput, "output");
+    removeOutputFolder(outputFolder);
+  }
 }
 
-export function validateFormat(files, type) {
-    let invalidFiles = [];
-    if (type === "fasta" || type === "Fasta") {
-        invalidFiles = files.filter(file => path.extname(file).toLowerCase() !== `.${type}`);
-    } else if (type === "fastq" || type === "Fastq") {
-        invalidFiles = files.filter(file =>
-            !file.toLowerCase().endsWith(".fq.gz") &&
-            !file.toLowerCase().endsWith(".fastq.gz")
-        );
-    }
-    console.log("Invalid files: ", invalidFiles);
-
-    invalidFiles = invalidFiles.filter(file => !file.match(/(Zone.Identifier|DS_Store)/));
-    return invalidFiles;
+export function isDirEmpty(files) {
+  console.log("Files in directory: ", files);
+  if (files.length === 0) {
+    console.error("Directory is empty!");
+    return true;
+  }
+  return false;
 }
 
-export function outputFolderExists(invalidFiles, outputFolder) {
-    let message = "";
-    if (invalidFiles.includes(outputFolder)) {
-        message = "Output folders already exists: files will be overwritten";
-        // remove output folder
-        fs.unlink(outputFolder, err => {
-          console.log("Removing output folder...");
-          if (err) {
-            throw ("Error while removing output folder: ", err);
-          }
-          console.log("Output folder removed successfully");
-        })
-    } else {
-        message = "Ouput folder not found";
+export function validateFormat(files, invalidFiles, type) {
+  if (type.toLowerCase() === "fasta") {
+    invalidFiles = files.filter(file => path.extname(file).toLowerCase() !== `.${type}`);
+  } else if (type.toLowerCase() === "fastq") {
+    invalidFiles = files.filter(file =>
+      !file.toLowerCase().endsWith(".fq.gz") &&
+      !file.toLowerCase().endsWith(".fastq.gz")
+    );
+  }
+  invalidFiles = invalidFiles.filter(file => !file.match(/(Zone.Identifier|DS_Store)/));
+  console.log("Invalid files: ", invalidFiles);
+  return invalidFiles;
+}
+
+export function outputFolderExists(files, outputFolder) {
+  // returns false if output folder does not exist, true if it does.
+  if (files.includes(outputFolder)) {
+    console.log("Output folder already exists: will be overwritten.");
+    return true;
+  }
+  console.log("Output folder does not exist.");
+  return false;
+}
+
+function removeOutputFolder(outputFolder) {
+  fs.rm(outputFolder, {recursive: true, force: true}, err => {
+    console.log("Removing output folder...");
+    if (err) {
+      throw ("Error while removing output folder: ", err);
     }
-    return message;
+    console.log("Output folder removed successfully");
+  })
 }

@@ -6,7 +6,7 @@ import fsExtra from 'fs-extra';
 import path from 'path';
 import { checkDockerInstalled, checkDockerRunning } from './utilities/docker_utils.js';
 import { setupContainer, prepareSnakemakeCommand, runAnalysis, produceReport, checkContainerRunning, stopContainer } from './utilities/containers.js';
-import { makeGenusDictionary, outputFolderExists, saveUserInput, validateFormat } from './utilities/general_functions.js';
+import { isDirEmpty, makeGenusDictionary, outputFolderExists, saveUserInput, validateFormat } from './utilities/general_functions.js';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -329,36 +329,42 @@ ipcMain.handle('dialog:select-folder', async function (event) {
 
 let originalConfigInput = "";
 let userAnalysisName = "";
+let outputExists = false;
 
 // 3) input folder validation
 ipcMain.handle('validate-folder', async (event, inputFolder, type) => {
   const response = { success: false, message: "" };
   try {
     const files = fs.readdirSync(inputFolder);
-    const invalidFiles = validateFormat(files, type);
-    // if (type === "fasta" || type === "Fasta") {
-    //   invalidFiles = files.filter(file => path.extname(file).toLowerCase() !== `.${type}`);
-    // } else if (type === "fastq" || type === "Fastq") {
-    //   invalidFiles = files.filter(file =>
-    //     !file.toLowerCase().endsWith(".fq.gz") &&
-    //     !file.toLowerCase().endsWith(".fastq.gz")
-    //   );
-    // }
-    // console.log("Invalid files: ", invalidFiles);
+    // check if directory is empty
+    const isEmpty = isDirEmpty(files);
+    if (isEmpty) {
+      const message = "Directory is empty!";
+      response.success = false;
+      response.message = message;
+      return response;
+    }
+    
+    // check if any file in folder does not match the input type
+    let invalidFiles = [];
+    invalidFiles = validateFormat(files, invalidFiles, type);
+    
+    // check if output folder already exists
+    outputExists = outputFolderExists(invalidFiles, "output");
+    if (outputExists) {
+      invalidFiles = invalidFiles.filter(file => !file.match(/(output)/));
+    }
+    console.log("Invalid files: ", invalidFiles);
 
-    // invalidFiles = invalidFiles.filter(file => !file.match(/(Zone.Identifier|DS_Store)/));
-
-    const outputFolder = "output";
-
+    // return response to frontend
     if (invalidFiles.length > 0) {
-      // overwrite ouput folder if it already exists
-      const message = outputFolderExists(invalidFiles, outputFolder);
-      response.success = true;
+      const message = "Input files format does not match specified type";
+      response.success = false;
       response.message = message;
       console.error(response);
     } else {
-      const message = "Input files format does not match specified type";
-      response.success = false;
+      const message = "Input files format is valid";
+      response.success = true;
       response.message = message;
       console.error(response);
     }
@@ -378,7 +384,7 @@ ipcMain.handle('save-file', async (event, yamlData) => {
     fs.writeFileSync(configFile, yamlData, 'utf8');
     console.log('File saved as:', configFile);
 
-    saveUserInput(configFile, originalConfigInput, userAnalysisName);
+    saveUserInput(configFile, originalConfigInput, userAnalysisName, outputExists);
 
     return { success: true, filePath: configFile };
   } catch (err) {
