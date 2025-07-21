@@ -67,23 +67,6 @@ if type == "fastq":
     with open(done_file, 'w') as f:
         f.write("Done\n")
 
-# def update_databases():
-#     print("Updating databases...")
-
-#     command = '''
-#     echo "Installing amrfinder db..." &&
-#     amrfinder -u
-#     '''
-
-#     try:
-#         subprocess.run(command, shell=True, check=True)
-#         print("Database updated successfully.")
-#     except subprocess.CalledProcessError as e:
-#         print(f"Error while updating databases: {e}")
-#         raise
-
-# update_databases()
-
 include: "pre_processing.smk"
 
 if type == "fastq":
@@ -98,6 +81,3 @@ else:
     raise ValueError(f"Type: {type} not supported")
 
 fasta_checkpoint = os.path.join(PATH_OUTPUT, "fasta_analysis_checkpoint.txt")
-
-# if GENOMAD_ANALYSIS == "yes" and os.path.exists(fasta_checkpoint):
-#     include: "genomad.smk"
