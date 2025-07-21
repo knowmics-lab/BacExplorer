@@ -1048,10 +1048,10 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
 
 ```
 
-## Viruses {.tabset #vir}
-
-### geNomad
-
+## Viruses {.tabset .tabset-fade .tabset-pills #vir}
+ 
+### geNomad {.tabset}
+ 
 ```{r geNomad viruses, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
   genomad_virus <- list.files(path=paste0(path_output, "/genomad/"), pattern = "_virus_summary.tsv", full.names=TRUE, recursive=TRUE)
 
@@ -1072,7 +1072,7 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
     }
   }
 
-   
+    
   gv_tab <- lapply(genomad_virus, genomad_virus_function)
 
   if(length(gv_tab) != 0){
@@ -1096,13 +1096,12 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
     }
 
     gv_tab2 <- as.data.frame(do.call(rbind, gv_tab2))
-    
+
     wbv <- createWorkbook()
     addWorksheet(wbv, "geNomad")
-    writeData(wbv, sheet = "geNomad", gpl_tab2)
+    writeData(wbv, sheet = "geNomad", gv_tab2)
     saveWorkbook(wbv, file=paste0(path_excel, "/Virus_table.xlsx"), overwrite = TRUE)
   }
-   
   
 ```
 
