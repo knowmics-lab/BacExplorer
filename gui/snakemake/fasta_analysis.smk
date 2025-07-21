@@ -13,39 +13,29 @@ GENOMAD_ANALYSIS = config["GENOMAD_ANALYSIS"]
 rule all:
     input:
         expand(os.path.join(PATH_OUTPUT, "quality_assessment/quast_results/{sample}"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "kraken2/{sample}_kraken2.txt"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "kraken2/{sample}_result.txt"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "mlst/{sample}.txt"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "mlst/{sample}_result.txt"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "amrfinder/{sample}_amrfinder.txt"), sample=SAMPLES),
-        # # expand(os.path.join(PATH_OUTPUT, "genomad/{sample}"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "virulencefinder/{sample}"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "meningotype/{sample}"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "fimtyper/{sample}"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "ngmaster/{sample}"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "shigeifinder/{sample}"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "pasty/{sample}"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "ClermonTyping/{sample}"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "abricate/{sample}"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "kleborate/{sample}"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "abricate_ecoli/{sample}"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "ectyper/{sample}"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "shigatyper/{sample}"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "emmtyper/{sample}"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "sccmec/{sample}"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "legsta/{sample}"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "pbptyper/{sample}"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "hicap/{sample}"), sample=SAMPLES)
-    # params:
-    #     # report_file = os.path.join(PATH_OUTPUT, f"{ANALYSIS_NAME}_report.html"),
-    #     # report = os.path.join(PATH_SCRIPT, "scripts/report.Rmd"),
-    #     post_processing = os.path.join(PATH_SCRIPT, "scripts/post_processing.py")
-    # shell:
-    #     '''
-    #     echo "Execution complete\nPostprocessing..."
-    #     PATH_OUTPUT="{PATH_OUTPUT}" python {params.post_processing}
-    #     echo 'Workflow complete'
-    #     '''
+        expand(os.path.join(PATH_OUTPUT, "kraken2/{sample}_kraken2.txt"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "kraken2/{sample}_result.txt"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "mlst/{sample}.txt"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "mlst/{sample}_result.txt"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "amrfinder/{sample}_amrfinder.txt"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "genomad/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "virulencefinder/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "meningotype/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "fimtyper/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "ngmaster/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "shigeifinder/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "pasty/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "ClermonTyping/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "abricate/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "kleborate/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "abricate_ecoli/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "ectyper/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "shigatyper/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "emmtyper/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "sccmec/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "legsta/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "pbptyper/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "hicap/{sample}"), sample=SAMPLES)
     params:
         genomad = "genomad.py",
         post_processing = os.path.join(PATH_SCRIPT, "scripts/post_processing.py")
@@ -59,11 +49,7 @@ rule all:
         PATH_OUTPUT="{PATH_OUTPUT}" python {params.post_processing}
         echo 'Workflow complete'
         ''')
-                
-
-# Rscript -e "rmarkdown::render('{params.report}', output_file='{params.report_file}',
-#         output_dir = '{PATH_OUTPUT}', params=list(path_output='{PATH_OUTPUT}',
-#         identity={IDENTITY}, coverage={COVERAGE}))"
+            
 
 rule mlst:
     input:
@@ -236,28 +222,6 @@ rule abricate:
         abricate {input.fasta_input} --db megares > {output.abricate}/{wildcards.sample}_megares.txt
         """
 
-# rule genomad:
-#     input:
-#         fasta_input = os.path.join(PATH_PROJECT, "{sample}.fasta"),
-#         kraken = os.path.join(PATH_OUTPUT, "kraken2/{sample}_result.txt")
-#     output:
-#         genomad = directory(os.path.join(PATH_OUTPUT, "genomad/{sample}"))
-#     threads: 8
-#     resources:
-#         mem_mb=16000
-#     run:
-#         if GENOMAD_ANALYSIS == "yes":
-#             shell(f"""
-#             echo "Performing Genomad"
-#             mkdir -p {output.genomad}
-#             genomad end-to-end --cleanup --splits 16 {input.fasta_input} {output.genomad} {PATH_GENOMAD}
-#             """)
-#         else:
-#             shell(f"""
-#             mkdir -p {output.genomad}
-#             touch {output.genomad}/skipped.marker
-#             """)
-
 rule check_genus:
     input:
         fasta_input = os.path.join(PATH_PROJECT, "{sample}.fasta"),
@@ -328,7 +292,7 @@ rule check_genus:
 
             echo "Performing fimtyper"
             cd {PATH_TOOLS}/fimtyper
-            perl fimtyper.pl -d fimtyper_db/ -b {PATH_TOOLS} -i {input.fasta_input} -k 95.00 -l 0.60 -o {output.fimtyper}
+            perl fimtyper.pl -d fimtyper_db/ -b {PATH_ENV} -i {input.fasta_input} -k 95.00 -l 0.60 -o {output.fimtyper}
             mv {output.fimtyper}/results_tab.txt {output.fimtyper}/{wildcards.sample}_tab.txt
             cd {PATH_PROJECT}
 
@@ -446,7 +410,7 @@ rule check_genus_species:
         mkdir -p {output.hicap}
         if [[ "$genus" == "Haemophilus" && "$species" == "influenzae" ]]; then
             echo "Performing Hicap"
-            hicap --query_fp {input.fasta_input} --output_dir {output.hicap}
+            {PATH_TOOLS}/hicap/hicap-runner.py --query_fp {input.fasta_input} --output_dir {output.hicap}
         else
             touch {output.hicap}/skipped.marker
         fi

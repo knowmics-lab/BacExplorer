@@ -1,9 +1,9 @@
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && \
-    apt-get install -y \
+RUN apt-get update \
+    && apt-get install -y \
     wget \
     curl \
     git \
@@ -22,7 +22,6 @@ RUN apt-get update && \
 RUN curl -L https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -o miniconda.sh && \
     bash miniconda.sh -b -u -p /opt/conda && \
     rm miniconda.sh
-    # source ~/miniconda3/bin/activate
 
 ENV PATH=/opt/conda/bin:$PATH
 
@@ -35,25 +34,26 @@ COPY bacEnv.yml /tmp/
 
 RUN conda env create -f /tmp/bacEnv.yml
 
-COPY . /project
-
-WORKDIR /project
-
 # Activate conda env
 SHELL ["conda", "run", "-n", "bacEnv", "/bin/bash", "-c"]
 
-RUN mkdir -p scripts
-
-WORKDIR /project/scripts
+COPY . /project
 
 # change row 34 from rU to r in ngmaster
 RUN sed -i '34s/rU/r/' \
     /opt/conda/envs/bacEnv/lib/python3.12/site-packages/ngmaster/utils.py
 
+# install packages in the following directory
+WORKDIR /project/tools
+
 # Install other packages
 RUN echo "Installing packages..." && \
     echo "RGI" && \
     pip install git+https://github.com/arpcard/rgi.git && \
+    echo "hicap" && \
+    git clone https://github.com/scwatts/hicap.git && \
+    echo "reportlab" && \
+    pip install reportlab && \
     echo "sccmec" && \
     git clone --recurse-submodules https://github.com/rpetit3/sccmec && \
     echo "fimtyper" && \
@@ -61,6 +61,7 @@ RUN echo "Installing packages..." && \
     cd fimtyper && \
     git clone https://bitbucket.org/genomicepidemiology/fimtyper_db.git && \
     make install && \
+    cd .. && \
     echo "ClermonTyping" && \
     git clone https://github.com/happykhan/ClermonTyping.git && \
     echo "metaMLST" && \
@@ -76,29 +77,6 @@ RUN echo "Installing packages..." && \
     quit(save='no')"
 
 WORKDIR /project
-
-# Update databases
-# RUN echo "Updating DBs..." && \
-#     echo "AMRfinder" && \
-#     amrfinder -u && \
-#     abricate-get_db --db card --force && \
-#     abricate-get_db --db argannot --force && \
-#     abricate-get_db --db resfinder --force && \
-#     abricate-get_db --db ecoh --force && \
-#     abricate-get_db --db vfdb --force && \
-#     abricate-get_db --db plasmidfinder --force && \
-#     abricate-get_db --db ecoli_vf --force &&
-    # abricate-get_db --db megares --force && \
-    # abricate-get_db --db ncbi --force && \
-# RUN echo "MLST" && \
-#     env_path=$(conda info --envs | grep '* ' | cut -d ' ' -f 2) && \
-#     if [ -z "$env_path" ]; then \
-#         echo "Conda environment doesn't exist"; \
-#         exit 1; \
-#     fi && \
-#     pubmlst_path="$env_path"/pubmlst && \
-#     mlst-download_pub_mlst -d $pubmlst_path && \
-#     mlst-make_blast_db &&
 
 # to build Docker image, run the following in your terminal:
 # docker build -t bacexplorer .
