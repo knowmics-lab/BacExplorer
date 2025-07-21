@@ -9,8 +9,9 @@ import TecnhicalSettings from './Technical-Settings';
 import ParametersAlert                      from './Parameters-Alert';
 import InvalidFolderAlert from './Invalid-Folder-Alert';
 import { saveConfig } from './Settings_Functions';
+import OngoingAnalysis from '../Ongoing-Analysis';
 
-export default function Inputs({ formData, setFormData }) {
+export default function Inputs({ formData, setFormData, ongoingAnalysis }) {
   const [validated, setValidated] = useState(false);
   const [isConfig, setIsConfig] = useState(false);
   const [configFile, setConfigFile] = useState();
@@ -40,6 +41,11 @@ export default function Inputs({ formData, setFormData }) {
 
   return (
     <div className="custom-container d-flex flex-column min-vh-100">
+      {ongoingAnalysis &&
+        <div className="position-sticky top-0 start-50 w-100" style={{ zIndex: 1050 }}>
+            <OngoingAnalysis />
+        </div>
+      }
       {showAlert && (
         <div className="position-fixed top-50 start-50 translate-middle z-3 w-50">
           <ParametersAlert formData={formData} setShowAlert={setShowAlert} onButtonClick={launchAnalysis}/>

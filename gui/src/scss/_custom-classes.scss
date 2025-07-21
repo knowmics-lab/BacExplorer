@@ -88,9 +88,19 @@ h2 {
     color: white;
 }
 
+.modal-secondary {
+    background-color: $secondary;
+    color: white;
+}
+
 .modal-danger {
     background-color: red;
     // color: black;
+}
+
+.danger {
+    background-color:red;
+    color: white;
 }
 
 .scrollable-modal .modal-dialog {

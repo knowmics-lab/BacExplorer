@@ -11,12 +11,16 @@ export default function Guide({ ongoingAnalysis }) {
     //when ongoingAnalysis show a button to redirect to analysis page
     return(
         <div className='custom-container'>
+            {ongoingAnalysis &&
+                    <div className="position-sticky top-0 start-0 w-100" style={{ zIndex: 1050 }}>
+                        <OngoingAnalysis />
+                    </div>
+                    }
             <div className="container">
+                
                 <div className="nav-col">
                     <NavGuide />
-                    {ongoingAnalysis &&
-                        <OngoingAnalysis />
-                    }
+                    
                 </div>
                 <div className="content-col">
                     <div className="row">

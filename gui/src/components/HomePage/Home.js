@@ -3,13 +3,18 @@ import logo from './logo.png';
 import { Stack, Col, Button } from "react-bootstrap";
 import OngoingAnalysis from "../Ongoing-Analysis";
 
-export default function Home({containerRunning, setContainerRunning, ongoingAnalysis}) {
+export default function Home({containerRunning, setContainerRunning, ongoingAnalysis, resetAllValues}) {
     const [containerMessage, setContainerMessage] = useState("");
     const [defaultButton, setDefaultButton] = useState(true);
 
     const navigate = (page) =>{
         console.log(`Navigating towards ${page}`);
         window.api.navigate(page);
+    }
+
+    const goToAnalysis = () => {
+        resetAllValues();
+        navigate('settings');
     }
 
     const handleClick = async () => {
@@ -22,10 +27,14 @@ export default function Home({containerRunning, setContainerRunning, ongoingAnal
                 setDefaultButton(false);
             }
         } catch (error) {
-            setContainerMessage("! Unable to run container !");
+            setContainerMessage("Unable to run container!");
             setDefaultButton(false);
             setContainerRunning(false);
         }
+    }
+
+    const refreshPage = () => {
+        setDefaultButton(true);
     }
 
     useEffect(() => {
@@ -33,14 +42,22 @@ export default function Home({containerRunning, setContainerRunning, ongoingAnal
             setDefaultButton(false);
     }, []);
 
+    useEffect(() => {
+        console.log("HOME ongoingAnalysis prop:", ongoingAnalysis);
+    }, [ongoingAnalysis]);
+
+
     return(
         <div className='custom-container home'>
-            <img className="img-fluid cover" src={logo} alt="LOGO"/>
+            <img className="img-fluid cover" src={logo} alt="LOGO" />
+            {ongoingAnalysis &&
+                <div className="position-absolute top-0 start-0 w-100" style={{ zIndex: 1050 }}>
+                    <OngoingAnalysis />
+                </div>
+            }
             <div className='text-container'>
                 <h1 className='text-header'>Welcome to BacExplorer!</h1>
-                {ongoingAnalysis &&
-                    <OngoingAnalysis />
-                }
+                
             </div>
             <Stack direction="horizontal" gap="3" className="justify-content-md-center px-5">
                 <Col className="custom-col justify-content-md-center py-5 px-5 mx-5">
@@ -58,10 +75,10 @@ export default function Home({containerRunning, setContainerRunning, ongoingAnal
                             <Button className="ms-auto" variant="secondary" onClick={handleClick}> Start container</Button>
                         }
                         {containerRunning &&
-                            <Button className="ms-auto" variant="primary" onClick={() => navigate('settings')}>Go to analysis</Button>
+                            <Button className="ms-auto" variant="primary" onClick={goToAnalysis}>Go to analysis</Button>
                         }
                         {!containerRunning && !defaultButton &&
-                            <p className="ms-auto" style={{color:"red"}}>{containerMessage}</p>
+                            <Button className="ms-auto" variant="danger" onClick={refreshPage}>{containerMessage}</Button>
                         }
                     </div>
                 </Col>
