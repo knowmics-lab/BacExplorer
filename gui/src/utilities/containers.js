@@ -3,7 +3,8 @@
 import { spawnSync } from 'child_process';
 import os from 'os';
 import fs from 'fs-extra';
-import { emitProgress, checkDir, checkArchitecture, demuxStream, downloadFile } from './general_functions';
+import { emitProgress, checkDir, isArchitectureARM, demuxStream, downloadFile } from './general_functions';
+import { appVariables } from './global_variables';
 
 const yaml = require('js-yaml');
 const Docker = require('dockerode');
@@ -417,6 +418,7 @@ async function startContainer(containerName) {
 // install databases inside the container (setup phase)
 async function updateContainer(containerName) {
   emitProgress(`Step 5: Installing databases...`, 0);
+  console.log("Installing amrfinder, abricate, pubmlst databases...");
   const virulencefinderDbDir = "/project/snakemake/resources/virulencefinder_db";
 
   const container = docker.getContainer(containerName);
@@ -479,7 +481,8 @@ async function updateContainer(containerName) {
       return !!(d && d.Running);
     }
   );
-  emitProgress(`Step 5: Installing databases...`, 0);
+  emitProgress(`Step 5: Installing databases...`, 100);
+  console.log("Amrfinder, abricate, pubmlst databases installed and upgraded");
   return;
 }
 
@@ -491,7 +494,9 @@ async function updateConfigFile(configFilePath) {
     const config = yaml.load(fs.readFileSync(configFilePath, 'utf8'));
     config.INPUT = containerInput;
     // stop genomad execution if host architecture is ARM
-    config.GENOMAD_ANALYSIS = String(checkArchitecture());
+    if (isArchitectureARM()) {
+      config.GENOMAD_ANALYSIS = "no";
+    }
 
     fs.writeFileSync(configFilePath, yaml.dump(config), 'utf8');
     console.log(`Config file updated: INPUT=${containerInput}`);
@@ -504,6 +509,7 @@ async function updateConfigFile(configFilePath) {
 export async function prepareSnakemakeCommand(containerName, userInput, snakefileDir) {
   try {
     const userConfigPath = path.join(snakefileDir, 'config.yaml');
+    // const userConfigPath = appVariables.configFile;
     await updateConfigFile(userConfigPath);
     const newContainer = await mapIO(containerName, userInput, userConfigPath);
 

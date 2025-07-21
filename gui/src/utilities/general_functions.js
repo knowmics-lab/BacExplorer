@@ -145,8 +145,8 @@ export function checkDir(directory) {
   
 }
 
-// return host machine architecture
-export function checkArchitecture() {
+// check host machine architecture
+export function isArchitectureARM() {
   console.log("Detected architecture: ", process.arch);
   return ["arm64", "arm"].includes(process.arch);
 }
@@ -204,6 +204,7 @@ export function saveUserInput(configFile, outputExists) {
   userVariables.userAnalysisName = originalConfig.NAME;
   console.log("Analysis name: ",  userVariables.userAnalysisName);
   console.log("Input folder: ", userVariables.originalConfigInput);
+  console.log("Genomad analysis: ", originalConfig.GENOMAD_ANALYSIS);
   if (outputExists) {
     const outputFolder = path.join(userVariables.originalConfigInput, "output");
     removeOutputFolder(outputFolder);
@@ -220,8 +221,9 @@ export function isDirEmpty(files) {
 }
 
 export function validateFormat(files, invalidFiles, type) {
+  const validFastaFormat = [".fasta", ".fa", ".fna", ".fsa"];
   if (type.toLowerCase() === "fasta") {
-    invalidFiles = files.filter(file => path.extname(file).toLowerCase() !== `.${type}`);
+    invalidFiles = files.filter(file => !validFastaFormat.some(ext => file.toLowerCase().endsWith(ext)));
   } else if (type.toLowerCase() === "fastq") {
     invalidFiles = files.filter(file =>
       !file.toLowerCase().endsWith(".fq.gz") &&
