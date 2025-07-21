@@ -62,7 +62,7 @@ export default function AnalysisPage({formData, ongoingAnalysis, setOngoingAnaly
 
       {isAnalysing && (
         <div className="position-fixed top-50 start-50 translate-middle z-3 w-75">
-          <AnalysisProg setOngoingAnalysis={setOngoingAnalysis}/>
+          <AnalysisProg />
         </div>
       )}
 

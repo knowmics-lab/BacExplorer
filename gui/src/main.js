@@ -153,7 +153,7 @@ const createWindow = () => {
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
 
   // Open the DevTools.
-  // mainWindow.webContents.openDevTools();
+  mainWindow.webContents.openDevTools();
 };
 
 // This method will be called when Electron has finished
@@ -212,11 +212,36 @@ app.on('window-all-closed', () => {
 });
 
 // stop container when closing the app
-app.on('will-quit', async (event) => {
-  event.preventDefault();
-  await stopContainer(containerVariables.containerName);
-  app.exit(0);
-})
+let quitting = false;
+
+app.on('before-quit', async (event) => {
+  if (!quitting) {
+    event.preventDefault();
+    if (mainWindow && !mainWindow.isDestroyed() && mainWindow.webContents) {
+      mainWindow.webContents.send('app-closing');
+      ipcMain.once('localStorage-cleaned', async () => {
+      console.log("Renderer confirmed localStorage reset");
+      quitting = true;
+      await stopContainer(containerVariables.containerName);
+      app.quit();
+});
+    } else {
+      quitting = true;
+      await stopContainer(containerVariables.containerName);
+      app.quit();
+    }
+  }
+});
+
+// app.on('will-quit', async (event) => {
+//   event.preventDefault();
+
+//   mainWindow.webContents.send('app-closing');
+//   await new Promise(resolve => setTimeout(resolve, 500));
+
+//   await stopContainer(containerVariables.containerName);
+//   app.exit(0); 
+// })
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.
