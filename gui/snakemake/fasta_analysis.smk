@@ -13,29 +13,29 @@ GENOMAD_ANALYSIS = config["GENOMAD_ANALYSIS"]
 rule all:
     input:
         expand(os.path.join(PATH_OUTPUT, "quality_assessment/quast_results/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "kraken2/{sample}_kraken2.txt"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "kraken2/{sample}_result.txt"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "mlst/{sample}.txt"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "mlst/{sample}_result.txt"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "amrfinder/{sample}_amrfinder.txt"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "genomad/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "virulencefinder/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "meningotype/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "fimtyper/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "ngmaster/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "shigeifinder/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "pasty/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "ClermonTyping/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "abricate/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "kleborate/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "abricate_ecoli/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "ectyper/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "shigatyper/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "emmtyper/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "sccmec/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "legsta/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "pbptyper/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "hicap/{sample}"), sample=SAMPLES)
+        # expand(os.path.join(PATH_OUTPUT, "kraken2/{sample}_kraken2.txt"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "kraken2/{sample}_result.txt"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "mlst/{sample}.txt"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "mlst/{sample}_result.txt"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "amrfinder/{sample}_amrfinder.txt"), sample=SAMPLES),
+        # # expand(os.path.join(PATH_OUTPUT, "genomad/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "virulencefinder/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "meningotype/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "fimtyper/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "ngmaster/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "shigeifinder/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "pasty/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "ClermonTyping/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "abricate/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "kleborate/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "abricate_ecoli/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "ectyper/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "shigatyper/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "emmtyper/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "sccmec/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "legsta/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "pbptyper/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "hicap/{sample}"), sample=SAMPLES)
     # params:
     #     # report_file = os.path.join(PATH_OUTPUT, f"{ANALYSIS_NAME}_report.html"),
     #     # report = os.path.join(PATH_SCRIPT, "scripts/report.Rmd"),
@@ -50,7 +50,6 @@ rule all:
         genomad = "genomad.py",
         post_processing = os.path.join(PATH_SCRIPT, "scripts/post_processing.py")
     run:
-    #gestire l'errore in modo che l'esecuzione non si blocchi
         if GENOMAD_ANALYSIS == "yes":
             shell(f'''
             PATH_OUTPUT="{PATH_OUTPUT}" PATH_GENOMAD="{PATH_GENOMAD}" PATH_PROJECT="{PATH_PROJECT}" SAMPLES='{json.dumps(SAMPLES)}' python {params.genomad}
@@ -270,9 +269,9 @@ rule check_genus:
         agrvate = directory(os.path.join(PATH_OUTPUT, "agrvate/{sample}")),
         shigatyper = directory(os.path.join(PATH_OUTPUT, "shigatyper/{sample}")),
         shigeifinder = directory(os.path.join(PATH_OUTPUT, "shigeifinder/{sample}")),
-        kleborate_escherichia = directory(os.path.join(PATH_OUTPUT, "kleborate_escherichia/{sample}")), # estendere a tutte le escherichia
-        fimtyper = directory(os.path.join(PATH_OUTPUT, "fimtyper/{sample}")), # estendere a tutte le escherichia
-        ClermonTyping = directory(os.path.join(PATH_OUTPUT, "ClermonTyping/{sample}")) # estendere a tutte le escherichia
+        kleborate_escherichia = directory(os.path.join(PATH_OUTPUT, "kleborate_escherichia/{sample}")),
+        fimtyper = directory(os.path.join(PATH_OUTPUT, "fimtyper/{sample}")),
+        ClermonTyping = directory(os.path.join(PATH_OUTPUT, "ClermonTyping/{sample}"))
     shell:
         """
         kraken_output=$(sed -n '1p' {input.kraken_report})
@@ -328,13 +327,13 @@ rule check_genus:
             kleborate -a {input.fasta_input} -o {output.kleborate_escherichia} -p escherichia
 
             echo "Performing fimtyper"
-            cd {PATH_ENV}/fimtyper
-            perl fimtyper.pl -d fimtyper_db/ -b {PATH_ENV} -i {input.fasta_input} -k 95.00 -l 0.60 -o {output.fimtyper}
+            cd {PATH_TOOLS}/fimtyper
+            perl fimtyper.pl -d fimtyper_db/ -b {PATH_TOOLS} -i {input.fasta_input} -k 95.00 -l 0.60 -o {output.fimtyper}
             mv {output.fimtyper}/results_tab.txt {output.fimtyper}/{wildcards.sample}_tab.txt
             cd {PATH_PROJECT}
 
             echo "Performing ClermonTyping"
-            {PATH_ENV}/ClermonTyping/clermonTyping.sh --fasta {input.fasta_input}
+            {PATH_TOOLS}/ClermonTyping/clermonTyping.sh --fasta {input.fasta_input}
             
             if compgen -G "{PATH_PROJECT}/analysis_*" > /dev/null; then
                 mv {PATH_PROJECT}/analysis_* {output.ClermonTyping}
@@ -476,7 +475,7 @@ rule check_genus_species:
         mkdir -p {output.pasty}
         if [[ "$genus" == "Pseudomonas" && "$species" == "aeruginosa" ]]; then
             echo "Performing pasty"
-            camlhmp-blast-regions --input {input.fasta_input} --outdir {output.pasty} --prefix {wildcards.sample} -y {PATH_ENV}/bin/../share/pasty/pa-osa.yaml -t {PATH_ENV}/bin/../share/pasty/pa-osa.fasta
+            camlhmp-blast-regions --input {input.fasta_input} --outdir {output.pasty} --prefix {wildcards.sample} -y {PATH_ENV}/share/pasty/pa-osa.yaml -t {PATH_ENV}/share/pasty/pa-osa.fasta
         else
             touch {output.pasty}/skipped.marker
         fi
