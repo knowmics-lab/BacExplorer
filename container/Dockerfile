@@ -32,7 +32,9 @@ RUN echo "Creating conda environment..." && \
 
 COPY bacEnv.yml /tmp/
 
-RUN conda env create -f /tmp/bacEnv.yml
+RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main && \
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r && \
+    conda env create -f /tmp/bacEnv.yml
 
 # Activate conda env
 SHELL ["conda", "run", "-n", "bacEnv", "/bin/bash", "-c"]
