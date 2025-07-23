@@ -8,7 +8,8 @@ Welcome to BacExplorer, a bacterial analysis tool with an user-friendly GUI.
 BacExplorer is a software system for the analysis of Microbial data. Its aim is to annotate Bacterial genome with information about Antimicrobial resistance, virulence factor, plasmids, serotypings and so on. The analysis is developed with Bash and wrapped in a Snakemake workflow.
 BacExplorer permits to analyze both raw fastq and fasta data.
 
-![BacExcplorer_Fig1](https://github.com/user-attachments/assets/b381b644-75eb-49b2-a53f-98b271af7fe1)
+<img width="4472" height="2132" alt="BacExcplorer_Fig1" src="https://github.com/user-attachments/assets/16859cec-a620-4f4e-b6ac-0aa645c942ac" />
+
 
 
 Please read the following guide for a correct installation and usage.
@@ -99,9 +100,12 @@ The user needs to set the following parameters for the analysis:
 - The **analysis name** (OPTIONAL), this will also be the name of the HTML report. If not provided, a default name will be assigned;
 - If all the samples belong to the same **Genus** and **Species**, it is possible to specify them. In this case, the kraken2 taxonomy analysis will be skipped;
 - **Identity** and **Coverage** values to filter AMR and virulence factor results. The default parameter is 90% for both;
+- The **Technical Settings** consist of number of threads to set based on your PC specifics and the possibility to run geNomad analysis for the research of provirus in the samples under study.
 - The **input folder** with the data to be analyzed.
 
-![Parameters_setting](https://github.com/user-attachments/assets/0865b1fb-63ce-41b7-b792-509d1f853410)
+<img width="2393" height="2132" alt="schermata_app1" src="https://github.com/user-attachments/assets/a2c21c0f-a808-44b0-9aa8-0d66221f4177" />
+
+
 
 3) **Output organization**
 <br> Inside the input folder the system will create an output folder with several subfolders and the html of the final report:
@@ -141,7 +145,8 @@ The user needs to set the following parameters for the analysis:
 4) **Report page**
 
 
-![immagine](https://github.com/user-attachments/assets/db3fe1ee-f254-4bad-8fe4-f05975e0bec6)
+<img width="1555" height="1010" alt="immagine" src="https://github.com/user-attachments/assets/90f9f135-f5dc-401e-a372-6567474c4494" />
+
 
 
 ![immagine](https://github.com/user-attachments/assets/701aeba7-3081-4ab1-a0c7-279f349233b7)
@@ -163,6 +168,8 @@ Fasta samples to test BacExplorer can be found in the "test_data" folder in this
 
 ## Softwares and Databases
 # Softwares
+- FastQC - https://github.com/s-andrews/FastQC
+- QUAST - https://github.com/ablab/quast
 - TrimGalore - https://github.com/FelixKrueger/TrimGalore
 - SPAdes - https://github.com/ablab/spades
 - Kraken2 - https://github.com/DerrickWood/kraken2
@@ -170,8 +177,11 @@ Fasta samples to test BacExplorer can be found in the "test_data" folder in this
 - ABRicate - https://github.com/tseemann/abricate
 - AMRfinder+ - https://github.com/ncbi/amr
 - VirulenceFinder - https://bitbucket.org/genomicepidemiology/virulencefinder/src/master/
+- geNomad - https://portal.nersc.gov/genomad/
 - Kleborate - https://github.com/klebgenomics/Kleborate
 - ECTyper - https://github.com/phac-nml/ecoli_serotyping
+- FimTyper - https://bitbucket.org/genomicepidemiology/fimtyper/src/master/
+- ClermonTyping - https://github.com/A-BN/ClermonTyping
 - AgrVATE - https://github.com/VishnuRaghuram94/AgrVATE
 - sscmec - https://github.com/rpetit3/sccmec
 - spaTyper - https://github.com/HCGB-IGTP/spaTyper
@@ -184,11 +194,8 @@ Fasta samples to test BacExplorer can be found in the "test_data" folder in this
 - LisSero - https://github.com/MDU-PHL/LisSero
 - meningotype - https://github.com/MDU-PHL/meningotype
 - ngmaster - https://github.com/MDU-PHL/ngmaster
-- FimTyper - https://bitbucket.org/genomicepidemiology/fimtyper/src/master/
-- ClermonTyping - https://github.com/A-BN/ClermonTyping
 - pasty - https://github.com/rpetit3/pasty
-- QUAST - https://github.com/ablab/quast
-- FastQC - https://github.com/s-andrews/FastQC
+
 
 # Databases
 - CARD - https://card.mcmaster.ca/
