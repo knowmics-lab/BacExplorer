@@ -1,6 +1,6 @@
 # BacExplorer
 
-Welcome to BacExplorer, a bacterial analysis tool with an user-friendly GUI.
+Welcome to BacExplorer, a bacterial analysis tool with an user-friendly graphical interface.
 
 ![BACEXPLORER](https://github.com/user-attachments/assets/694f612f-8645-45bf-85c2-5ec00efdc1a6)
 
