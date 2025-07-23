@@ -164,7 +164,7 @@ To test BacExplorer with fastq samples it is possible to download:
 - *Staphylococcus aureus* sample from https://www.ncbi.nlm.nih.gov/bioproject/PRJNA912391
 
 ### FASTA
-Fasta samples to test BacExplorer can be found in the "test_data" folder in this repository.
+Fasta samples to test BacExplorer can be found in the "test_data" folder in this repository. The subfolder "case_study" contains the .fasta files analyzed in the case study.
 
 ## Softwares and Databases
 # Softwares
