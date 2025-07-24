@@ -71,13 +71,13 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
 * #### [Listeria monocytogenes](#lis)
 * #### [Legionella pneumophila](#leg)
 * #### [Neisseria](#neis)
-* #### [P.aeruginosa](#pasty)
+* #### [Pseudomonas aeruginosa](#pasty)
 * #### [Citations](#Cite)
 
 
 <br>
 
-## RAw Reads Quality Control {#fqc}
+## Raw Reads Quality Control {#fqc}
 
 ### FastQC
 
