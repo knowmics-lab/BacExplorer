@@ -327,8 +327,7 @@ ipcMain.handle('check-container', async (event) => {
 
 // 1) dinamically handle mapping of genus and species for the Select in frontend
 ipcMain.handle('get-genus-species', async () => {
-  const appPath = app.getAppPath();
-  const filePath = path.join(appPath, 'snakemake', 'resources', 'Lista_mlst.csv');
+  const filePath = path.join(appVariables.backendPath, 'resources', 'Lista_mlst.csv');
   try {
     return makeGenusDictionary(filePath);
   } catch (error) {
