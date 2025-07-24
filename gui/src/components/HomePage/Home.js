@@ -71,7 +71,7 @@ export default function Home({containerRunning, setContainerRunning, ongoingAnal
                     <h2 className="text-header">Start analysis</h2>
                     <p className="text-secondary">Skip the setup, launch your analysis.</p>
                     <div className="d-flex">
-                        {defaultButton &&
+                        {defaultButton && !containerRunning &&
                             <Button className="ms-auto" variant="secondary" onClick={handleClick}> Start container</Button>
                         }
                         {containerRunning &&
