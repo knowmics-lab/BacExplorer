@@ -20,10 +20,13 @@ export default function App() {
         GENOMAD_ANALYSIS: 'yes',
     });
 
-    const [containerRunning, setContainerRunning] = useState(() => {
-        const value = localStorage.getItem("containerRunning")
-        return value ? value === "true" : false;
-    });
+    // not working
+    // const [containerRunning, setContainerRunning] = useState(() => {
+    //     const value = localStorage.getItem("containerRunning")
+    //     return value ? value === "true" : false;
+    // });
+
+    const [containerRunning, setContainerRunning] = useState(false);
     
     const [currentPage, setCurrentPage] = useState('home');
 
@@ -72,8 +75,10 @@ export default function App() {
     }, [containerRunning]);
 
     useEffect(() => {
+        setContainerRunning(false);
+        setOngoingAnalysis(false);
         console.log("App started: cleaning localStorage");
-        localStorage.setItem("containerRunning", "false");
+        // localStorage.setItem("containerRunning", "false");
         localStorage.setItem("ongoingAnalysis", "false");
         resetAllValues();
     }, []);
@@ -81,7 +86,7 @@ export default function App() {
     useEffect(() => {
         if (window.api?.receive) {
             window.api.receive('app-closing', resetAllValues);
-            localStorage.setItem("containerRunning", "false");
+            // localStorage.setItem("containerRunning", "false");
             localStorage.setItem("ongoingAnalysis", "false");
             setTimeout(() => {
                 console.log("LocalStorage cleaned, notifying main...");

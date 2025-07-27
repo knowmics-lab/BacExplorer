@@ -38,9 +38,14 @@ export default function Home({containerRunning, setContainerRunning, ongoingAnal
     }
 
     useEffect(() => {
+        console.log("On mount - containerRunning:", containerRunning);
+        console.log("On mount - defaultButton:", defaultButton);
+    }, []);
+
+    useEffect(() => {
         if (containerRunning)
             setDefaultButton(false);
-    }, []);
+    }, [containerRunning]);
 
     useEffect(() => {
         console.log("HOME ongoingAnalysis prop:", ongoingAnalysis);
@@ -71,10 +76,10 @@ export default function Home({containerRunning, setContainerRunning, ongoingAnal
                     <h2 className="text-header">Start analysis</h2>
                     <p className="text-secondary">Skip the setup, launch your analysis.</p>
                     <div className="d-flex">
-                        {defaultButton && !containerRunning &&
+                        {defaultButton &&
                             <Button className="ms-auto" variant="secondary" onClick={handleClick}> Start container</Button>
                         }
-                        {containerRunning &&
+                        {!defaultButton && containerRunning &&
                             <Button className="ms-auto" variant="primary" onClick={goToAnalysis}>Go to analysis</Button>
                         }
                         {!containerRunning && !defaultButton &&
