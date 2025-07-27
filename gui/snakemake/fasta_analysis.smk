@@ -117,7 +117,7 @@ rule kraken2:
         # except Exception as e:
         #     print(f"An error occured: {e}")
 
-        if GENUS != "":
+        if GENUS is not None:
             print(f"Genus already specified by user. Skipping Kraken")
             with open(output.report, 'w') as out:
                 out.write(f"Check MLST output")
@@ -392,7 +392,7 @@ rule check_genus_species:
         fi
 
         mkdir {output.legsta}
-        if [[ "$genus" == "Legionella" && "$species" == "pneumophyla" ]]; then
+        if [[ "$genus" == "Legionella" && "$species" == "pneumophila" ]]; then
             echo "Performing Legsta"
             legsta {input.fasta_input} > {output.legsta}/{wildcards.sample}.tsv
         else

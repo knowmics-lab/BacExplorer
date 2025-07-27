@@ -1641,15 +1641,43 @@ options(knitr.table.format = "html")
     }
       
   }
-  pbp_tab <- as.data.frame(do.call(rbind, lapply(pbptyper,  pbptyper_function)))
+
+  uniform_columns <- function(df, all_cols) {
+    missing_cols <- setdiff(all_cols, colnames(df))
+    if (length(missing_cols) > 0) {
+      df[missing_cols] <- NA
+    }
+    df <- df[, all_cols, drop = FALSE]
+    return(df)
+  }
+
+  list_dfs <- lapply(pbptyper, function(file) {
+    tryCatch(
+      pbptyper_function(file),
+      error = function(e) {
+        message(paste("Error during processing of file:", file, "->", e$message))
+        NULL
+      }
+    )
+  })
+
+  list_dfs <- Filter(Negate(is.null), list_dfs)
+  all_columns <- unique(unlist(lapply(list_dfs, colnames)))
+  list_dfs_uniform <- lapply(list_dfs, uniform_columns, all_cols = all_columns)
+
+  pbp_tab <- do.call(rbind, list_dfs_uniform)
+
+  # pbp_tab <- as.data.frame(do.call(rbind, lapply(pbptyper,  pbptyper_function)))
+  pbp_tab <- as.data.frame(pbp_tab)
+  
   if(dim(pbp_tab)[1] != 0){
     print(kable(pbp_tab) %>%
     kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
       scroll_box(width = "100%", height = "300px"))
   }
+
   if(dim(pbp_tab)[1] != 0){
-    pbp1_tab <- as.data.frame(do.call(rbind, lapply(pbptyper,  pbptyper_function)))
-    write.xlsx(pbp1_tab, file=paste0(path_excel, "/S.pneumoniae_table.xlsx"),   sheetName = "PBPtyper", col.names = TRUE, row.names = FALSE, append=TRUE)
+    write.xlsx(pbp_tab, file=paste0(path_excel, "/S.pneumoniae_table.xlsx"),   sheetName = "PBPtyper", col.names = TRUE, row.names = FALSE, append=TRUE)
   }
   
 ```
@@ -1676,8 +1704,7 @@ options(knitr.table.format = "html")
     kable_styling(bootstrap_options = c("striped", "hover","responsive")))
   
   if(dim(lis_tab)[1] != 0){
-    lis1_tab <- as.data.frame(do.call(rbind, lapply(lissero,  lissero_function)))
-    write.xlsx(lis1_tab, file=paste0(path_excel, "/L.monocytogenes_table.xlsx"),   sheetName = "LisSero", col.names = TRUE, row.names = FALSE, append=TRUE)
+    write.xlsx(lis_tab, file=paste0(path_excel, "/L.monocytogenes_table.xlsx"),   sheetName = "LisSero", col.names = TRUE, row.names = FALSE, append=TRUE)
   }
   
 ```
@@ -1703,8 +1730,7 @@ options(knitr.table.format = "html")
     kable_styling(bootstrap_options = c("striped", "hover","responsive")))
   
   if(dim(leg_tab)[1] != 0){
-    leg1_tab <- as.data.frame(do.call(rbind, lapply(legsta,  legsta_function)))
-    write.xlsx(leg1_tab, file=paste0(path_excel, "/L.pneumophila_table.xlsx"),   sheetName = "Legsta", col.names = TRUE, row.names = FALSE, append=TRUE)
+    write.xlsx(leg_tab, file=paste0(path_excel, "/L.pneumophila_table.xlsx"),   sheetName = "Legsta", col.names = TRUE, row.names = FALSE, append=TRUE)
   }
   
 ```
@@ -1732,10 +1758,9 @@ options(knitr.table.format = "html")
     kable_styling(bootstrap_options = c("striped", "hover","responsive")))
   
   if(dim(men_tab)[1] != 0){
-    men1_tab <- as.data.frame(do.call(rbind, lapply(meningotype,  meningotype_function)))
     wbneis <- createWorkbook()
     addWorksheet(wbneis, "meningotype_N.meningitis")
-    writeData(wbneis, sheet = "meningotype_N.meningitis", men1_tab)
+    writeData(wbneis, sheet = "meningotype_N.meningitis", men_tab)
   }
   
 ```
@@ -1763,9 +1788,8 @@ options(knitr.table.format = "html")
     kable_styling(bootstrap_options = c("striped", "hover","responsive")))
   
   if(dim(ng_tab)[1] != 0){
-    ng1_tab <- as.data.frame(do.call(rbind, lapply(ngmaster,  ngmaster_function)))
     addWorksheet(wbneis, "ngmaster_N.gonorrhoeae")
-    writeData(wbneis, sheet = "ngmaster_N.gonorrhoeae", ng1_tab) 
+    writeData(wbneis, sheet = "ngmaster_N.gonorrhoeae", ng_tab) 
     saveWorkbook(wbneis, file=paste0(path_excel, "/Neisseria_table.xlsx"), overwrite = TRUE)
   }
   
@@ -1796,9 +1820,8 @@ options(knitr.table.format = "html")
   print(kable(pa_tab) %>%
     kable_styling(bootstrap_options = c("striped", "hover","responsive")))
   
-   if(dim(pa_tab)[1] != 0){
-    pa1_tab <- as.data.frame(do.call(rbind, lapply(pasty,  pasty_function)))
-    write.xlsx(pa1_tab, file=paste0(path_excel, "/P.aeruginosa_table.xlsx"),   sheetName = "Pasty", col.names = TRUE, row.names = FALSE, append=TRUE)
+  if(dim(pa_tab)[1] != 0){
+    write.xlsx(pa_tab, file=paste0(path_excel, "/P.aeruginosa_table.xlsx"),   sheetName = "Pasty", col.names = TRUE, row.names = FALSE, append=TRUE)
   }
   
 ```
