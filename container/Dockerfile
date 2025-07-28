@@ -1,4 +1,7 @@
 FROM ubuntu:22.04
+LABEL org.opencontainers.image.source=https://github.com/knowmics-lab/BacExplorer
+LABEL org.opencontainers.image.description="BacExplorer Main Container"
+LABEL org.opencontainers.image.licenses=MIT
 
 ENV DEBIAN_FRONTEND=noninteractive
 
