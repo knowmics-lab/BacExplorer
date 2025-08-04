@@ -5,8 +5,7 @@ Welcome to BacExplorer, a bacterial analysis tool with an user-friendly graphica
 ![BACEXPLORER](https://github.com/user-attachments/assets/694f612f-8645-45bf-85c2-5ec00efdc1a6)
 
 
-BacExplorer is a software system for the analysis of Microbial data. Its aim is to annotate Bacterial genome with information about Antimicrobial resistance, virulence factor, plasmids, serotypings and so on. The analysis is developed with Bash and wrapped in a Snakemake workflow.
-BacExplorer permits to analyze both raw fastq and fasta data.
+BacExplorer is a software system designed for the analysis of microbial data. Its primary goal is to annotate bacterial genomes with information on antimicrobial resistance, virulence factors, plasmids, serotyping, and more. The analysis is implemented in Bash and orchestrated using a Snakemake workflow. BacExplorer supports the analysis of both raw FASTQ and FASTA data.
 
 <img width="4472" height="2132" alt="BacExcplorer_Fig1" src="https://github.com/user-attachments/assets/16859cec-a620-4f4e-b6ac-0aa645c942ac" />
 
