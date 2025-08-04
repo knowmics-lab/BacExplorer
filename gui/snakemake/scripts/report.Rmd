@@ -189,10 +189,11 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
     quast_tab <- as.data.frame(do.call(rbind, lapply(quast, quast_function)))
     rownames(quast_tab) <- NULL
     
-    print(kable(quast_tab) %>%
-      kable_styling(bootstrap_options = c("striped", "hover","responsive")))
-    
     if(dim(quast_tab)[1] != 0){
+      
+      print(kable(quast_tab) %>%
+        kable_styling(bootstrap_options = c("striped", "hover","responsive")))
+
       wbq <- createWorkbook()
       addWorksheet(wb, "quast")
       writeData(wbq, sheet = "quast", quast_tab) 
@@ -311,20 +312,21 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
   amr_tab <- amr_tab[!sapply(amr_tab,is.null)]
   amr_tab <- amr_tab[sapply(amr_tab, nrow)>0]
 
-  for (i in 1:length(amr_tab)) {
-    cat("####", as.data.frame(amr_tab[i])$Sample[1], "<br>", "\n")
-    print(kable(as.data.frame(amr_tab[i]), row.names = FALSE) %>%
-      kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
-        scroll_box(width = "100%", height = "330px"))
-    cat("\n", "<br>", "\n\n")
+  if(dim(amr_tab)[1] != 0) {
+    for (i in 1:length(amr_tab)) {
+      cat("####", as.data.frame(amr_tab[i])$Sample[1], "<br>", "\n")
+      print(kable(as.data.frame(amr_tab[i]), row.names = FALSE) %>%
+        kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
+          scroll_box(width = "100%", height = "330px"))
+      cat("\n", "<br>", "\n\n")
+    }
+
+    amr_tab1 <- as.data.frame(do.call(rbind, lapply(amrfinder_db, amrfinder_db_function)))
+    wb <- createWorkbook()
+    addWorksheet(wb, "AMRfinder")
+    writeData(wb, sheet = "AMRfinder", amr_tab1) 
   }
 
-  amr_tab1 <- as.data.frame(do.call(rbind, lapply(amrfinder_db, amrfinder_db_function)))
-  wb <- createWorkbook()
-  addWorksheet(wb, "AMRfinder")
-  writeData(wb, sheet = "AMRfinder", amr_tab1) 
-
-  
 ```
 
 ### NCBI {.tabset}
@@ -352,17 +354,19 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
   ncbi_tab <- ncbi_tab[!sapply(ncbi_tab,is.null)]
   ncbi_tab <- ncbi_tab[sapply(ncbi_tab, nrow)>0]
 
-  for (i in 1:length(ncbi_tab)) {
-    cat("####", as.data.frame(ncbi_tab[i])$Sample[1], "<br>", "\n")
-    print(kable(as.data.frame(ncbi_tab[i]), row.names = FALSE) %>%
-      kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
-        scroll_box(width = "100%", height = "300px"))
-    cat("\n", "<br>", "\n\n")
-  }
+  if(nrow(ncbi_tab) > 0) {
+    for (i in 1:length(ncbi_tab)) {
+      cat("####", as.data.frame(ncbi_tab[i])$Sample[1], "<br>", "\n")
+      print(kable(as.data.frame(ncbi_tab[i]), row.names = FALSE) %>%
+        kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
+          scroll_box(width = "100%", height = "300px"))
+      cat("\n", "<br>", "\n\n")
+    }
 
-  ncbi_tab1 <- as.data.frame(do.call(rbind, lapply(abricate_ncbi, abricate_ncbi_function)))
-  addWorksheet(wb, "NCBI")
-  writeData(wb, sheet = "NCBI", ncbi_tab1) 
+    ncbi_tab1 <- as.data.frame(do.call(rbind, lapply(abricate_ncbi, abricate_ncbi_function)))
+    addWorksheet(wb, "NCBI")
+    writeData(wb, sheet = "NCBI", ncbi_tab1) 
+  }
 
 ```
 
@@ -392,17 +396,20 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
   mega_tab <- mega_tab[!sapply(mega_tab,is.null)]
   mega_tab <- mega_tab[sapply(mega_tab, nrow)>0]
 
-  for (i in 1:length(mega_tab)) {
-    cat("####", as.data.frame(mega_tab[i])$Sample[1], "<br>", "\n")
-    print(kable(as.data.frame(mega_tab[i]), row.names = FALSE) %>%
-    kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
-        scroll_box(width = "100%", height = "300px"))
-    cat("\n", "<br>", "\n\n")
+  if(nrow(mega_tab) > 0) {
+    for (i in 1:length(mega_tab)) {
+      cat("####", as.data.frame(mega_tab[i])$Sample[1], "<br>", "\n")
+      print(kable(as.data.frame(mega_tab[i]), row.names = FALSE) %>%
+      kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
+          scroll_box(width = "100%", height = "300px"))
+      cat("\n", "<br>", "\n\n")
+    }
+
+    mega_tab1 <- as.data.frame(do.call(rbind, lapply(abricate_mega, abricate_mega_function)))
+    addWorksheet(wb, "Megares")
+    writeData(wb, sheet = "Megares", mega_tab1) 
   }
 
-  mega_tab1 <- as.data.frame(do.call(rbind, lapply(abricate_mega, abricate_mega_function)))
-  addWorksheet(wb, "Megares")
-  writeData(wb, sheet = "Megares", mega_tab1) 
 ```
 
 ### ResFinder {.tabset}
@@ -430,17 +437,19 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
   res_tab <- res_tab[!sapply(res_tab,is.null)]
   res_tab <- res_tab[sapply(res_tab, nrow)>0]
 
-  for (i in 1:length(res_tab)) {
-    cat("####", as.data.frame(res_tab[i])$Sample[1], "<br>", "\n")
-    print(kable(as.data.frame(res_tab[i]), row.names = FALSE) %>%
-      kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
-        scroll_box(width = "100%", height = "300px"))
-    cat("\n", "<br>", "\n\n")
-  }
+  if(nrow(res_tab) > 0) {
+    for (i in 1:length(res_tab)) {
+      cat("####", as.data.frame(res_tab[i])$Sample[1], "<br>", "\n")
+      print(kable(as.data.frame(res_tab[i]), row.names = FALSE) %>%
+        kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
+          scroll_box(width = "100%", height = "300px"))
+      cat("\n", "<br>", "\n\n")
+    }
 
-  res_tab1 <- as.data.frame(do.call(rbind, lapply(abricate_resfinder, abricate_resfinder_function)))
-  addWorksheet(wb, "ResFinder")
-  writeData(wb, sheet = "ResFinder", res_tab1) 
+    res_tab1 <- as.data.frame(do.call(rbind, lapply(abricate_resfinder, abricate_resfinder_function)))
+    addWorksheet(wb, "ResFinder")
+    writeData(wb, sheet = "ResFinder", res_tab1) 
+  }
 
 ```
 
@@ -469,20 +478,21 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
   card_tab <- card_tab[!sapply(card_tab,is.null)]
   card_tab <- card_tab[sapply(card_tab, nrow)>0]
   
-
-  for (i in 1:length(card_tab)) {
+  if(nrow(card_tab) > 0) {
+    for (i in 1:length(card_tab)) {
       cat("####", as.data.frame(card_tab[i])$Sample[1], "<br>", "\n")
-    print(kable(as.data.frame(card_tab[i]), row.names = FALSE) %>%
-      kable_styling(bootstrap_options = c("striped", "hover","responsive"),
-                    fixed_thead = T) %>%
-         scroll_box(width = "100%", height = "300px"))
-    cat("\n", "<br>", "\n\n")
+      print(kable(as.data.frame(card_tab[i]), row.names = FALSE) %>%
+        kable_styling(bootstrap_options = c("striped", "hover","responsive"),
+                      fixed_thead = T) %>%
+          scroll_box(width = "100%", height = "300px"))
+      cat("\n", "<br>", "\n\n")
+    }
+
+    card_tab1 <- as.data.frame(do.call(rbind, lapply(abricate_card, abricate_card_function)))
+    addWorksheet(wb, "CARD")
+    writeData(wb, sheet = "CARD", card_tab1) 
   }
-
-  card_tab1 <- as.data.frame(do.call(rbind, lapply(abricate_card, abricate_card_function)))
-  addWorksheet(wb, "CARD")
-  writeData(wb, sheet = "CARD", card_tab1) 
-
+  
 ```
 
 ### arg-annot {.tabset}
@@ -510,18 +520,20 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
   aga_tab <- aga_tab[!sapply(aga_tab,is.null)]
   aga_tab <- aga_tab[sapply(aga_tab, nrow)>0]
 
-  for (i in 1:length(aga_tab)){
-    cat("####", as.data.frame(aga_tab[i])$Sample[1], "<br>", "\n")
-    print(kable(as.data.frame(aga_tab[i]), row.names = FALSE) %>%
-      kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
-        scroll_box(width = "100%", height = "300px"))
-    cat("\n", "<br>", "\n\n")
-  }
+  if(nrow(aga_tab) > 0) {
+    for (i in 1:length(aga_tab)){
+      cat("####", as.data.frame(aga_tab[i])$Sample[1], "<br>", "\n")
+      print(kable(as.data.frame(aga_tab[i]), row.names = FALSE) %>%
+        kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
+          scroll_box(width = "100%", height = "300px"))
+      cat("\n", "<br>", "\n\n")
+    }
 
-  aga_tab1 <- as.data.frame(do.call(rbind, lapply(abricate_argannot, abricate_argannot_function)))
-  addWorksheet(wb, "argannot")
-  writeData(wb, sheet = "argannot", aga_tab1) 
-  saveWorkbook(wb, file=paste0(path_excel, "/Antimicrobial_resistance_table.xlsx"), overwrite = TRUE)
+    aga_tab1 <- as.data.frame(do.call(rbind, lapply(abricate_argannot, abricate_argannot_function)))
+    addWorksheet(wb, "argannot")
+    writeData(wb, sheet = "argannot", aga_tab1) 
+    saveWorkbook(wb, file=paste0(path_excel, "/Antimicrobial_resistance_table.xlsx"), overwrite = TRUE)
+  }  
 
 ```
 
@@ -793,19 +805,22 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
   vfdb_tab <- lapply(abricate_vfdb, abricate_vfdb_function)
   vfdb_tab <- vfdb_tab[!sapply(vfdb_tab,is.null)]
   vfdb_tab <- vfdb_tab[sapply(vfdb_tab, nrow)>0]
-   
-  for (i in 1:length(vfdb_tab)) {
-    cat("####", as.data.frame(vfdb_tab[i])$Sample[1], "<br>", "\n")
-    print(kable(as.data.frame(vfdb_tab[i]), row.names = FALSE) %>%
-      kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
-        scroll_box(width = "100%", height = "300px"))
-    cat("\n", "<br>", "\n\n")
+
+  if(nrow(vfdb_tab) != 0) {
+    for (i in 1:length(vfdb_tab)) {
+      cat("####", as.data.frame(vfdb_tab[i])$Sample[1], "<br>", "\n")
+      print(kable(as.data.frame(vfdb_tab[i]), row.names = FALSE) %>%
+        kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
+          scroll_box(width = "100%", height = "300px"))
+      cat("\n", "<br>", "\n\n")
+    }
+    
+    vfdb1_tab <- as.data.frame(do.call(rbind, lapply(abricate_vfdb, abricate_vfdb_function)))
+    wbv <- createWorkbook()
+    addWorksheet(wbv, "VFDB")
+    writeData(wbv, sheet = "VFDB", vfdb1_tab)
   }
-   
-  vfdb1_tab <- as.data.frame(do.call(rbind, lapply(abricate_vfdb, abricate_vfdb_function)))
-  wbv <- createWorkbook()
-  addWorksheet(wbv, "VFDB")
-  writeData(wbv, sheet = "VFDB", vfdb1_tab)
+  
 ```
 
 ### Virulencefinder  {.tabset}
@@ -840,18 +855,20 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
   vf_tab <- vf_tab[!sapply(vf_tab,is.null)]
   vf_tab <- vf_tab[sapply(vf_tab, nrow)>0]
 
-  for (i in 1:length(vf_tab)) {
-    cat("####", as.data.frame(vf_tab[i])$Sample[1], "<br>", "\n")
-    print(kable(as.data.frame(vf_tab[i]), row.names = FALSE) %>%
-      kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
-        scroll_box(width = "100%", height = "300px"))
-    cat("\n", "<br>", "\n\n")
+  if(nrow(vf_tab) != 0) {
+    for (i in 1:length(vf_tab)) {
+      cat("####", as.data.frame(vf_tab[i])$Sample[1], "<br>", "\n")
+      print(kable(as.data.frame(vf_tab[i]), row.names = FALSE) %>%
+        kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
+          scroll_box(width = "100%", height = "300px"))
+      cat("\n", "<br>", "\n\n")
+    }
+    
+    vf1_tab <- as.data.frame(do.call(rbind, lapply(virulencefinder, virulencefinder_function)))
+    addWorksheet(wbv, "VirulenceFinder")
+    writeData(wbv, sheet = "VirulenceFinder", vf1_tab) 
+    saveWorkbook(wbv, file=paste0(path_excel, "/Virulence_factor_table.xlsx"), overwrite = TRUE)
   }
-  
-  vf1_tab <- as.data.frame(do.call(rbind, lapply(virulencefinder, virulencefinder_function)))
-  addWorksheet(wbv, "VirulenceFinder")
-  writeData(wbv, sheet = "VirulenceFinder", vf1_tab) 
-  saveWorkbook(wbv, file=paste0(path_excel, "/Virulence_factor_table.xlsx"), overwrite = TRUE)
  
 ```
 
@@ -965,21 +982,21 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
   plfd_tab <- lapply(abricate_plfd, abricate_plfd_function)
   plfd_tab <- plfd_tab[!sapply(plfd_tab,is.null)]
   plfd_tab <- plfd_tab[sapply(plfd_tab, nrow)>0]
-  
-  for (i in 1:length(plfd_tab)) {
-    cat("####", as.data.frame(plfd_tab[i])$Sample[1], "<br>", "\n")
-    print(kable(as.data.frame(plfd_tab[i]), row.names = FALSE) %>%
-      kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
-        scroll_box(width = "100%", height = "300px"))
-    cat("\n", "<br>", "\n\n")
+
+  if(nrow(plfd_tab) != 0) {
+    for (i in 1:length(plfd_tab)) {
+      cat("####", as.data.frame(plfd_tab[i])$Sample[1], "<br>", "\n")
+      print(kable(as.data.frame(plfd_tab[i]), row.names = FALSE) %>%
+        kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
+          scroll_box(width = "100%", height = "300px"))
+      cat("\n", "<br>", "\n\n")
+    }
+      
+    wbp <- createWorkbook()
+    addWorksheet(wbp, "Plasmidfinder")
+    writeData(wbp, sheet = "Plasmidfinder", plfd_tab)
+    # saveWorkbook(wbp, file=paste0(path_excel, "/Plasmid_table.xlsx"), overwrite = TRUE)
   }
-  
-  pd1_tab <- as.data.frame(do.call(rbind, lapply(abricate_plfd, abricate_plfd_function)))
-  
-  wbp <- createWorkbook()
-  addWorksheet(wbp, "Plasmidfinder")
-  writeData(wbp, sheet = "Plasmidfinder", pd1_tab)
-  # saveWorkbook(wbp, file=paste0(path_excel, "/Plasmid_table.xlsx"), overwrite = TRUE)
   
 ```
 
@@ -1176,7 +1193,9 @@ options(knitr.table.format = "html")
   ec_tab$O.type <- gsub("-", "", ec_tab$O.type)
 
   if(dim(ec_tab)[1] != 0){
-    print(kable(ec_tab) %>% kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>% scroll_box(width = "100%", height = "300px"))
+    print(kable(ec_tab) %>%
+      kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
+        scroll_box(width = "100%", height = "300px"))
     
     wbec <- createWorkbook()
     # ec1_tab <- as.data.frame(do.call(rbind, lapply(ectyper, ectyper_function)))
@@ -1208,23 +1227,23 @@ options(knitr.table.format = "html")
     }
   }
   klb_es_tab <- as.data.frame(do.call(rbind, lapply(kleborate_esch, kleborate_esch_function)))
-  #if(length(klb_es_tab) != 0){
-  print(kable(klb_es_tab) %>%
+    
+  if(dim(klb_es_tab)[1] != 0){
+
+    print(kable(klb_es_tab) %>%
     kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
       scroll_box(width = "100%", height = "300px"))
     
-  if(dim(klb_es_tab)[1] != 0){
-    kb1_es_tab <- as.data.frame(do.call(rbind, lapply(kleborate_esch, kleborate_esch_function)))
-    for(n in 1:nrow(kb1_es_tab)){
-      for(j in 1:ncol(kb1_es_tab)){
-        if(kb1_es_tab[n,j] == "$-$" & !is.na(kb1_es_tab[n,j])){
-          kb1_es_tab[n,j] <- gsub("\\$-\\$","-",kb1_es_tab[n,j])
+    for(n in 1:nrow(klb_es_tab)){
+      for(j in 1:ncol(klb_es_tab)){
+        if(klb_es_tab[n,j] == "$-$" & !is.na(klb_es_tab[n,j])){
+          klb_es_tab[n,j] <- gsub("\\$-\\$","-",klb_es_tab[n,j])
         }
       } 
     }
   
     addWorksheet(wbec, "Kleborate")
-    writeData(wbec, sheet = "Kleborate", kb1_es_tab) 
+    writeData(wbec, sheet = "Kleborate", klb_es_tab) 
   }
    
 ```
@@ -1250,15 +1269,14 @@ options(knitr.table.format = "html")
   }
      
   ec_tab <- as.data.frame(do.call(rbind, lapply(ecoh, ecoh_function)))
-  
-  print(kable(ec_tab, row.names = FALSE) %>%
-    kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
-      scroll_box(width = "100%", height = "300px"))
     
   if(dim(ec_tab)[1] != 0){
-    ec1_tab <- as.data.frame(do.call(rbind, lapply(ecoh, ecoh_function)))
+    print(kable(ec_tab, row.names = FALSE) %>%
+    kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
+      scroll_box(width = "100%", height = "300px"))
+
     addWorksheet(wbec, "EcOH")
-    writeData(wbec, sheet = "EcOH", ec1_tab) 
+    writeData(wbec, sheet = "EcOH", ec_tab) 
   }
 ```
 
@@ -1284,15 +1302,15 @@ options(knitr.table.format = "html")
   }
      
   evf_tab <- as.data.frame(do.call(rbind, lapply(ecoli_vf, ecoli_vf_function)))
-  
-  print(kable(evf_tab, row.names = FALSE) %>%
-    kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
-      scroll_box(width = "100%", height = "300px"))
     
   if(dim(evf_tab)[1] != 0){
-    evf1_tab <- as.data.frame(do.call(rbind, lapply(ecoli_vf, ecoli_vf_function)))
+
+    print(kable(evf_tab, row.names = FALSE) %>%
+    kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
+      scroll_box(width = "100%", height = "300px"))
+
     addWorksheet(wbec, "ecoli_vf")
-    writeData(wbec, sheet = "ecoli_vf", evf1_tab) 
+    writeData(wbec, sheet = "ecoli_vf", evf_tab) 
   }
 ```
 
@@ -1318,13 +1336,9 @@ options(knitr.table.format = "html")
      print(kable(fim_tab, row.names = FALSE) %>%
       kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
         scroll_box(width = "100%", height = "300px"))
-    
-    if(dim(fim_tab)[1] != 0){
-      fim1_tab <- as.data.frame(do.call(rbind, lapply(fim, fim_function)))
-    }
  
     addWorksheet(wbec, "fimtyper")
-    writeData(wbec, sheet = "fimtyper", fim1_tab)
+    writeData(wbec, sheet = "fimtyper", fim_tab)
   }
 ```
 
@@ -1361,11 +1375,12 @@ options(knitr.table.format = "html")
   }
   cle_tab <- as.data.frame(do.call(rbind, lapply(clermontyping, clermontyping_function)))
   
-  print(kable(cle_tab, row.names = FALSE) %>%
+  if(dim(cle_tab)[1] != 0){
+
+    print(kable(cle_tab, row.names = FALSE) %>%
     kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
       scroll_box(width = "100%", height = "300px"))
-    
-  if(dim(cle_tab)[1] != 0){
+
     cle1_tab <- as.data.frame(do.call(rbind, lapply(clermontyping, clermontyping_function)))
     
     addWorksheet(wbec, "ClermonTyping")
@@ -1395,22 +1410,20 @@ options(knitr.table.format = "html")
     }
   }
   klb_tab <- as.data.frame(do.call(rbind, lapply(kleborate, kleborate_function)))
+    
   if(dim(klb_tab)[1] != 0){
     print(kable(klb_tab) %>%
       kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
         scroll_box(width = "100%", height = "300px"))
-  }
-    
-  if(dim(klb_tab)[1] != 0){
-    kb1_tab <- as.data.frame(do.call(rbind, lapply(kleborate, kleborate_function)))
-    for(n in 1:nrow(kb1_tab)){
-      for(j in 1:ncol(kb1_tab)){
-        if(kb1_tab[n,j] == "$-$" & !is.na(kb1_tab[n,j])){
-          kb1_tab[n,j] <- gsub("\\$-\\$","-",kb1_tab[n,j])
+
+    for(n in 1:nrow(klb_tab)){
+      for(j in 1:ncol(klb_tab)){
+        if(klb_tab[n,j] == "$-$" & !is.na(klb_tab[n,j])){
+          klb_tab[n,j] <- gsub("\\$-\\$","-",klb_tab[n,j])
         }
       } 
     }
-    write.xlsx(kb1_tab, file=paste0(path_excel, "/Klebsiella_table.xlsx"),   sheetName = "kleborate", col.names = TRUE, row.names = FALSE)
+    write.xlsx(klb_tab, file=paste0(path_excel, "/Klebsiella_table.xlsx"),   sheetName = "kleborate", col.names = TRUE, row.names = FALSE)
   }
    
   
@@ -1432,13 +1445,14 @@ options(knitr.table.format = "html")
     }
   }
   emm_tab <- as.data.frame(do.call(rbind, lapply(emmtyper, emmtyper_function)))
-  print(kable(emm_tab) %>%
-    kable_styling(bootstrap_options = c("striped", "hover","responsive")) %>%
-    footnote(general = c("* 	Suspect emm-like 	Allele flagged in the CDC database as possibly emm-like", "~ 	Imperfect score 	Match score below 100%")))
   
   if(dim(emm_tab)[1] != 0){
-    emm1_tab <- as.data.frame(do.call(rbind, lapply(emmtyper, emmtyper_function)))
-    write.xlsx(emm1_tab, file=paste0(path_excel, "/S.pyogenes_table.xlsx"),   sheetName = "emmtyper", col.names = TRUE, row.names = FALSE)
+
+    print(kable(emm_tab) %>%
+      kable_styling(bootstrap_options = c("striped", "hover","responsive")) %>%
+        footnote(general = c("* 	Suspect emm-like 	Allele flagged in the CDC database as possibly emm-like", "~ 	Imperfect score 	Match score below 100%")))
+
+    write.xlsx(emm_tab, file=paste0(path_excel, "/S.pyogenes_table.xlsx"),   sheetName = "emmtyper", col.names = TRUE, row.names = FALSE)
   }
 ```
 
@@ -1458,15 +1472,14 @@ options(knitr.table.format = "html")
     }
   }
   hp_tab <- as.data.frame(do.call(rbind, lapply(hicap, hicap_function)))
-  if(dim(hp_tab)[1] != 0){
-    print(kable(hp_tab) %>%
-    kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
-      scroll_box(width = "100%", height = "300px"))
-  }
   
   if(dim(hp_tab)[1] != 0){
-    hp1_tab <- as.data.frame(do.call(rbind, lapply(hicap, hicap_function)))
-    write.xlsx(hp1_tab, file=paste0(path_excel, "/H.influenzae_table.xlsx"), sheetName = "hicap", col.names = TRUE, row.names = FALSE)
+
+    print(kable(hp_tab) %>%
+      kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
+      scroll_box(width = "100%", height = "300px"))
+
+    write.xlsx(hp_tab, file=paste0(path_excel, "/H.influenzae_table.xlsx"), sheetName = "hicap", col.names = TRUE, row.names = FALSE)
   }
 ```
 
@@ -1489,15 +1502,15 @@ options(knitr.table.format = "html")
     }
   }
   shiga_tab <- as.data.frame(do.call(rbind, lapply(shigatyper, shigatyper_function)))
-  
-  print(kable(shiga_tab) %>%
-    kable_styling(bootstrap_options = c("striped", "hover","responsive")))
    
   if(dim(shiga_tab)[1] != 0){
-    shiga1_tab <- as.data.frame(do.call(rbind, lapply(shigatyper, shigatyper_function)))
+
+    print(kable(shiga_tab) %>%
+      kable_styling(bootstrap_options = c("striped", "hover","responsive")))
+
     wbshi <- createWorkbook()
     addWorksheet(wbshi, "Shigatyper")
-    writeData(wbshi, sheet = "Shigatyper", shiga1_tab)
+    writeData(wbshi, sheet = "Shigatyper", shiga_tab)
   }
   
 ```
@@ -1518,14 +1531,14 @@ options(knitr.table.format = "html")
   }
     
   shige_tab <- as.data.frame(do.call(rbind, lapply(shige,  shige_function)))
-
-  print(kable(shige_tab) %>%
-    kable_styling(bootstrap_options = c("striped", "hover","responsive")))
   
    if(dim(shige_tab)[1] != 0){
-    shige1_tab <- as.data.frame(do.call(rbind, lapply(shige,  shige_function)))
+    
+    print(kable(shige_tab) %>%
+      kable_styling(bootstrap_options = c("striped", "hover","responsive")))
+
     addWorksheet(wbshi, "ShigEiFinder")
-    writeData(wbshi, sheet = "ShigEiFinder", shige1_tab) 
+    writeData(wbshi, sheet = "ShigEiFinder", shige_tab) 
     saveWorkbook(wbshi, file=paste0(path_excel, "/Shigella_table.xlsx"), overwrite = TRUE)
   }
   
@@ -1556,17 +1569,16 @@ options(knitr.table.format = "html")
     }
   }
   stap_tab <- as.data.frame(do.call(rbind, lapply(staphopia, staphopia_function)))
+  
   if(dim(stap_tab)[1] != 0){
+    
     print(kable(stap_tab) %>%
       kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
         scroll_box(width = "100%", height = "300px"))
-  }
-  
-  if(dim(stap_tab)[1] != 0){
-    st1_tab <- as.data.frame(do.call(rbind, lapply(staphopia, staphopia_function)))
+
     wbstaph <- createWorkbook()
     addWorksheet(wbstaph, "sscmec")
-    writeData(wbstaph, sheet = "sscmec", st1_tab)
+    writeData(wbstaph, sheet = "sscmec", st_tab)
   }
 ```
 
@@ -1586,15 +1598,15 @@ options(knitr.table.format = "html")
     }
   }
   spa_tab <- as.data.frame(do.call(rbind, lapply(spatyper,  spatyper_function)))
-
-  print(kable(spa_tab) %>%
-    kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
-      scroll_box(width = "100%", height = "300px"))
   
   if(dim(spa_tab)[1] != 0){
-    sp1_tab <- as.data.frame(do.call(rbind, lapply(spatyper,  spatyper_function)))
+
+    print(kable(spa_tab) %>%
+    kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
+      scroll_box(width = "100%", height = "300px"))
+    
     addWorksheet(wbstaph, "spaTyper")
-    writeData(wbstaph, sheet = "spaTyper", sp1_tab)
+    writeData(wbstaph, sheet = "spaTyper", spa_tab)
   }
 ```
 
@@ -1612,14 +1624,14 @@ options(knitr.table.format = "html")
     }
   }
   agr_tab <- as.data.frame(do.call(rbind, lapply(agrvate,  agrvate_function)))
-
-  print(kable(agr_tab) %>%
+  
+  if(dim(agr_tab)[1] != 0){
+    print(kable(agr_tab) %>%
     kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
       scroll_box(width = "100%", height = "300px"))
-  if(dim(agr_tab)[1] != 0){
-    ag1_tab <- as.data.frame(do.call(rbind, lapply(agrvate,  agrvate_function)))
+
     addWorksheet(wbstaph, "agrvate")
-    writeData(wbstaph, sheet = "agrvate", ag1_tab) 
+    writeData(wbstaph, sheet = "agrvate", agr_tab) 
     saveWorkbook(wbstaph, file=paste0(path_excel, "/Staphylococcus_table.xlsx"), overwrite = TRUE)
   }
 ```
@@ -1669,14 +1681,12 @@ options(knitr.table.format = "html")
 
   # pbp_tab <- as.data.frame(do.call(rbind, lapply(pbptyper,  pbptyper_function)))
   pbp_tab <- as.data.frame(pbp_tab)
-  
+
   if(dim(pbp_tab)[1] != 0){
     print(kable(pbp_tab) %>%
     kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
       scroll_box(width = "100%", height = "300px"))
-  }
-
-  if(dim(pbp_tab)[1] != 0){
+    
     write.xlsx(pbp_tab, file=paste0(path_excel, "/S.pneumoniae_table.xlsx"),   sheetName = "PBPtyper", col.names = TRUE, row.names = FALSE, append=TRUE)
   }
   
@@ -1699,11 +1709,11 @@ options(knitr.table.format = "html")
     } 
   }
   lis_tab <- as.data.frame(do.call(rbind, lapply(lissero,  lissero_function)))
-
-  print(kable(lis_tab) %>%
-    kable_styling(bootstrap_options = c("striped", "hover","responsive")))
   
   if(dim(lis_tab)[1] != 0){
+    print(kable(lis_tab) %>%
+      kable_styling(bootstrap_options = c("striped", "hover","responsive")))
+
     write.xlsx(lis_tab, file=paste0(path_excel, "/L.monocytogenes_table.xlsx"),   sheetName = "LisSero", col.names = TRUE, row.names = FALSE, append=TRUE)
   }
   
@@ -1725,11 +1735,11 @@ options(knitr.table.format = "html")
     }
   }
   leg_tab <- as.data.frame(do.call(rbind, lapply(legsta,  legsta_function)))
-
-  print(kable(leg_tab) %>%
-    kable_styling(bootstrap_options = c("striped", "hover","responsive")))
   
   if(dim(leg_tab)[1] != 0){
+    print(kable(leg_tab) %>%
+      kable_styling(bootstrap_options = c("striped", "hover","responsive")))
+
     write.xlsx(leg_tab, file=paste0(path_excel, "/L.pneumophila_table.xlsx"),   sheetName = "Legsta", col.names = TRUE, row.names = FALSE, append=TRUE)
   }
   
@@ -1753,11 +1763,11 @@ options(knitr.table.format = "html")
     }    
   }
   men_tab <- as.data.frame(do.call(rbind, lapply(meningotype,  meningotype_function)))
-
-  print(kable(men_tab) %>%
-    kable_styling(bootstrap_options = c("striped", "hover","responsive")))
   
   if(dim(men_tab)[1] != 0){
+    print(kable(men_tab) %>%
+      kable_styling(bootstrap_options = c("striped", "hover","responsive")))
+
     wbneis <- createWorkbook()
     addWorksheet(wbneis, "meningotype_N.meningitis")
     writeData(wbneis, sheet = "meningotype_N.meningitis", men_tab)
@@ -1783,11 +1793,12 @@ options(knitr.table.format = "html")
       
   }
   ng_tab <- as.data.frame(do.call(rbind, lapply(ngmaster,  ngmaster_function)))
-
-  print(kable(ng_tab) %>%
-    kable_styling(bootstrap_options = c("striped", "hover","responsive")))
   
   if(dim(ng_tab)[1] != 0){
+    
+    print(kable(ng_tab) %>%
+    kable_styling(bootstrap_options = c("striped", "hover","responsive")))
+
     addWorksheet(wbneis, "ngmaster_N.gonorrhoeae")
     writeData(wbneis, sheet = "ngmaster_N.gonorrhoeae", ng_tab) 
     saveWorkbook(wbneis, file=paste0(path_excel, "/Neisseria_table.xlsx"), overwrite = TRUE)
@@ -1817,10 +1828,10 @@ options(knitr.table.format = "html")
   }
   pa_tab <- as.data.frame(do.call(rbind, lapply(pasty,  pasty_function)))
 
-  print(kable(pa_tab) %>%
-    kable_styling(bootstrap_options = c("striped", "hover","responsive")))
-  
   if(dim(pa_tab)[1] != 0){
+    print(kable(pa_tab) %>%
+      kable_styling(bootstrap_options = c("striped", "hover","responsive")))
+
     write.xlsx(pa_tab, file=paste0(path_excel, "/P.aeruginosa_table.xlsx"),   sheetName = "Pasty", col.names = TRUE, row.names = FALSE, append=TRUE)
   }
   
