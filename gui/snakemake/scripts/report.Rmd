@@ -28,7 +28,7 @@ library(openxlsx)
 library(stringr)
 
 #for Rstudio testing
-# path_output <- "/Users/adria/Desktop/Uni/Magistrale/Tirocinio/test/output"
+# path_output <- "/Users/adria/Desktop/Uni/BacExplorer_prove/Prova_tot/output"
 # identity <- 90
 # coverage <- 90
 # type <- "Fasta"
@@ -105,8 +105,32 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
         return(fq)
       }
     }
-
-    fq_tab <- as.data.frame(do.call(bind_rows, lapply(fastqc, fastqc_function)))
+    
+    uniform_columns <- function(df, all_cols) {
+      missing_cols <- setdiff(all_cols, colnames(df))
+      if (length(missing_cols) > 0) {
+        df[missing_cols] <- NA
+      }
+      df <- df[, all_cols, drop = FALSE]
+      return(df)
+    }
+  
+    list_dfs <- lapply(fastqc, function(file) {
+      tryCatch(
+        fastqc_function(file),
+        error = function(e) {
+          message(paste("Error during processing of file:", file, "->", e$message))
+          NULL
+        }
+      )
+    })
+  
+    list_dfs <- Filter(Negate(is.null), list_dfs)
+    all_columns <- unique(unlist(lapply(list_dfs, colnames)))
+    list_dfs_uniform <- lapply(list_dfs, uniform_columns, all_cols = all_columns)
+  
+    fq_tab <- as.data.frame(do.call(rbind, list_dfs_uniform))
+  
     rownames(fq_tab) <- NULL
     if(dim(fq_tab)[1] != 0){ 
       print(kable(fq_tab) %>%
@@ -186,7 +210,31 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
         
     }
     
-    quast_tab <- as.data.frame(do.call(rbind, lapply(quast, quast_function)))
+    uniform_columns <- function(df, all_cols) {
+      missing_cols <- setdiff(all_cols, colnames(df))
+      if (length(missing_cols) > 0) {
+        df[missing_cols] <- NA
+      }
+      df <- df[, all_cols, drop = FALSE]
+      return(df)
+    }
+  
+    list_dfs <- lapply(quast, function(file) {
+      tryCatch(
+        quast_function(file),
+        error = function(e) {
+          message(paste("Error during processing of file:", file, "->", e$message))
+          NULL
+        }
+      )
+    })
+  
+    list_dfs <- Filter(Negate(is.null), list_dfs)
+    all_columns <- unique(unlist(lapply(list_dfs, colnames)))
+    list_dfs_uniform <- lapply(list_dfs, uniform_columns, all_cols = all_columns)
+  
+    quast_tab <- as.data.frame(do.call(rbind, list_dfs_uniform))    
+    
     rownames(quast_tab) <- NULL
     
     if(dim(quast_tab)[1] != 0){
@@ -229,7 +277,31 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
       }
       
     }
-    kraken2_tab <- as.data.frame(do.call(rbind, lapply(kraken2, kraken2_function)))
+    
+    uniform_columns <- function(df, all_cols) {
+      missing_cols <- setdiff(all_cols, colnames(df))
+      if (length(missing_cols) > 0) {
+        df[missing_cols] <- NA
+      }
+      df <- df[, all_cols, drop = FALSE]
+      return(df)
+    }
+  
+    list_dfs <- lapply(kraken2, function(file) {
+      tryCatch(
+        kraken2_function(file),
+        error = function(e) {
+          message(paste("Error during processing of file:", file, "->", e$message))
+          NULL
+        }
+      )
+    })
+  
+    list_dfs <- Filter(Negate(is.null), list_dfs)
+    all_columns <- unique(unlist(lapply(list_dfs, colnames)))
+    list_dfs_uniform <- lapply(list_dfs, uniform_columns, all_cols = all_columns)
+  
+    kraken2_tab <- as.data.frame(do.call(rbind, list_dfs_uniform))
     
     # print(kable(mlst_tab) %>%
     #   kable_styling(bootstrap_options = c("striped", "hover","responsive")))
@@ -265,7 +337,32 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
         return(sm)
       }
     }
-    mlst_tab <- as.data.frame(do.call(rbind,lapply(mlst, mlst_function)))
+
+    uniform_columns <- function(df, all_cols) {
+      missing_cols <- setdiff(all_cols, colnames(df))
+      if (length(missing_cols) > 0) {
+        df[missing_cols] <- NA
+      }
+      df <- df[, all_cols, drop = FALSE]
+      return(df)
+    }
+  
+    list_dfs <- lapply(mlst, function(file) {
+      tryCatch(
+        mlst_function(file),
+        error = function(e) {
+          message(paste("Error during processing of file:", file, "->", e$message))
+          NULL
+        }
+      )
+    })
+  
+    list_dfs <- Filter(Negate(is.null), list_dfs)
+    all_columns <- unique(unlist(lapply(list_dfs, colnames)))
+    list_dfs_uniform <- lapply(list_dfs, uniform_columns, all_cols = all_columns)
+  
+    mlst_tab <- as.data.frame(do.call(rbind, list_dfs_uniform))
+    
     mlst_tab <- mlst_tab[!sapply(mlst_tab,is.null)]
     # print(kable(mlst_tab) %>%
     #   kable_styling(bootstrap_options = c("striped", "hover","responsive")))
@@ -308,24 +405,27 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
       return(amr)
     }
   }
+    
   amr_tab <- lapply(amrfinder_db, amrfinder_db_function)
   amr_tab <- amr_tab[!sapply(amr_tab,is.null)]
   amr_tab <- amr_tab[sapply(amr_tab, nrow)>0]
+  
 
-  if(dim(amr_tab)[1] != 0) {
-    for (i in 1:length(amr_tab)) {
+  for (i in 1:length(amr_tab)) {
+    if(dim(as.data.frame(amr_tab[i]))[1] != 0) {
       cat("####", as.data.frame(amr_tab[i])$Sample[1], "<br>", "\n")
       print(kable(as.data.frame(amr_tab[i]), row.names = FALSE) %>%
         kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
           scroll_box(width = "100%", height = "330px"))
       cat("\n", "<br>", "\n\n")
     }
-
-    amr_tab1 <- as.data.frame(do.call(rbind, lapply(amrfinder_db, amrfinder_db_function)))
-    wb <- createWorkbook()
-    addWorksheet(wb, "AMRfinder")
-    writeData(wb, sheet = "AMRfinder", amr_tab1) 
+    
   }
+
+  amr_tab1 <- as.data.frame(do.call(rbind, lapply(amrfinder_db, amrfinder_db_function)))
+  wb <- createWorkbook()
+  addWorksheet(wb, "AMRfinder")
+  writeData(wb, sheet = "AMRfinder", amr_tab1) 
 
 ```
 
@@ -354,19 +454,19 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
   ncbi_tab <- ncbi_tab[!sapply(ncbi_tab,is.null)]
   ncbi_tab <- ncbi_tab[sapply(ncbi_tab, nrow)>0]
 
-  if(nrow(ncbi_tab) > 0) {
-    for (i in 1:length(ncbi_tab)) {
+  for (i in 1:length(ncbi_tab)) {
+    if(dim(as.data.frame(ncbi_tab[i]))[1] != 0) {
       cat("####", as.data.frame(ncbi_tab[i])$Sample[1], "<br>", "\n")
       print(kable(as.data.frame(ncbi_tab[i]), row.names = FALSE) %>%
         kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
           scroll_box(width = "100%", height = "300px"))
       cat("\n", "<br>", "\n\n")
     }
-
-    ncbi_tab1 <- as.data.frame(do.call(rbind, lapply(abricate_ncbi, abricate_ncbi_function)))
-    addWorksheet(wb, "NCBI")
-    writeData(wb, sheet = "NCBI", ncbi_tab1) 
   }
+
+  ncbi_tab1 <- as.data.frame(do.call(rbind, lapply(abricate_ncbi, abricate_ncbi_function)))
+  addWorksheet(wb, "NCBI")
+  writeData(wb, sheet = "NCBI", ncbi_tab1)
 
 ```
 
@@ -396,19 +496,19 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
   mega_tab <- mega_tab[!sapply(mega_tab,is.null)]
   mega_tab <- mega_tab[sapply(mega_tab, nrow)>0]
 
-  if(nrow(mega_tab) > 0) {
-    for (i in 1:length(mega_tab)) {
+  for (i in 1:length(mega_tab)) {
+    if(dim(as.data.frame(mega_tab[i]))[1] != 0) {
       cat("####", as.data.frame(mega_tab[i])$Sample[1], "<br>", "\n")
       print(kable(as.data.frame(mega_tab[i]), row.names = FALSE) %>%
       kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
           scroll_box(width = "100%", height = "300px"))
       cat("\n", "<br>", "\n\n")
     }
-
-    mega_tab1 <- as.data.frame(do.call(rbind, lapply(abricate_mega, abricate_mega_function)))
-    addWorksheet(wb, "Megares")
-    writeData(wb, sheet = "Megares", mega_tab1) 
   }
+
+  mega_tab1 <- as.data.frame(do.call(rbind, lapply(abricate_mega, abricate_mega_function)))
+  addWorksheet(wb, "Megares")
+  writeData(wb, sheet = "Megares", mega_tab1) 
 
 ```
 
@@ -437,19 +537,20 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
   res_tab <- res_tab[!sapply(res_tab,is.null)]
   res_tab <- res_tab[sapply(res_tab, nrow)>0]
 
-  if(nrow(res_tab) > 0) {
-    for (i in 1:length(res_tab)) {
+  for (i in 1:length(res_tab)) {
+    if(dim(as.data.frame(res_tab[i]))[1] != 0) {
       cat("####", as.data.frame(res_tab[i])$Sample[1], "<br>", "\n")
       print(kable(as.data.frame(res_tab[i]), row.names = FALSE) %>%
         kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
           scroll_box(width = "100%", height = "300px"))
       cat("\n", "<br>", "\n\n")
     }
-
-    res_tab1 <- as.data.frame(do.call(rbind, lapply(abricate_resfinder, abricate_resfinder_function)))
-    addWorksheet(wb, "ResFinder")
-    writeData(wb, sheet = "ResFinder", res_tab1) 
+    
   }
+
+  res_tab1 <- as.data.frame(do.call(rbind, lapply(abricate_resfinder, abricate_resfinder_function)))
+  addWorksheet(wb, "ResFinder")
+  writeData(wb, sheet = "ResFinder", res_tab1)
 
 ```
 
@@ -478,8 +579,8 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
   card_tab <- card_tab[!sapply(card_tab,is.null)]
   card_tab <- card_tab[sapply(card_tab, nrow)>0]
   
-  if(nrow(card_tab) > 0) {
-    for (i in 1:length(card_tab)) {
+  for (i in 1:length(card_tab)) {
+    if(dim(as.data.frame(card_tab[i]))[1] != 0) {
       cat("####", as.data.frame(card_tab[i])$Sample[1], "<br>", "\n")
       print(kable(as.data.frame(card_tab[i]), row.names = FALSE) %>%
         kable_styling(bootstrap_options = c("striped", "hover","responsive"),
@@ -487,11 +588,12 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
           scroll_box(width = "100%", height = "300px"))
       cat("\n", "<br>", "\n\n")
     }
-
-    card_tab1 <- as.data.frame(do.call(rbind, lapply(abricate_card, abricate_card_function)))
-    addWorksheet(wb, "CARD")
-    writeData(wb, sheet = "CARD", card_tab1) 
+    
   }
+
+  card_tab1 <- as.data.frame(do.call(rbind, lapply(abricate_card, abricate_card_function)))
+  addWorksheet(wb, "CARD")
+  writeData(wb, sheet = "CARD", card_tab1) 
   
 ```
 
@@ -520,20 +622,21 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
   aga_tab <- aga_tab[!sapply(aga_tab,is.null)]
   aga_tab <- aga_tab[sapply(aga_tab, nrow)>0]
 
-  if(nrow(aga_tab) > 0) {
-    for (i in 1:length(aga_tab)){
+  for (i in 1:length(aga_tab)){
+    if(dim(as.data.frame(aga_tab[i]))[1] != 0) {
       cat("####", as.data.frame(aga_tab[i])$Sample[1], "<br>", "\n")
       print(kable(as.data.frame(aga_tab[i]), row.names = FALSE) %>%
         kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
           scroll_box(width = "100%", height = "300px"))
       cat("\n", "<br>", "\n\n")
     }
+    
+  }
 
-    aga_tab1 <- as.data.frame(do.call(rbind, lapply(abricate_argannot, abricate_argannot_function)))
-    addWorksheet(wb, "argannot")
-    writeData(wb, sheet = "argannot", aga_tab1) 
-    saveWorkbook(wb, file=paste0(path_excel, "/Antimicrobial_resistance_table.xlsx"), overwrite = TRUE)
-  }  
+  aga_tab1 <- as.data.frame(do.call(rbind, lapply(abricate_argannot, abricate_argannot_function)))
+  addWorksheet(wb, "argannot")
+  writeData(wb, sheet = "argannot", aga_tab1) 
+  saveWorkbook(wb, file=paste0(path_excel, "/Antimicrobial_resistance_table.xlsx"), overwrite = TRUE)
 
 ```
 
@@ -779,7 +882,7 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
 
 ```
 
-## Virulence Factors {.tabset #virulence}
+## Virulence Factors {.tabset .tabset-fade .tabset-pills #virulence}
 
 ### VFDB  {.tabset}
 
@@ -806,8 +909,8 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
   vfdb_tab <- vfdb_tab[!sapply(vfdb_tab,is.null)]
   vfdb_tab <- vfdb_tab[sapply(vfdb_tab, nrow)>0]
 
-  if(nrow(vfdb_tab) != 0) {
-    for (i in 1:length(vfdb_tab)) {
+  for (i in 1:length(vfdb_tab)) {
+    if(dim(as.data.frame(vfdb_tab[i]))[1] != 0) {
       cat("####", as.data.frame(vfdb_tab[i])$Sample[1], "<br>", "\n")
       print(kable(as.data.frame(vfdb_tab[i]), row.names = FALSE) %>%
         kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
@@ -815,11 +918,12 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
       cat("\n", "<br>", "\n\n")
     }
     
-    vfdb1_tab <- as.data.frame(do.call(rbind, lapply(abricate_vfdb, abricate_vfdb_function)))
-    wbv <- createWorkbook()
-    addWorksheet(wbv, "VFDB")
-    writeData(wbv, sheet = "VFDB", vfdb1_tab)
   }
+  
+  vfdb1_tab <- as.data.frame(do.call(rbind, lapply(abricate_vfdb, abricate_vfdb_function)))
+  wbv <- createWorkbook()
+  addWorksheet(wbv, "VFDB")
+  writeData(wbv, sheet = "VFDB", vfdb1_tab)
   
 ```
 
@@ -855,20 +959,20 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
   vf_tab <- vf_tab[!sapply(vf_tab,is.null)]
   vf_tab <- vf_tab[sapply(vf_tab, nrow)>0]
 
-  if(nrow(vf_tab) != 0) {
-    for (i in 1:length(vf_tab)) {
+  for (i in 1:length(vf_tab)) {
+    if(dim(as.data.frame(vf_tab[i]))[1] != 0) {
       cat("####", as.data.frame(vf_tab[i])$Sample[1], "<br>", "\n")
       print(kable(as.data.frame(vf_tab[i]), row.names = FALSE) %>%
         kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
           scroll_box(width = "100%", height = "300px"))
       cat("\n", "<br>", "\n\n")
     }
-    
-    vf1_tab <- as.data.frame(do.call(rbind, lapply(virulencefinder, virulencefinder_function)))
-    addWorksheet(wbv, "VirulenceFinder")
-    writeData(wbv, sheet = "VirulenceFinder", vf1_tab) 
-    saveWorkbook(wbv, file=paste0(path_excel, "/Virulence_factor_table.xlsx"), overwrite = TRUE)
   }
+  
+  vf1_tab <- as.data.frame(do.call(rbind, lapply(virulencefinder, virulencefinder_function)))
+  addWorksheet(wbv, "VirulenceFinder")
+  writeData(wbv, sheet = "VirulenceFinder", vf1_tab) 
+  saveWorkbook(wbv, file=paste0(path_excel, "/Virulence_factor_table.xlsx"), overwrite = TRUE)
  
 ```
 
@@ -891,9 +995,34 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
     return(vfdb)
     }
   }
+  
 
   if(length(abricate_vfdb) > 0){
-    vfdb_tab <- as.data.frame(do.call(rbind, lapply(abricate_vfdb, abricate_vfdb_function)))
+    uniform_columns <- function(df, all_cols) {
+      missing_cols <- setdiff(all_cols, colnames(df))
+      if (length(missing_cols) > 0) {
+        df[missing_cols] <- NA
+      }
+      df <- df[, all_cols, drop = FALSE]
+      return(df)
+    }
+  
+    list_dfs <- lapply(abricate_vfdb, function(file) {
+      tryCatch(
+        abricate_vfdb_function(file),
+        error = function(e) {
+          message(paste("Error during processing of file:", file, "->", e$message))
+          NULL
+        }
+      )
+    })
+  
+    list_dfs <- Filter(Negate(is.null), list_dfs)
+    all_columns <- unique(unlist(lapply(list_dfs, colnames)))
+    list_dfs_uniform <- lapply(list_dfs, uniform_columns, all_cols = all_columns)
+    
+    vfdb_tab <- as.data.frame(do.call(rbind, list_dfs_uniform))
+
     if(nrow(vfdb_tab) > 0) {
       vfdb_tab <- vfdb_tab[!sapply(vfdb_tab,is.null)]
       vfdb <- vfdb_tab[c(1,2)]
@@ -934,7 +1063,30 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
   }
    
    if(length(virulencefinder) > 0) {
-    vf_tab <- as.data.frame(do.call(rbind, lapply(virulencefinder, virulencefinder_function)))
+     uniform_columns <- function(df, all_cols) {
+      missing_cols <- setdiff(all_cols, colnames(df))
+      if (length(missing_cols) > 0) {
+        df[missing_cols] <- NA
+      }
+      df <- df[, all_cols, drop = FALSE]
+      return(df)
+    }
+  
+    list_dfs <- lapply(virulencefinder, function(file) {
+      tryCatch(
+        virulencefinder_function(file),
+        error = function(e) {
+          message(paste("Error during processing of file:", file, "->", e$message))
+          NULL
+        }
+      )
+    })
+  
+    list_dfs <- Filter(Negate(is.null), list_dfs)
+    all_columns <- unique(unlist(lapply(list_dfs, colnames)))
+    list_dfs_uniform <- lapply(list_dfs, uniform_columns, all_cols = all_columns)
+    
+    vf_tab <- as.data.frame(do.call(rbind, list_dfs_uniform))
     if(nrow(vf_tab) > 0) {
       vf_tab <- vf_tab[!sapply(vf_tab,is.null)]
       vf <- vf_tab[c(1,2)]
@@ -979,24 +1131,49 @@ knitr::opts_chunk$set(fig.width=23, fig.height=15)
       return(smp)
     }
   }
-  plfd_tab <- lapply(abricate_plfd, abricate_plfd_function)
+  
+  uniform_columns <- function(df, all_cols) {
+    missing_cols <- setdiff(all_cols, colnames(df))
+    if (length(missing_cols) > 0) {
+      df[missing_cols] <- NA
+    }
+    df <- df[, all_cols, drop = FALSE]
+    return(df)
+  }
+
+  list_dfs <- lapply(abricate_plfd, function(file) {
+    tryCatch(
+      abricate_plfd_function(file),
+      error = function(e) {
+        message(paste("Error during processing of file:", file, "->", e$message))
+        NULL
+      }
+    )
+  })
+
+  list_dfs <- Filter(Negate(is.null), list_dfs)
+  all_columns <- unique(unlist(lapply(list_dfs, colnames)))
+  plfd_tab <- lapply(list_dfs, uniform_columns, all_cols = all_columns)
+    
   plfd_tab <- plfd_tab[!sapply(plfd_tab,is.null)]
   plfd_tab <- plfd_tab[sapply(plfd_tab, nrow)>0]
 
-  if(nrow(plfd_tab) != 0) {
-    for (i in 1:length(plfd_tab)) {
+  for (i in 1:length(plfd_tab)) {
+    if(dim(as.data.frame(plfd_tab[i]))[1] != 0) {
       cat("####", as.data.frame(plfd_tab[i])$Sample[1], "<br>", "\n")
       print(kable(as.data.frame(plfd_tab[i]), row.names = FALSE) %>%
         kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
           scroll_box(width = "100%", height = "300px"))
       cat("\n", "<br>", "\n\n")
     }
-      
-    wbp <- createWorkbook()
-    addWorksheet(wbp, "Plasmidfinder")
-    writeData(wbp, sheet = "Plasmidfinder", plfd_tab)
-    # saveWorkbook(wbp, file=paste0(path_excel, "/Plasmid_table.xlsx"), overwrite = TRUE)
+    
   }
+
+  wbp <- createWorkbook()
+  addWorksheet(wbp, "Plasmidfinder")
+  plfd_tab1 <- do.call(rbind, plfd_tab)
+  writeData(wbp, sheet = "Plasmidfinder", plfd_tab1)
+  # saveWorkbook(wbp, file=paste0(path_excel, "/Plasmid_table.xlsx"), overwrite = TRUE)
   
 ```
 
@@ -1189,6 +1366,7 @@ options(knitr.table.format = "html")
   ec_tab <- do.call(rbind, list_dfs_uniform)
 
   ec_tab <- as.data.frame(ec_tab)
+  rownames(ec_tab) <- NULL
   colnames(ec_tab) <- gsub("-", ".", colnames(ec_tab))
   ec_tab$O.type <- gsub("-", "", ec_tab$O.type)
 
@@ -1226,7 +1404,32 @@ options(knitr.table.format = "html")
       return(klb)
     }
   }
-  klb_es_tab <- as.data.frame(do.call(rbind, lapply(kleborate_esch, kleborate_esch_function)))
+  
+  uniform_columns <- function(df, all_cols) {
+    missing_cols <- setdiff(all_cols, colnames(df))
+    if (length(missing_cols) > 0) {
+      df[missing_cols] <- NA
+    }
+    df <- df[, all_cols, drop = FALSE]
+    return(df)
+  }
+
+  list_dfs <- lapply(kleborate_esch, function(file) {
+    tryCatch(
+      kleborate_esch_function(file),
+      error = function(e) {
+        message(paste("Error during processing of file:", file, "->", e$message))
+        NULL
+      }
+    )
+  })
+
+  list_dfs <- Filter(Negate(is.null), list_dfs)
+  all_columns <- unique(unlist(lapply(list_dfs, colnames)))
+  list_dfs_uniform <- lapply(list_dfs, uniform_columns, all_cols = all_columns)
+
+  klb_es_tab <- as.data.frame(do.call(rbind, list_dfs_uniform))    
+  rownames(klb_es_tab) <- NULL
     
   if(dim(klb_es_tab)[1] != 0){
 
@@ -1267,9 +1470,34 @@ options(knitr.table.format = "html")
       return(ec)
     }
   }
+  
+  uniform_columns <- function(df, all_cols) {
+    missing_cols <- setdiff(all_cols, colnames(df))
+    if (length(missing_cols) > 0) {
+      df[missing_cols] <- NA
+    }
+    df <- df[, all_cols, drop = FALSE]
+    return(df)
+  }
+
+  list_dfs <- lapply(ecoh, function(file) {
+    tryCatch(
+      ecoh_function(file),
+      error = function(e) {
+        message(paste("Error during processing of file:", file, "->", e$message))
+        NULL
+      }
+    )
+  })
+
+  list_dfs <- Filter(Negate(is.null), list_dfs)
+  all_columns <- unique(unlist(lapply(list_dfs, colnames)))
+  list_dfs_uniform <- lapply(list_dfs, uniform_columns, all_cols = all_columns)
+
+  ec_tab <- as.data.frame(do.call(rbind, list_dfs_uniform))    
+  
+  rownames(ec_tab) <- NULL
      
-  ec_tab <- as.data.frame(do.call(rbind, lapply(ecoh, ecoh_function)))
-    
   if(dim(ec_tab)[1] != 0){
     print(kable(ec_tab, row.names = FALSE) %>%
     kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
@@ -1300,9 +1528,34 @@ options(knitr.table.format = "html")
       return(evf)
     }
   }
-     
-  evf_tab <- as.data.frame(do.call(rbind, lapply(ecoli_vf, ecoli_vf_function)))
-    
+  
+  uniform_columns <- function(df, all_cols) {
+    missing_cols <- setdiff(all_cols, colnames(df))
+    if (length(missing_cols) > 0) {
+      df[missing_cols] <- NA
+    }
+    df <- df[, all_cols, drop = FALSE]
+    return(df)
+  }
+  
+  list_dfs <- lapply(ecoli_vf, function(file) {
+    tryCatch(
+      ecoli_vf_function(file),
+      error = function(e) {
+        message(paste("Error during processing of file:", file, "->", e$message))
+        NULL
+      }
+    )
+  })
+  
+  list_dfs <- Filter(Negate(is.null), list_dfs)
+  all_columns <- unique(unlist(lapply(list_dfs, colnames)))
+  list_dfs_uniform <- lapply(list_dfs, uniform_columns, all_cols = all_columns)
+  
+  evf_tab <- as.data.frame(do.call(rbind, list_dfs_uniform))    
+  
+  rownames(evf_tab) <- NULL
+
   if(dim(evf_tab)[1] != 0){
 
     print(kable(evf_tab, row.names = FALSE) %>%
@@ -1330,8 +1583,34 @@ options(knitr.table.format = "html")
       }
     }
   }
-  fim_tab <- as.data.frame(do.call(rbind, lapply(fim, fim_function)))
   
+  uniform_columns <- function(df, all_cols) {
+    missing_cols <- setdiff(all_cols, colnames(df))
+    if (length(missing_cols) > 0) {
+      df[missing_cols] <- NA
+    }
+    df <- df[, all_cols, drop = FALSE]
+    return(df)
+  }
+
+  list_dfs <- lapply(fim, function(file) {
+    tryCatch(
+      fim_function(file),
+      error = function(e) {
+        message(paste("Error during processing of file:", file, "->", e$message))
+        NULL
+      }
+    )
+  })
+
+  list_dfs <- Filter(Negate(is.null), list_dfs)
+  all_columns <- unique(unlist(lapply(list_dfs, colnames)))
+  list_dfs_uniform <- lapply(list_dfs, uniform_columns, all_cols = all_columns)
+
+  fim_tab <- as.data.frame(do.call(rbind, list_dfs_uniform))    
+  
+  rownames(fim_tab) <- NULL
+    
   if(nrow(fim_tab) > 0) {
      print(kable(fim_tab, row.names = FALSE) %>%
       kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
@@ -1373,18 +1652,42 @@ options(knitr.table.format = "html")
     }
      
   }
-  cle_tab <- as.data.frame(do.call(rbind, lapply(clermontyping, clermontyping_function)))
   
+  uniform_columns <- function(df, all_cols) {
+    missing_cols <- setdiff(all_cols, colnames(df))
+    if (length(missing_cols) > 0) {
+      df[missing_cols] <- NA
+    }
+    df <- df[, all_cols, drop = FALSE]
+    return(df)
+  }
+
+  list_dfs <- lapply(clermontyping, function(file) {
+    tryCatch(
+      clermontyping_function(file),
+      error = function(e) {
+        message(paste("Error during processing of file:", file, "->", e$message))
+        NULL
+      }
+    )
+  })
+
+  list_dfs <- Filter(Negate(is.null), list_dfs)
+  all_columns <- unique(unlist(lapply(list_dfs, colnames)))
+  list_dfs_uniform <- lapply(list_dfs, uniform_columns, all_cols = all_columns)
+
+  cle_tab <- as.data.frame(do.call(rbind, list_dfs_uniform))    
+  
+  rownames(cle_tab) <- NULL
+    
   if(dim(cle_tab)[1] != 0){
 
     print(kable(cle_tab, row.names = FALSE) %>%
     kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
       scroll_box(width = "100%", height = "300px"))
 
-    cle1_tab <- as.data.frame(do.call(rbind, lapply(clermontyping, clermontyping_function)))
-    
     addWorksheet(wbec, "ClermonTyping")
-    writeData(wbec, sheet = "ClermonTyping", cle1_tab) 
+    writeData(wbec, sheet = "ClermonTyping", cle_tab) 
   }
 ```
 
@@ -1409,7 +1712,33 @@ options(knitr.table.format = "html")
       return(klb)
     }
   }
-  klb_tab <- as.data.frame(do.call(rbind, lapply(kleborate, kleborate_function)))
+  
+  uniform_columns <- function(df, all_cols) {
+    missing_cols <- setdiff(all_cols, colnames(df))
+    if (length(missing_cols) > 0) {
+      df[missing_cols] <- NA
+    }
+    df <- df[, all_cols, drop = FALSE]
+    return(df)
+  }
+
+  list_dfs <- lapply(kleborate, function(file) {
+    tryCatch(
+      kleborate_function(file),
+      error = function(e) {
+        message(paste("Error during processing of file:", file, "->", e$message))
+        NULL
+      }
+    )
+  })
+
+  list_dfs <- Filter(Negate(is.null), list_dfs)
+  all_columns <- unique(unlist(lapply(list_dfs, colnames)))
+  list_dfs_uniform <- lapply(list_dfs, uniform_columns, all_cols = all_columns)
+
+  klb_tab <- as.data.frame(do.call(rbind, list_dfs_uniform))    
+  
+  rownames(klb_tab) <- NULL
     
   if(dim(klb_tab)[1] != 0){
     print(kable(klb_tab) %>%
@@ -1444,8 +1773,34 @@ options(knitr.table.format = "html")
       return(em)
     }
   }
-  emm_tab <- as.data.frame(do.call(rbind, lapply(emmtyper, emmtyper_function)))
   
+  uniform_columns <- function(df, all_cols) {
+    missing_cols <- setdiff(all_cols, colnames(df))
+    if (length(missing_cols) > 0) {
+      df[missing_cols] <- NA
+    }
+    df <- df[, all_cols, drop = FALSE]
+    return(df)
+  }
+
+  list_dfs <- lapply(emmtyper, function(file) {
+    tryCatch(
+      emmtyper_function(file),
+      error = function(e) {
+        message(paste("Error during processing of file:", file, "->", e$message))
+        NULL
+      }
+    )
+  })
+
+  list_dfs <- Filter(Negate(is.null), list_dfs)
+  all_columns <- unique(unlist(lapply(list_dfs, colnames)))
+  list_dfs_uniform <- lapply(list_dfs, uniform_columns, all_cols = all_columns)
+
+  emm_tab <- as.data.frame(do.call(rbind, list_dfs_uniform))    
+  
+  rownames(emm_tab) <- NULL
+    
   if(dim(emm_tab)[1] != 0){
 
     print(kable(emm_tab) %>%
@@ -1471,8 +1826,33 @@ options(knitr.table.format = "html")
       return(hp)
     }
   }
-  hp_tab <- as.data.frame(do.call(rbind, lapply(hicap, hicap_function)))
   
+  uniform_columns <- function(df, all_cols) {
+    missing_cols <- setdiff(all_cols, colnames(df))
+    if (length(missing_cols) > 0) {
+      df[missing_cols] <- NA
+    }
+    df <- df[, all_cols, drop = FALSE]
+    return(df)
+  }
+
+  list_dfs <- lapply(hicap, function(file) {
+    tryCatch(
+      hicap_function(file),
+      error = function(e) {
+        message(paste("Error during processing of file:", file, "->", e$message))
+        NULL
+      }
+    )
+  })
+
+  list_dfs <- Filter(Negate(is.null), list_dfs)
+  all_columns <- unique(unlist(lapply(list_dfs, colnames)))
+  list_dfs_uniform <- lapply(list_dfs, uniform_columns, all_cols = all_columns)
+
+  hp_tab <- as.data.frame(do.call(rbind, list_dfs_uniform))    
+  rownames(hp_tab) <- NULL
+    
   if(dim(hp_tab)[1] != 0){
 
     print(kable(hp_tab) %>%
@@ -1501,8 +1881,34 @@ options(knitr.table.format = "html")
       return(sh)
     }
   }
-  shiga_tab <- as.data.frame(do.call(rbind, lapply(shigatyper, shigatyper_function)))
-   
+  
+  uniform_columns <- function(df, all_cols) {
+    missing_cols <- setdiff(all_cols, colnames(df))
+    if (length(missing_cols) > 0) {
+      df[missing_cols] <- NA
+    }
+    df <- df[, all_cols, drop = FALSE]
+    return(df)
+  }
+
+  list_dfs <- lapply(shigatyper, function(file) {
+    tryCatch(
+      shigatyper_function(file),
+      error = function(e) {
+        message(paste("Error during processing of file:", file, "->", e$message))
+        NULL
+      }
+    )
+  })
+
+  list_dfs <- Filter(Negate(is.null), list_dfs)
+  all_columns <- unique(unlist(lapply(list_dfs, colnames)))
+  list_dfs_uniform <- lapply(list_dfs, uniform_columns, all_cols = all_columns)
+
+  shiga_tab <- as.data.frame(do.call(rbind, list_dfs_uniform))    
+  
+  rownames(shiga_tab) <- NULL
+    
   if(dim(shiga_tab)[1] != 0){
 
     print(kable(shiga_tab) %>%
@@ -1529,11 +1935,35 @@ options(knitr.table.format = "html")
       return(shi)
     }
   }
-    
-  shige_tab <- as.data.frame(do.call(rbind, lapply(shige,  shige_function)))
   
-   if(dim(shige_tab)[1] != 0){
+  uniform_columns <- function(df, all_cols) {
+    missing_cols <- setdiff(all_cols, colnames(df))
+    if (length(missing_cols) > 0) {
+      df[missing_cols] <- NA
+    }
+    df <- df[, all_cols, drop = FALSE]
+    return(df)
+  }
+
+  list_dfs <- lapply(shige, function(file) {
+    tryCatch(
+      shige_function(file),
+      error = function(e) {
+        message(paste("Error during processing of file:", file, "->", e$message))
+        NULL
+      }
+    )
+  })
+
+  list_dfs <- Filter(Negate(is.null), list_dfs)
+  all_columns <- unique(unlist(lapply(list_dfs, colnames)))
+  list_dfs_uniform <- lapply(list_dfs, uniform_columns, all_cols = all_columns)
+
+  shige_tab <- as.data.frame(do.call(rbind, list_dfs_uniform))    
+  
+  rownames(shige_tab) <- NULL
     
+  if(dim(shige_tab)[1] != 0){
     print(kable(shige_tab) %>%
       kable_styling(bootstrap_options = c("striped", "hover","responsive")))
 
@@ -1568,7 +1998,33 @@ options(knitr.table.format = "html")
       return(stap)
     }
   }
-  stap_tab <- as.data.frame(do.call(rbind, lapply(staphopia, staphopia_function)))
+  
+  uniform_columns <- function(df, all_cols) {
+    missing_cols <- setdiff(all_cols, colnames(df))
+    if (length(missing_cols) > 0) {
+      df[missing_cols] <- NA
+    }
+    df <- df[, all_cols, drop = FALSE]
+    return(df)
+  }
+
+  list_dfs <- lapply(staphopia, function(file) {
+    tryCatch(
+      staphopia_function(file),
+      error = function(e) {
+        message(paste("Error during processing of file:", file, "->", e$message))
+        NULL
+      }
+    )
+  })
+
+  list_dfs <- Filter(Negate(is.null), list_dfs)
+  all_columns <- unique(unlist(lapply(list_dfs, colnames)))
+  list_dfs_uniform <- lapply(list_dfs, uniform_columns, all_cols = all_columns)
+
+  stap_tab <- as.data.frame(do.call(rbind, list_dfs_uniform))    
+  
+  rownames(stap_tab) <- NULL
   
   if(dim(stap_tab)[1] != 0){
     
@@ -1578,7 +2034,7 @@ options(knitr.table.format = "html")
 
     wbstaph <- createWorkbook()
     addWorksheet(wbstaph, "sscmec")
-    writeData(wbstaph, sheet = "sscmec", st_tab)
+    writeData(wbstaph, sheet = "sscmec", stap_tab)
   }
 ```
 
@@ -1597,7 +2053,33 @@ options(knitr.table.format = "html")
       return(spa)
     }
   }
-  spa_tab <- as.data.frame(do.call(rbind, lapply(spatyper,  spatyper_function)))
+  
+  uniform_columns <- function(df, all_cols) {
+    missing_cols <- setdiff(all_cols, colnames(df))
+    if (length(missing_cols) > 0) {
+      df[missing_cols] <- NA
+    }
+    df <- df[, all_cols, drop = FALSE]
+    return(df)
+  }
+
+  list_dfs <- lapply(spatyper, function(file) {
+    tryCatch(
+      spatyper_function(file),
+      error = function(e) {
+        message(paste("Error during processing of file:", file, "->", e$message))
+        NULL
+      }
+    )
+  })
+
+  list_dfs <- Filter(Negate(is.null), list_dfs)
+  all_columns <- unique(unlist(lapply(list_dfs, colnames)))
+  list_dfs_uniform <- lapply(list_dfs, uniform_columns, all_cols = all_columns)
+
+  spa_tab <- as.data.frame(do.call(rbind, list_dfs_uniform))    
+  
+  rownames(spa_tab) <- NULL
   
   if(dim(spa_tab)[1] != 0){
 
@@ -1623,8 +2105,34 @@ options(knitr.table.format = "html")
       return(agr)
     }
   }
-  agr_tab <- as.data.frame(do.call(rbind, lapply(agrvate,  agrvate_function)))
   
+  uniform_columns <- function(df, all_cols) {
+    missing_cols <- setdiff(all_cols, colnames(df))
+    if (length(missing_cols) > 0) {
+      df[missing_cols] <- NA
+    }
+    df <- df[, all_cols, drop = FALSE]
+    return(df)
+  }
+
+  list_dfs <- lapply(agrvate, function(file) {
+    tryCatch(
+      agrvate_function(file),
+      error = function(e) {
+        message(paste("Error during processing of file:", file, "->", e$message))
+        NULL
+      }
+    )
+  })
+
+  list_dfs <- Filter(Negate(is.null), list_dfs)
+  all_columns <- unique(unlist(lapply(list_dfs, colnames)))
+  list_dfs_uniform <- lapply(list_dfs, uniform_columns, all_cols = all_columns)
+
+  agr_tab <- as.data.frame(do.call(rbind, list_dfs_uniform))    
+  
+  rownames(agr_tab) <- NULL
+
   if(dim(agr_tab)[1] != 0){
     print(kable(agr_tab) %>%
     kable_styling(bootstrap_options = c("striped", "hover","responsive"), fixed_thead = T) %>%
@@ -1678,6 +2186,7 @@ options(knitr.table.format = "html")
   list_dfs_uniform <- lapply(list_dfs, uniform_columns, all_cols = all_columns)
 
   pbp_tab <- do.call(rbind, list_dfs_uniform)
+  rownames(pbp_tab) <- NULL
 
   # pbp_tab <- as.data.frame(do.call(rbind, lapply(pbptyper,  pbptyper_function)))
   pbp_tab <- as.data.frame(pbp_tab)
@@ -1708,7 +2217,33 @@ options(knitr.table.format = "html")
       return(lis)
     } 
   }
-  lis_tab <- as.data.frame(do.call(rbind, lapply(lissero,  lissero_function)))
+  
+  uniform_columns <- function(df, all_cols) {
+    missing_cols <- setdiff(all_cols, colnames(df))
+    if (length(missing_cols) > 0) {
+      df[missing_cols] <- NA
+    }
+    df <- df[, all_cols, drop = FALSE]
+    return(df)
+  }
+
+  list_dfs <- lapply(lissero, function(file) {
+    tryCatch(
+      lissero_function(file),
+      error = function(e) {
+        message(paste("Error during processing of file:", file, "->", e$message))
+        NULL
+      }
+    )
+  })
+
+  list_dfs <- Filter(Negate(is.null), list_dfs)
+  all_columns <- unique(unlist(lapply(list_dfs, colnames)))
+  list_dfs_uniform <- lapply(list_dfs, uniform_columns, all_cols = all_columns)
+
+  lis_tab <- as.data.frame(do.call(rbind, list_dfs_uniform))    
+  
+  rownames(lis_tab) <- NULL
   
   if(dim(lis_tab)[1] != 0){
     print(kable(lis_tab) %>%
@@ -1734,7 +2269,33 @@ options(knitr.table.format = "html")
       return(leg)
     }
   }
-  leg_tab <- as.data.frame(do.call(rbind, lapply(legsta,  legsta_function)))
+  
+  uniform_columns <- function(df, all_cols) {
+    missing_cols <- setdiff(all_cols, colnames(df))
+    if (length(missing_cols) > 0) {
+      df[missing_cols] <- NA
+    }
+    df <- df[, all_cols, drop = FALSE]
+    return(df)
+  }
+
+  list_dfs <- lapply(legsta, function(file) {
+    tryCatch(
+      legsta_function(file),
+      error = function(e) {
+        message(paste("Error during processing of file:", file, "->", e$message))
+        NULL
+      }
+    )
+  })
+
+  list_dfs <- Filter(Negate(is.null), list_dfs)
+  all_columns <- unique(unlist(lapply(list_dfs, colnames)))
+  list_dfs_uniform <- lapply(list_dfs, uniform_columns, all_cols = all_columns)
+
+  leg_tab <- as.data.frame(do.call(rbind, list_dfs_uniform))    
+  
+  rownames(leg_tab) <- NULL
   
   if(dim(leg_tab)[1] != 0){
     print(kable(leg_tab) %>%
@@ -1762,8 +2323,34 @@ options(knitr.table.format = "html")
       return(men)
     }    
   }
-  men_tab <- as.data.frame(do.call(rbind, lapply(meningotype,  meningotype_function)))
   
+  uniform_columns <- function(df, all_cols) {
+    missing_cols <- setdiff(all_cols, colnames(df))
+    if (length(missing_cols) > 0) {
+      df[missing_cols] <- NA
+    }
+    df <- df[, all_cols, drop = FALSE]
+    return(df)
+  }
+
+  list_dfs <- lapply(meningotype, function(file) {
+    tryCatch(
+      meningotype_function(file),
+      error = function(e) {
+        message(paste("Error during processing of file:", file, "->", e$message))
+        NULL
+      }
+    )
+  })
+
+  list_dfs <- Filter(Negate(is.null), list_dfs)
+  all_columns <- unique(unlist(lapply(list_dfs, colnames)))
+  list_dfs_uniform <- lapply(list_dfs, uniform_columns, all_cols = all_columns)
+
+  men_tab <- as.data.frame(do.call(rbind, list_dfs_uniform))    
+  
+  rownames(men_tab) <- NULL
+    
   if(dim(men_tab)[1] != 0){
     print(kable(men_tab) %>%
       kable_styling(bootstrap_options = c("striped", "hover","responsive")))
@@ -1792,7 +2379,33 @@ options(knitr.table.format = "html")
     }
       
   }
-  ng_tab <- as.data.frame(do.call(rbind, lapply(ngmaster,  ngmaster_function)))
+  
+  uniform_columns <- function(df, all_cols) {
+    missing_cols <- setdiff(all_cols, colnames(df))
+    if (length(missing_cols) > 0) {
+      df[missing_cols] <- NA
+    }
+    df <- df[, all_cols, drop = FALSE]
+    return(df)
+  }
+
+  list_dfs <- lapply(ngmaster, function(file) {
+    tryCatch(
+      ngmaster_function(file),
+      error = function(e) {
+        message(paste("Error during processing of file:", file, "->", e$message))
+        NULL
+      }
+    )
+  })
+
+  list_dfs <- Filter(Negate(is.null), list_dfs)
+  all_columns <- unique(unlist(lapply(list_dfs, colnames)))
+  list_dfs_uniform <- lapply(list_dfs, uniform_columns, all_cols = all_columns)
+
+  ng_tab <- as.data.frame(do.call(rbind, list_dfs_uniform))    
+  
+  rownames(ng_tab) <- NULL
   
   if(dim(ng_tab)[1] != 0){
     
@@ -1826,8 +2439,34 @@ options(knitr.table.format = "html")
     }
       
   }
-  pa_tab <- as.data.frame(do.call(rbind, lapply(pasty,  pasty_function)))
+  
+  uniform_columns <- function(df, all_cols) {
+    missing_cols <- setdiff(all_cols, colnames(df))
+    if (length(missing_cols) > 0) {
+      df[missing_cols] <- NA
+    }
+    df <- df[, all_cols, drop = FALSE]
+    return(df)
+  }
 
+  list_dfs <- lapply(pasty, function(file) {
+    tryCatch(
+      pasty_function(file),
+      error = function(e) {
+        message(paste("Error during processing of file:", file, "->", e$message))
+        NULL
+      }
+    )
+  })
+
+  list_dfs <- Filter(Negate(is.null), list_dfs)
+  all_columns <- unique(unlist(lapply(list_dfs, colnames)))
+  list_dfs_uniform <- lapply(list_dfs, uniform_columns, all_cols = all_columns)
+
+  pa_tab <- as.data.frame(do.call(rbind, list_dfs_uniform))    
+  
+  rownames(pa_tab) <- NULL
+    
   if(dim(pa_tab)[1] != 0){
     print(kable(pa_tab) %>%
       kable_styling(bootstrap_options = c("striped", "hover","responsive")))
