@@ -5,9 +5,9 @@ export const userVariables = {
     originalConfigInput: "",
     userAnalysisName: "",
 }
-
+// imageName: 'adrianacannata/bacexplorer:latest',
 export const containerVariables = {
-    imageName: 'adrianacannata/bacexplorer:latest',
+    imageName: 'ghcr.io/knowmics-lab/bacexplorer:1.0',
     containerName: 'snakemakeContainer',
     containerInput: "/project/user-input/",
     containerOutput: "/project/user-input/output/",

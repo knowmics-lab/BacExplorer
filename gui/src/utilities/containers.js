@@ -113,6 +113,7 @@ async function pullImage(imageName) {
       if (err) {
         return reject(err);
       }
+      emitProgress('Step 1: fetching image...', progress);
       docker.modem.followProgress(stream, onFinished, onProgress);
     });
 
@@ -132,8 +133,6 @@ async function pullImage(imageName) {
         // progress divided in 3 + number of layers steps = totProg
         // totProg : 100 = 1 : x
         // currentPercentage = 100 / totProg
-
-        emitProgress('Step 1: fetching image...', progress);
 
         if (event.status.includes('Pulling from')) {
           emitProgress('Downloading image...', progress);
