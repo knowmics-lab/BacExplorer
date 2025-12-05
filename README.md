@@ -205,6 +205,6 @@ Fasta samples to test BacExplorer can be found in the "test_data" folder in this
 - PubMLST - https://pubmlst.org/
   
 ## Citation 
-- BacExplorer - Privitera GF, Cannata AA, Campanile F, Alaimo S, Bongiorno D, Pulvirenti A. BacExplorer (2025). Available at [https://github.com/knowmics-lab/BacExplorer](https://github.com/knowmics-lab/BacExplorer)
+- Grete Francesca Privitera, Adriana Antonella Cannata, Floriana Campanile, Salvatore Alaimo, Dafne Bongiorno, Alfredo Pulvirenti, BacExplorer: an integrated platform for de novo bacterial genome annotation, Bioinformatics Advances, Volume 5, Issue 1, 2025, vbaf281, https://doi.org/10.1093/bioadv/vbaf281
 
 
