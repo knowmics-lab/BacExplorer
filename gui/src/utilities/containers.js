@@ -348,7 +348,10 @@ async function createContainer(imageName, containerName, snakemakePath) {
 
   // mount dbs (container conda env) in host machine
   const amrfinderHostPath = path.join(snakemakePath, "resources", "amrfinder");
-  const amrfinderVolume = '/opt/conda/envs/bacEnv/share/amrfinderplus';
+  //OLD DIRECTORY FOR amrfinder db:
+  //const amrfinderVolume = '/opt/conda/envs/bacEnv/share/amrfinderplus';
+
+  const amrfinderVolume = '/project/tools/amrfinder/data/latest';
   // volume for abricate and pubmlst databases
   const dbsHostPath = path.join(snakemakePath, "resources", "dbs");
   const dbsVolume = '/opt/conda/envs/bacEnv/db';
@@ -422,11 +425,28 @@ async function updateContainer(containerName) {
 
   const container = docker.getContainer(containerName);
   const exec = await container.exec({
-    Cmd: ['bash', '-c', `. /opt/conda/etc/profile.d/conda.sh &&
+    // old
+    // Cmd: ['bash', '-c', `. /opt/conda/etc/profile.d/conda.sh &&
+    //   conda activate bacEnv &&
+    //   cd ${virulencefinderDbDir} && 
+    //   python ${virulencefinderDbDir}/INSTALL.py &&
+    //   amrfinder -u &&
+    //   abricate-get_db --db card --force &&
+    //   abricate-get_db --db argannot --force &&
+    //   abricate-get_db --db resfinder --force &&
+    //   abricate-get_db --db ecoh --force &&
+    //   abricate-get_db --db vfdb --force &&
+    //   abricate-get_db --db plasmidfinder --force &&
+    //   abricate-get_db --db ecoli_vf --force &&
+    //   pubmlst_path="/opt/conda/envs/bacEnv/db/pubmlst" &&
+    //   mlst-download_pub_mlst -d $pubmlst_path &&
+    //   mlst-make_blast_db
+    // `],
+      Cmd: ['bash', '-c', `. /opt/conda/etc/profile.d/conda.sh &&
       conda activate bacEnv &&
       cd ${virulencefinderDbDir} && 
       python ${virulencefinderDbDir}/INSTALL.py &&
-      amrfinder -u &&
+      amrfinder --force_update &&
       abricate-get_db --db card --force &&
       abricate-get_db --db argannot --force &&
       abricate-get_db --db resfinder --force &&
@@ -438,10 +458,9 @@ async function updateContainer(containerName) {
       mlst-download_pub_mlst -d $pubmlst_path &&
       mlst-make_blast_db
     `],
-    // Cmd: ['bash', '-c', `. /opt/conda/etc/profile.d/conda.sh &&
+    //   Cmd: ['bash', '-c', `. /opt/conda/etc/profile.d/conda.sh &&
     //   conda activate bacEnv &&
-    //   cd ${virulencefinderDbDir} && 
-    //   python ${virulencefinderDbDir}/INSTALL.py
+    //   amrfinder --force_update
     // `],
     AttachStdout: true,
     AttachStderr: true,
