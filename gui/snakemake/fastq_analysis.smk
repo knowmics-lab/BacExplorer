@@ -47,6 +47,10 @@ print(f"FASTQ ANALYSIS STARTED")
 print(f"Trim Galore path: {PATH_TRIMGALORE}")
 
 def trim_galore():
+    # testare la percentuale nel progress (in runAnalysis, containers.js)
+    sys.stderr.write("1%\n")
+    sys.stderr.flush()
+
     for sample in FASTQ_SAMPLES:
         print(f"Performing Trim Galore on: {sample}")
         fasta_file = os.path.join(PATH_PROJECT, f"{sample}.fasta")
@@ -84,6 +88,8 @@ def trim_galore():
         mkdir -p {PATH_PROJECT}/fasta_output
         mv {fasta_file} {PATH_PROJECT}/fasta_output
         """)
+
+
 
 print(f"FASTQ_SAMPLES: {FASTQ_SAMPLES}")
 

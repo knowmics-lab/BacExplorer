@@ -12,7 +12,7 @@ GENOMAD_ANALYSIS = config["GENOMAD_ANALYSIS"]
 
 rule all:
     input:
-        # # expand(os.path.join(PATH_OUTPUT, "quality_assessment/quast_results/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "quality_assessment/quast_results/{sample}"), sample=SAMPLES),
         # expand(os.path.join(PATH_OUTPUT, "kraken2/{sample}_kraken2.txt"), sample=SAMPLES),
         # expand(os.path.join(PATH_OUTPUT, "kraken2/{sample}_result.txt"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "mlst/{sample}.txt"), sample=SAMPLES),

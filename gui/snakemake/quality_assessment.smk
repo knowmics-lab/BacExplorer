@@ -41,7 +41,7 @@ elif type == "fastq":
         rule quality_assessment_fastq_paired:
             input:
                 fasta_file = os.path.join(PATH_PROJECT, "{sample}.fasta"),
-                fastq_file_1 = os.path.join(PATH_OUTPUT, "trim/{sample}_R1_001_val_1.fq.gz")
+                fastq_file_1 = os.path.join(PATH_OUTPUT, "trim/{sample}_R1_001_val_1.fq.gz"),
                 fastq_file_2 = os.path.join(PATH_OUTPUT, "trim/{sample}_R2_001_val_2.fq.gz")
             output:
                 quast = directory(os.path.join(PATH_OUTPUT, "quality_assessment/quast_results/{sample}")),
