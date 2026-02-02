@@ -1,4 +1,5 @@
 from snakemake import shell
+# inserire un progress di 1% per far sembrare che stia facendo qualcosa
 
 PATH_TRIMGALORE = os.path.join(PATH_SCRIPT, "tools/TrimGalore-master")
 
