@@ -1,10 +1,8 @@
 node_modules
 out
 release
-snakemake/resources/virulencefinder_db
-snakemake/resources/genomad_db
-snakemake/resources/kraken2db
-snakemake/tools/TrimGalore-master
+snakemake
+gui/snakemake/tools/TrimGalore-master
 appunti
 .snakemake
 .webpack

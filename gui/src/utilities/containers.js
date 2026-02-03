@@ -683,7 +683,7 @@ export async function produceReport(containerName, reply, onError, localConfigDi
   const exec = await container.exec({
     Cmd: ['bash', '-c', `source /opt/conda/etc/profile.d/conda.sh && conda activate bacEnv && Rscript -e "rmarkdown::render('${report}', output_file='${reportFile}',
         output_dir = '${containerOutput}', params=list(path_output='${containerOutput}',
-        identity=${identity}, coverage=${coverage}))"`],
+        identity=${identity}, coverage=${coverage})), type=${type}"`],
     AttachStdout: true,
     AttachStderr: true,
     AttachStdin: true,
