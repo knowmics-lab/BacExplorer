@@ -14,6 +14,7 @@ params:
     path_output: NULL
     identity: NULL
     coverage: NULL
+    type: "Fasta"
 ---
 
 ```{r setup, include=FALSE}
@@ -28,7 +29,8 @@ library(openxlsx)
 library(stringr)
 
 #for Rstudio testing
-# path_output <- normalizePath("//wsl.localhost/Ubuntu/home/adriana/analisi_bacExplorer/fastq_test/output", winslash = "/", mustWork = TRUE)
+# path_output <- normalizepath("D:\\Uni\\BacExplorer\\campioni\\fastq_test_2", winslash = "/", mustwork = true)
+# path_output <- "D:/Uni/BacExplorer/campioni/fastq_test_2"
 
 # identity <- 90
 # coverage <- 90
@@ -37,7 +39,7 @@ library(stringr)
 path_output <- params$path_output
 identity <- params$identity
 coverage <- params$coverage
-type <- params$type
+type <- tolower(trimws(params$type))
 path_excel <- paste0(path_output, "/file")
 
 dir.create(file.path(path_excel), showWarnings = FALSE)
@@ -140,13 +142,17 @@ options(knitr.table.format = "html")
 args=commandArgs(trailingOnly = TRUE)
 
 
-  quast <- list.files(path=paste0(path_output, "/quality_assessment/quast_results/16Can_S5_L001"), pattern="_report.tsv", full.names=TRUE, recursive=TRUE)
+quast <- list.files(path=paste0(path_output, "/quality_assessment/quast_results/"), pattern="_report.tsv", full.names=TRUE, recursive=TRUE)
  rs <- grep("reads_stats", quast)
  quast <- quast[-c(rs)]
  aq <- grep("transposed_", quast)
  quast <- quast[-c(aq)]
+
+ quast_function <- function(...) {
+  stop("quast_function not initialized. type=", type)
+}
   
- if(type == "Fasta"){
+ if(type == "fasta"){
    quast_function <- function(i){
           qs <- read.csv(i, sep= "\t")
       if(nrow(qs) > 0) {
@@ -162,7 +168,7 @@ args=commandArgs(trailingOnly = TRUE)
         return(qs)
       }
    }
-  } else if(type == "Fastq"){
+  } else if(type == "fastq"){
     quast_function <- function(i){
     qs <- read.csv(i, sep= "\t")
     if(nrow(qs) > 0) {
@@ -204,8 +210,6 @@ args=commandArgs(trailingOnly = TRUE)
   # 
   # ggplot(data=long_df, aes(x=test, y=Value, fill=sample)) +
   # geom_bar(stat="identity", position=position_dodge())
-
-
 ```
 
 

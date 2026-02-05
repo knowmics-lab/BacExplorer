@@ -677,13 +677,14 @@ export async function produceReport(containerName, reply, onError, localConfigDi
   const analysisName = config.NAME;
   const identity = config.IDENTITY;
   const coverage = config.COVERAGE;
+  const type = config.TYPE;
   const reportFile = `project/user-input/output/${analysisName}_report.html`;
   const container = docker.getContainer(containerName);
 
   const exec = await container.exec({
     Cmd: ['bash', '-c', `source /opt/conda/etc/profile.d/conda.sh && conda activate bacEnv && Rscript -e "rmarkdown::render('${report}', output_file='${reportFile}',
         output_dir = '${containerOutput}', params=list(path_output='${containerOutput}',
-        identity=${identity}, coverage=${coverage})), type=${type}"`],
+        identity=${identity}, coverage=${coverage}, type='${type}'))"`],
     AttachStdout: true,
     AttachStderr: true,
     AttachStdin: true,

@@ -48,7 +48,7 @@ print(f"Trim Galore path: {PATH_TRIMGALORE}")
 
 def trim_galore():
     # testare la percentuale nel progress (in runAnalysis, containers.js)
-    sys.stderr.write("1%\n")
+    sys.stderr.write("Fastq analysis started:(1%)\n")
     sys.stderr.flush()
 
     for sample in FASTQ_SAMPLES:
