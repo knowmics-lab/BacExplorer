@@ -16,33 +16,54 @@ if type == "fasta":
             """)
             
 elif type == "fastq":
-    rule quality_assessment_fastq:
-        input:
-            fasta_file = os.path.join(PATH_PROJECT, "{sample}.fasta"),
-            fastq_file = os.path.join(PATH_OUTPUT, "trim/{sample}_R1_001_val_1.fq.gz")
-        output:
-            quast = directory(os.path.join(PATH_OUTPUT, "quality_assessment/quast_results/{sample}")),
-            fastqc = directory(os.path.join(PATH_OUTPUT, "quality_assessment/fastqc_results/{sample}"))          
-        params:
-            paired = paired
-        run:
-        
-            print(f"Performing Fastq Quality Assessment")
-            shell(f"""
-            mkdir -p {output.fastqc}
-            mkdir -p {output.quast}
-            echo "Performing Fastq"
-            fastqc {input.fastq_file}
-            unzip -d {output.fastqc} {PATH_OUTPUT}/trim/{wildcards.sample}_R1_001_val_1_fastqc.zip 
-            echo "Performing QUAST"
-            if [[ {params.paired} == "yes" ]]; then
-                quast.py {input.fasta_file} -o {output.quast} -t {THREADS_NUMBER} -1 {PATH_OUTPUT}/trim/{wildcards.sample}_R1_001_val_1.fq.gz -2 {PATH_OUTPUT}/trim/{wildcards.sample}_R2_001_val_2.fq.gz
-            elif [[ {params.paired} != "yes" ]]; then
-                quast.py {input.fasta_file} -o {output.quast} --single {PATH_OUTPUT}/trim/{wildcards.sample}.fq.gz -t {THREADS_NUMBER}
-            fi
+    if paired != "yes":
+        rule quality_assessment_fastq_unpaired:
+            input:
+                fasta_file = os.path.join(PATH_PROJECT, "{sample}.fasta"),
+                fastq_file = os.path.join(PATH_OUTPUT, "trim/{sample}_R1_001_val_1.fq.gz")
+            output:
+                quast = directory(os.path.join(PATH_OUTPUT, "quality_assessment/quast_results/{sample}")),
+                fastqc = directory(os.path.join(PATH_OUTPUT, "quality_assessment/fastqc_results/{sample}"))          
+            run:
+                print(f"Performing Fastq Quality Assessment")
+                shell(f"""
+                mkdir -p {output.fastqc}
+                mkdir -p {output.quast}
+                echo "Performing Fastq"
+                fastqc {input.fastq_file}
+                unzip -d {output.fastqc} {PATH_OUTPUT}/trim/{wildcards.sample}_R1_001_val_1_fastqc.zip 
+                echo "Performing QUAST"
+                quast.py {input.fasta_file} -o {output.quast} --single {input.fastq_file} -t {THREADS_NUMBER}
+                
+                mv {output.quast}/report.tsv {output.quast}/{wildcards.sample}_report.tsv
+                """)
+    elif paired == "yes":
+        rule quality_assessment_fastq_paired:
+            input:
+                fasta_file = os.path.join(PATH_PROJECT, "{sample}.fasta"),
+                fastq_file_1 = os.path.join(PATH_OUTPUT, "trim/{sample}_R1_001_val_1.fq.gz"),
+                fastq_file_2 = os.path.join(PATH_OUTPUT, "trim/{sample}_R2_001_val_2.fq.gz")
+            output:
+                quast = directory(os.path.join(PATH_OUTPUT, "quality_assessment/quast_results/{sample}")),
+                fastqc = directory(os.path.join(PATH_OUTPUT, "quality_assessment/fastqc_results/{sample}"))
+            run:
             
-            mv {output.quast}/report.tsv {output.quast}/{wildcards.sample}_report.tsv
-            """)
+                print(f"Performing Fastq Quality Assessment")
+                shell(f"""
+                mkdir -p {output.fastqc}
+                mkdir -p {output.quast}
+                mkdir -p {output.fastqc}/val_1
+                mkdir -p {output.fastqc}/val_2
+                echo "Performing Fastq"
+                fastqc {input.fastq_file_1}
+                unzip -d {output.fastqc}/val_1 {PATH_OUTPUT}/trim/{wildcards.sample}_R1_001_val_1_fastqc.zip 
+                fastqc {input.fastq_file_2}
+                unzip -d {output.fastqc}/val_2 {PATH_OUTPUT}/trim/{wildcards.sample}_R2_001_val_2_fastqc.zip 
+                echo "Performing QUAST"
+                quast.py {input.fasta_file} -o {output.quast} -t {THREADS_NUMBER} -1 {input.fastq_file_1} -2 {input.fastq_file_2}
+                
+                mv {output.quast}/report.tsv {output.quast}/{wildcards.sample}_report.tsv
+                """)
 
 # add fastq file for quast:
 # if paired:
