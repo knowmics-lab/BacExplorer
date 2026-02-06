@@ -42,6 +42,26 @@ RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkg
 # Activate conda env
 SHELL ["conda", "run", "-n", "bacEnv", "/bin/bash", "-c"]
 
+# --------------------------------------------------------
+# Install AMRFinderPlus 4.2.5 inside bacEnv
+# --------------------------------------------------------
+
+RUN conda install -c conda-forge patchelf -y && \
+    mkdir -p /project/tools/amrfinder && \
+    cd /project/tools/amrfinder && \
+    wget https://github.com/ncbi/amr/releases/download/amrfinder_v4.2.5/amrfinder_binaries_v4.2.5.tar.gz && \
+    tar -xzf amrfinder_binaries_v4.2.5.tar.gz && \
+    rm amrfinder_binaries_v4.2.5.tar.gz && \
+    for bin in $(find . -type f -executable); do \
+        file "$bin" | grep -q "ELF" && patchelf --set-rpath "$CONDA_PREFIX/lib" "$bin"; \
+    done && \
+    ./amrfinder --force_update
+
+# 4) Update AMRfinder database
+RUN /project/tools/amrfinder/amrfinder --force_update || true
+
+ENV PATH="/project/tools/amrfinder:$PATH"
+
 COPY . /project
 
 # change row 34 from rU to r in ngmaster
@@ -59,6 +79,8 @@ RUN echo "Installing packages..." && \
     git clone https://github.com/scwatts/hicap.git && \
     echo "reportlab" && \
     pip install reportlab && \
+    echo "AMRfinder" && \
+
     echo "sccmec" && \
     git clone --recurse-submodules https://github.com/rpetit3/sccmec && \
     echo "fimtyper" && \

@@ -103,6 +103,7 @@ export default function App() {
                 const errorMatch = /(Error|Exception|Traceback)/.test(data.stderr) && !/Error in library|markdown/.test(data.stderr);
                 // catch exact Snakemake output at the end of a job: ex. 1 of 25 steps (4%) done
                 const progressMatch = data.stderr.match(/(\d+)\s+of\s+(\d+)\s+steps\s+\((\d+)%\)\s+done/i);
+                const fastqProg = data.stderr.match(/Fastq analysis started:+\((1)%\)/i);
 
                 if (errorMatch) {
                     localStorage.setItem("error", JSON.stringify({ error: true, message: `Error: ${data.stderr}` }));
@@ -118,8 +119,11 @@ export default function App() {
                     window.api.launchReport();
                     return;
                 } else if (progressMatch) {
-                    const percentage = parseInt(progressMatch[3], 10);
+                    const percentage = parseInt(progressMatch[3], 10); //capture the third parenthesis group
                     localStorage.setItem("progress", percentage);
+                } else if (fastqProg) {
+                    // const percentage = parseInt(fastqProg[3], 10);
+                    localStorage.setItem("progress", 1); //a match exists, set progress to 1 (meaning Fastq analysis is in progress)
                 } else {
                     localStorage.setItem("lastOutput", data.stderr);
                 }

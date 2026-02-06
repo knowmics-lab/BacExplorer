@@ -18,7 +18,6 @@ rule all:
         expand(os.path.join(PATH_OUTPUT, "mlst/{sample}.txt"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "mlst/{sample}_result.txt"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "amrfinder/{sample}_amrfinder.txt"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "genomad/{sample}"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "virulencefinder/{sample}"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "meningotype/{sample}"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "fimtyper/{sample}"), sample=SAMPLES),

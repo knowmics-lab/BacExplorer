@@ -234,7 +234,6 @@ dependencies:
   - muscle=5.3=h4ac6f70_0
   - namex=0.0.8=pyhd8ed1ab_0
   - nbformat=5.10.4=pyhd8ed1ab_0
-  - ncbi-amrfinderplus=3.12.8=h283d18e_0
   - ncbi-vdb=3.1.1=h4ac6f70_2
   - ncurses=6.5=he02047a_1
   - ngmaster=0.5.8=pyhdfd78af_1
