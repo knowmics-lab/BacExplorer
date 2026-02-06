@@ -303,6 +303,7 @@ amrfinder_db <- list.files(path=paste0(path_output, "/amrfinder/"), full.names=T
    amrfinder_db_function <- function(i){
      amr <- read.csv(i, sep= "\t")
      if(nrow(amr) > 0){
+      amr <- amr[amr$Type != "VIRULENCE",]
       amr$sample <- basename(tools::file_path_sans_ext(i))
       amr <- amr[,c(23, 6, 7, 11, 12, 16, 17, 14, 15, 18, 2:5,  19:22, 1, 8:10)]
       names(amr) <- c("Sample", "Gene", "Sequence Name", "Antibiotic class", "Antibiotic subclass", "Coverage", "Identity", "Target Length", "Reference Length", "Alignment Length", "Contig", "Start", "Stop", "Strand", "Accession", "Clostest sequence name", "HMM ID", "HMM Description", "Protein identifier", "Scope", "Element type", "Element Subtype")
@@ -548,6 +549,7 @@ amrfinder_db <- list.files(path=paste0(path_output, "/amrfinder/"), full.names=T
    amrfinder_function <- function(i){
      amr <- read.csv(i, sep= "\t")
      if(nrow(amr) > 0){
+      amr <- amr[amr$Type != "VIRULENCE",]
       amr$sample <- basename(tools::file_path_sans_ext(i))
       amr <- amr[,c(23, 6, 7, 11, 12, 16, 17, 14, 15, 18, 2:5, 19:22, 1, 8:10)]
       names(amr) <- c("Sample", "Gene", "Sequence Name", "Antibiotic class", "Antibiotic subclass", "Coverage", "Identity", "Target Length", "Reference Length", "Alignment Length", "Contig", "Start", "Stop", "Strand", "Accession", "Clostest sequence name", "HMM ID", "HMM Description", "Protein identifier", "Scope", "Element type", "Element Subtype")
@@ -823,6 +825,45 @@ abricate_vfdb <- list.files(path=paste0(path_output, "/abricate/"), pattern = "v
    addWorksheet(wbv, "VFDB")
    writeData(wbv, sheet = "VFDB", vfdb1_tab)
 ```
+### AMRfinfer+ virulence  {.tabset}
+
+```{r amrfinder virulence, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+ amrfinder_db_vir <- list.files(path=paste0(path_output, "/amrfinder/"), full.names=TRUE, recursive=TRUE)
+
+   amrfinder_db_function_virulence <- function(i){
+     amr <- read.csv(i, sep= "\t")
+     if(nrow(amr) > 0){
+      amr <- amr[amr$Type == "VIRULENCE",]
+      amr$sample <- basename(tools::file_path_sans_ext(i))
+      amr <- amr[,c(23, 6, 7, 11, 12, 16, 17, 14, 15, 18, 2:5,  19:22, 1, 8:10)]
+      names(amr) <- c("Sample", "Gene", "Sequence Name", "Antibiotic class", "Antibiotic subclass", "Coverage", "Identity", "Target Length", "Reference Length", "Alignment Length", "Contig", "Start", "Stop", "Strand", "Accession", "Clostest sequence name", "HMM ID", "HMM Description", "Protein identifier", "Scope", "Element type", "Element Subtype")
+      amr$Sample <- gsub("_amrfinder", "", amr$Sample)
+      amr$Strand[amr$Strand == "+"] <- "$+$"
+      amr$Strand[amr$Strand == "-"] <- "$-$"
+      amr <- amr[amr$Coverage >= coverage & amr$Identity >= identity, ]
+      amr <- amr[order(amr$Gene),]
+      return(amr)
+     }
+   }
+   amr_tab_vir <- lapply(amrfinder_db_vir, amrfinder_db_function_virulence)
+   amr_tab_vir <- amr_tab_vir[!sapply(amr_tab_vir,is.null)]
+   amr_tab_vir <- amr_tab_vir[sapply(amr_tab_vir, nrow)>0]
+
+  for (i in 1:length(amr_tab_vir)) {
+      cat("####", as.data.frame(amr_tab_vir[i])$Sample[1], "<br>", "\n")
+    print(kable(as.data.frame(amr_tab_vir[i]), row.names = FALSE) %>%
+      kable_styling(bootstrap_options = c("striped", "hover","responsive"),
+                    fixed_thead = T) %>%
+         scroll_box(width = "100%", height = "330px"))
+    cat("\n", "<br>", "\n\n")
+  }
+
+   amr_tab1_vir <- as.data.frame(do.call(rbind, lapply(amrfinder_db_vir, amrfinder_db_function_virulence)))
+   addWorksheet(wbv, "AMRfinder")
+   writeData(wbv, sheet = "AMRfinder", amr_tab1_vir) 
+   saveWorkbook(wbv, file=paste0(path_excel, "/Virulence_factor_table.xlsx"), overwrite = TRUE)
+ 
+```
 
 ### Virulencefinder  {.tabset}
 
@@ -913,6 +954,44 @@ abricate_vfdb <- list.files(path=paste0(path_output, "/abricate/"), pattern = "v
       plot(d)
     }
     
+  }
+  
+```
+### AMRfinder plus virulence
+```{r AMRfinder vir plot, echo=FALSE, message=FALSE, warning=FALSE, results='asis', fig.align='center'}
+ amrfinder <- list.files(path=paste0(path_output, "/amrfinder/"), full.names=TRUE, recursive=TRUE)
+
+   amrfinder_function <- function(i){
+     amr <- read.csv(i, sep= "\t")
+     if(nrow(amr) > 0){
+      amr <- amr[amr$Type == "VIRULENCE",]
+      amr$sample <- basename(tools::file_path_sans_ext(i))
+      amr <- amr[,c(23, 6, 7, 11, 12, 16, 17, 14, 15, 18, 2:5, 19:22, 1, 8:10)]
+      names(amr) <- c("Sample", "Gene", "Sequence Name", "Antibiotic class", "Antibiotic subclass", "Coverage", "Identity", "Target Length", "Reference Length", "Alignment Length", "Contig", "Start", "Stop", "Strand", "Accession", "Clostest sequence name", "HMM ID", "HMM Description", "Protein identifier", "Scope", "Element type", "Element Subtype")
+      amr$Sample <- gsub("_amrfinder", "", amr$Sample)
+      amr <- amr[amr$Coverage >= coverage & amr$Identity >= identity, ]
+      return(amr)
+     }
+   }
+  amr_tab <- as.data.frame(do.call(rbind, lapply(amrfinder, amrfinder_function)))
+  
+  if(nrow(amr_tab) > 0) {
+    amr_tab <- amr_tab[!sapply(amr_tab,is.null)]
+
+    amr <- amr_tab[c(1,2)]
+    amr$Presence <- 1
+    
+    amr1 <- reshape(amr, timevar = "Gene", idvar = "Sample", direction = "wide")
+    amr1[is.na(amr1)] <- 0
+    colnames(amr1) <- gsub("Presence.", "", colnames(amr1))
+    rownames(amr1) <- amr1$Sample
+    amr1$Sample <- NULL
+    col_fun = colorRamp2(c(0, 1), c("white", "blue"))
+    d <- Heatmap(amr1, col = col_fun, rect_gp = gpar(col = "black", lwd = 2),
+            column_title = "Antibiotic Resistance Genes", cluster_columns = FALSE,  column_title_gp = gpar(fontsize=25),
+            row_names_side = "left", row_dend_side = "right", column_names_rot = 90,
+            show_heatmap_legend = FALSE, row_names_gp = gpar(fontsize = 20), column_names_gp = gpar(fontsize=15))
+    plot(d)
   }
   
 ```
