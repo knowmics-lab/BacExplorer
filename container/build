@@ -4,7 +4,7 @@ VERSION="${1:-1.0}"
 
 echo "Building version ${VERSION}"
 
-docker build --network=host -t "ghcr.io/knowmics-lab/BacExplorer:latest" -t "ghcr.io/knowmics-lab/BacExplorer:${VERSION}" . \
+docker build --network=host -t "ghcr.io/knowmics-lab/bacexplorer:latest" -t "ghcr.io/knowmics-lab/bacexplorer:${VERSION}" . \
 && docker push "ghcr.io/knowmics-lab/bacexplorer:latest" \
 && docker push "ghcr.io/knowmics-lab/bacexplorer:${VERSION}"
 
