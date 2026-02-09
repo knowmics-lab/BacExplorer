@@ -31,7 +31,9 @@ ENV PATH=/opt/conda/bin:$PATH
 RUN echo "Creating conda environment..." && \
     conda config --add channels bioconda && \
     conda config --add channels conda-forge && \
-    conda config --set channel_priority flexible
+    conda config --set channel_priority flexible && \
+    conda config --set remote_read_timeout_secs 1000.0 && \
+    conda config --set remote_max_retries 5
 
 COPY bacEnv.yml /tmp/
 
