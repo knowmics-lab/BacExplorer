@@ -29,17 +29,16 @@ RUN curl -L https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.s
 ENV PATH=/opt/conda/bin:$PATH
 
 RUN echo "Creating conda environment..." && \
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main && \
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r && \
+    conda install -n base -c conda-forge mamba -y && \
     conda config --add channels bioconda && \
     conda config --add channels conda-forge && \
-    conda config --set channel_priority flexible && \
-    conda config --set remote_read_timeout_secs 1000.0 && \
-    conda config --set remote_max_retries 5
+    conda config --set channel_priority flexible
 
 COPY bacEnv.yml /tmp/
 
-RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main && \
-    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r && \
-    conda env create -f /tmp/bacEnv.yml
+RUN mamba env create -f /tmp/bacEnv.yml -y
 
 # Activate conda env
 SHELL ["conda", "run", "-n", "bacEnv", "/bin/bash", "-c"]
@@ -48,19 +47,20 @@ SHELL ["conda", "run", "-n", "bacEnv", "/bin/bash", "-c"]
 # Install AMRFinderPlus 4.2.5 inside bacEnv
 # --------------------------------------------------------
 
-RUN conda install -c conda-forge patchelf -y && \
+RUN mamba install -c conda-forge patchelf file -y && \
     mkdir -p /project/tools/amrfinder && \
     cd /project/tools/amrfinder && \
     wget https://github.com/ncbi/amr/releases/download/amrfinder_v4.2.5/amrfinder_binaries_v4.2.5.tar.gz && \
     tar -xzf amrfinder_binaries_v4.2.5.tar.gz && \
     rm amrfinder_binaries_v4.2.5.tar.gz && \
+    report() { echo "$1"; }; \
     for bin in $(find . -type f -executable); do \
-        file "$bin" | grep -q "ELF" && patchelf --set-rpath "$CONDA_PREFIX/lib" "$bin"; \
+        file "$bin" | grep -q "ELF" && patchelf --set-rpath "$CONDA_PREFIX/lib" "$bin" || report "Failed patchelf --set-rpath \"$CONDA_PREFIX/lib\" \"$bin\""; \
     done && \
     ./amrfinder --force_update
 
 # 4) Update AMRfinder database
-RUN /project/tools/amrfinder/amrfinder --force_update || true
+RUN /project/tools/amrfinder/amrfinder --force_update
 
 ENV PATH="/project/tools/amrfinder:$PATH"
 
@@ -81,8 +81,6 @@ RUN echo "Installing packages..." && \
     git clone https://github.com/scwatts/hicap.git && \
     echo "reportlab" && \
     pip install reportlab && \
-    echo "AMRfinder" && \
-
     echo "sccmec" && \
     git clone --recurse-submodules https://github.com/rpetit3/sccmec && \
     echo "fimtyper" && \
