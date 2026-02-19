@@ -834,15 +834,17 @@ abricate_vfdb <- list.files(path=paste0(path_output, "/abricate/"), pattern = "v
      amr <- read.csv(i, sep= "\t")
      if(nrow(amr) > 0){
       amr <- amr[amr$Type == "VIRULENCE",]
-      amr$sample <- basename(tools::file_path_sans_ext(i))
-      amr <- amr[,c(23, 6, 7, 11, 12, 16, 17, 14, 15, 18, 2:5,  19:22, 1, 8:10)]
-      names(amr) <- c("Sample", "Gene", "Sequence Name", "Antibiotic class", "Antibiotic subclass", "Coverage", "Identity", "Target Length", "Reference Length", "Alignment Length", "Contig", "Start", "Stop", "Strand", "Accession", "Clostest sequence name", "HMM ID", "HMM Description", "Protein identifier", "Scope", "Element type", "Element Subtype")
-      amr$Sample <- gsub("_amrfinder", "", amr$Sample)
-      amr$Strand[amr$Strand == "+"] <- "$+$"
-      amr$Strand[amr$Strand == "-"] <- "$-$"
-      amr <- amr[amr$Coverage >= coverage & amr$Identity >= identity, ]
-      amr <- amr[order(amr$Gene),]
-      return(amr)
+      if(nrow(amr) > 0) {
+        amr$sample <- basename(tools::file_path_sans_ext(i))
+        amr <- amr[,c(23, 6, 7, 11, 12, 16, 17, 14, 15, 18, 2:5,  19:22, 1, 8:10)]
+        names(amr) <- c("Sample", "Gene", "Sequence Name", "Antibiotic class", "Antibiotic subclass", "Coverage", "Identity", "Target Length", "Reference Length", "Alignment Length", "Contig", "Start", "Stop", "Strand", "Accession", "Clostest sequence name", "HMM ID", "HMM Description", "Protein identifier", "Scope", "Element type", "Element Subtype")
+        amr$Sample <- gsub("_amrfinder", "", amr$Sample)
+        amr$Strand[amr$Strand == "+"] <- "$+$"
+        amr$Strand[amr$Strand == "-"] <- "$-$"
+        amr <- amr[amr$Coverage >= coverage & amr$Identity >= identity, ]
+        amr <- amr[order(amr$Gene),]
+        return(amr)
+      }  
      }
    }
    amr_tab_vir <- lapply(amrfinder_db_vir, amrfinder_db_function_virulence)
@@ -965,12 +967,14 @@ abricate_vfdb <- list.files(path=paste0(path_output, "/abricate/"), pattern = "v
      amr <- read.csv(i, sep= "\t")
      if(nrow(amr) > 0){
       amr <- amr[amr$Type == "VIRULENCE",]
-      amr$sample <- basename(tools::file_path_sans_ext(i))
-      amr <- amr[,c(23, 6, 7, 11, 12, 16, 17, 14, 15, 18, 2:5, 19:22, 1, 8:10)]
-      names(amr) <- c("Sample", "Gene", "Sequence Name", "Antibiotic class", "Antibiotic subclass", "Coverage", "Identity", "Target Length", "Reference Length", "Alignment Length", "Contig", "Start", "Stop", "Strand", "Accession", "Clostest sequence name", "HMM ID", "HMM Description", "Protein identifier", "Scope", "Element type", "Element Subtype")
-      amr$Sample <- gsub("_amrfinder", "", amr$Sample)
-      amr <- amr[amr$Coverage >= coverage & amr$Identity >= identity, ]
-      return(amr)
+      if(nrow(amr) > 0) {
+        amr$sample <- basename(tools::file_path_sans_ext(i))
+        amr <- amr[,c(23, 6, 7, 11, 12, 16, 17, 14, 15, 18, 2:5, 19:22, 1, 8:10)]
+        names(amr) <- c("Sample", "Gene", "Sequence Name", "Antibiotic class", "Antibiotic subclass", "Coverage", "Identity", "Target Length", "Reference Length", "Alignment Length", "Contig", "Start", "Stop", "Strand", "Accession", "Clostest sequence name", "HMM ID", "HMM Description", "Protein identifier", "Scope", "Element type", "Element Subtype")
+        amr$Sample <- gsub("_amrfinder", "", amr$Sample)
+        amr <- amr[amr$Coverage >= coverage & amr$Identity >= identity, ]
+        return(amr)
+      } 
      }
    }
   amr_tab <- as.data.frame(do.call(rbind, lapply(amrfinder, amrfinder_function)))
