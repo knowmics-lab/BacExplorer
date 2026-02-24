@@ -6,6 +6,8 @@
 # SAMPLES = os.environ["SAMPLES"]
 # FASTQ_SAMPLES = os.environ["FASTQ_SAMPLES"]
 
+# remove any spaces in sample name
+
 def change_fasta_format():
     formats = [".fa", '.fna', '.fsa']
 
@@ -65,16 +67,27 @@ def check_format(FASTQ_DIR, std_suffix_1, std_suffix_2):
     
     if invalid == True:
         raise ValueError(f"Filename format: {filename} invalid.\nValid formats: sample_R1.fastq.gz sample_R2.fastq.gz sample_R1_001.fastq.gz sample_R2_001.fastq.gz sample_1.fastq.gz sample_2.fastq.gz")
-    
+
+# move fasta samples to "fasta_samples"
+def move_samples(src_dir, dest_dir):
+    os.makedirs(dest_dir, exist_ok = True)
+    for sample in os.listdir(src_dir):
+        print(sample)
+        src_path = os.path.join(src_dir, sample)
+        dest_path = os.path.join(dest_dir, sample)
+        if ".fasta" in sample:
+            if src_path != dest_path:
+                os.rename(src_path, dest_path)
 
 print(f"Starting preprocessing for type: {type}")
 
 if type == "fasta":
     change_fasta_format()
-    SAMPLES = [os.path.splitext(os.path.basename(f))[0] for f in glob.glob(f"{PATH_PROJECT}/*.fasta")]
+    move_samples(PATH_PROJECT, FASTA_SAMPLES_DIR)
+    print(f"FASTA_SAMPLES_DIR: {FASTA_SAMPLES_DIR}")
+    SAMPLES = [os.path.splitext(os.path.basename(f))[0] for f in glob.glob(f"{FASTA_SAMPLES_DIR}/*.fasta")]
     print(f"FASTA_SAMPLES: {SAMPLES}")
-
-
+ 
 elif type == "fastq":
     # SAMPLES = [os.path.splitext(os.path.basename(f))[0] for f in glob.glob(f"{PATH_PROJECT}/fasta_output/*.fasta")]
     FASTQ_DIR = os.path.join(PATH_PROJECT, "fastq")

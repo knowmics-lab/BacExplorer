@@ -22,9 +22,15 @@ GENUS = config["GENUS"]
 SPECIES = config["SPECIES"]
 paired = config["PAIRED"]
 GENOMAD_ANALYSIS = config["GENOMAD_ANALYSIS"]
+PHYLO_TREE = config["PHYLO_TREE"]
+SNIPPY = config["SNIPPY"]
+REFERENCE_GENOME = config["REFERENCE_GENOME"]
+VBCG = config["VBCG"]
 
 # PATH_PROJECT is the input folder provided by the user
-PATH_ENV = os.path.join(info["envs_dirs"][0], "bacEnv")
+# PATH_ENV = os.path.join(info["envs_dirs"][0], "bacEnv")
+#per test locale usa questo bacEnv
+PATH_ENV = os.path.join(info["envs_dirs"][0])
 PATH_PROJECT = config["INPUT"]
 PATH_OUTPUT = os.path.join(PATH_PROJECT, "output")
 PATH_SCRIPT = workflow.basedir
@@ -32,12 +38,14 @@ PATH_TOOLS = "/project/tools"
 PATH_VIRULENCE_DB = os.path.join(PATH_SCRIPT, "resources/virulencefinder_db/")
 PATH_KRAKEN_DB = os.path.join(PATH_SCRIPT, "resources/kraken2db")
 PATH_GENOMAD = os.path.join(PATH_SCRIPT, "resources/genomad_db")
+FASTA_SAMPLES_DIR = os.path.join(PATH_PROJECT, "fasta_samples")
 
 SAMPLES = []
 FASTQ_SAMPLES = []
 
 print(f"PATH_SCRIPT: {PATH_SCRIPT}")
 print(f"PATH_PROJECT: {PATH_PROJECT}")
+print(f"FASTA_SAMPLES_DIR: {FASTA_SAMPLES_DIR}")
 print(f"PATH_OUTPUT: {PATH_OUTPUT}")
 print(f"PATH_ENV: {PATH_ENV}")
 print(f"PATH_TOOLS: {PATH_TOOLS}")
@@ -67,6 +75,13 @@ if type == "fastq":
     with open(done_file, 'w') as f:
         f.write("Done\n")
 
+# create "vbcg" folder upon user selection
+if VBCG:
+    os.makedirs(os.path.join(PATH_OUTPUT, "vbcg"), exist_ok=True)
+    done_file = os.path.join(PATH_OUTPUT, d, '.done')
+    with open(done_file, 'w') as f:
+        f.write("Done\n")
+
 include: "pre_processing.smk"
 
 if type == "fastq":
@@ -79,5 +94,14 @@ elif type == "fasta":
     include: "quality_assessment.smk"
 else:
     raise ValueError(f"Type: {type} not supported")
+
+# capisci perché la lancia più di una volta
+
+# launch optional analyses
+if VBCG == "yes":
+    include: "core_tree.smk"
+
+if PHYLO_TREE == "yes":
+    include: "phylo_tree.smk"
 
 fasta_checkpoint = os.path.join(PATH_OUTPUT, "fasta_analysis_checkpoint.txt")

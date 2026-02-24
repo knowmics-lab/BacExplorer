@@ -1,5 +1,4 @@
 from snakemake import shell
-# inserire un progress di 1% per far sembrare che stia facendo qualcosa
 
 PATH_TRIMGALORE = os.path.join(PATH_SCRIPT, "tools/TrimGalore-master")
 
@@ -55,7 +54,7 @@ def trim_galore():
         print(f"Performing Trim Galore on: {sample}")
         fasta_file = os.path.join(PATH_PROJECT, f"{sample}.fasta")
         
-        fasta_processed = os.path.join(PATH_PROJECT, "fasta_output", f"{sample}.fasta")
+        fasta_processed = os.path.join(FASTA_SAMPLES_DIR, f"{sample}.fasta")
         if os.path.exists(fasta_processed):
             print(f"Sample {sample} already processed, skipping...")
             continue
@@ -85,16 +84,14 @@ def trim_galore():
         
         shell(f"""
         mv {PATH_PROJECT}/contigs.fasta {fasta_file}
-        mkdir -p {PATH_PROJECT}/fasta_output
-        mv {fasta_file} {PATH_PROJECT}/fasta_output
+        mkdir -p {FASTA_SAMPLES_DIR}
+        mv {fasta_file} {FASTA_SAMPLES_DIR}
         """)
-
-
 
 print(f"FASTQ_SAMPLES: {FASTQ_SAMPLES}")
 
 ALL_FASTA_FILES = [
-    os.path.join(PATH_PROJECT, "fasta_output", f"{sample}.fasta")
+    os.path.join(FASTA_SAMPLES_DIR, f"{sample}.fasta")
     for sample in FASTQ_SAMPLES
 ]
 

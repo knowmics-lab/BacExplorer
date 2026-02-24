@@ -2,10 +2,10 @@ import json
 
 print(f"FASTA ANALYSIS STARTED")
 
-# change PATH_PROJECT for correct evaluation in quality_assessment
+# change FASTA_SAMPLES_DIR for correct evaluation in quality_assessment
 if type == "fastq":
-    SAMPLES = [os.path.splitext(os.path.basename(f))[0] for f in glob.glob(f"{PATH_PROJECT}/fasta_output/*.fasta")]
-    PATH_PROJECT = os.path.join(PATH_PROJECT, "fasta_output")
+    SAMPLES = [os.path.splitext(os.path.basename(f))[0] for f in glob.glob(f"{FASTA_SAMPLES_DIR}/fasta_samples/*.fasta")]
+    # FASTA_SAMPLES_DIR = os.path.join(FASTA_SAMPLES_DIR, "fasta_samples")
 
 GENOMAD_ANALYSIS = config["GENOMAD_ANALYSIS"]
 
@@ -41,7 +41,7 @@ rule all:
     run:
         if GENOMAD_ANALYSIS == "yes":
             shell(f'''
-            PATH_OUTPUT="{PATH_OUTPUT}" PATH_GENOMAD="{PATH_GENOMAD}" PATH_PROJECT="{PATH_PROJECT}" SAMPLES='{json.dumps(SAMPLES)}' python {params.genomad}
+            PATH_OUTPUT="{PATH_OUTPUT}" PATH_GENOMAD="{PATH_GENOMAD}" FASTA_SAMPLES_DIR="{FASTA_SAMPLES_DIR}" SAMPLES='{json.dumps(SAMPLES)}' python {params.genomad}
             ''')
         shell(f'''
         echo "Execution complete\nPostprocessing..."
@@ -52,7 +52,7 @@ rule all:
 
 rule mlst:
     input:
-        fasta_file = lambda wildcards: os.path.join(PATH_PROJECT, f"{wildcards.sample}.fasta")
+        fasta_file = lambda wildcards: os.path.join(FASTA_SAMPLES_DIR, f"{wildcards.sample}.fasta")
     output:
         mlst_output = os.path.join(PATH_OUTPUT, "mlst/{sample}.txt"),
         genus_species = os.path.join(PATH_OUTPUT, "mlst/{sample}_result.txt")
@@ -95,7 +95,7 @@ def check_mlst (input_file, output_file):
     
 rule kraken2:
     input:
-        fasta_input = os.path.join(PATH_PROJECT, "{sample}.fasta"),
+        fasta_input = os.path.join(FASTA_SAMPLES_DIR, "{sample}.fasta"),
         mlst_output = os.path.join(PATH_OUTPUT, "mlst/{sample}_result.txt")
     output:
         report = os.path.join(PATH_OUTPUT, "kraken2/{sample}_kraken2.txt"),
@@ -164,7 +164,7 @@ rule AMRfinder:
     input:
         organism = os.path.join(PATH_OUTPUT, "mlst/{sample}_result.txt"),
         kraken_report = os.path.join(PATH_OUTPUT, "kraken2/{sample}_result.txt"),
-        fasta_input = os.path.join(PATH_PROJECT, "{sample}.fasta")
+        fasta_input = os.path.join(FASTA_SAMPLES_DIR, "{sample}.fasta")
     output:
         amr_output = os.path.join(PATH_OUTPUT, "amrfinder/{sample}_amrfinder.txt")
     shell:
@@ -205,7 +205,7 @@ rule AMRfinder:
 
 rule abricate:
     input:
-        fasta_input = os.path.join(PATH_PROJECT, "{sample}.fasta")
+        fasta_input = os.path.join(FASTA_SAMPLES_DIR, "{sample}.fasta")
     output:
         abricate = directory(os.path.join(PATH_OUTPUT, "abricate/{sample}"))
     shell:
@@ -223,7 +223,7 @@ rule abricate:
 
 rule check_genus:
     input:
-        fasta_input = os.path.join(PATH_PROJECT, "{sample}.fasta"),
+        fasta_input = os.path.join(FASTA_SAMPLES_DIR, "{sample}.fasta"),
         parsed = os.path.join(PATH_OUTPUT, "mlst/{sample}_result.txt"),
         kraken_report = os.path.join(PATH_OUTPUT, "kraken2/{sample}_result.txt")
     output:
@@ -293,13 +293,13 @@ rule check_genus:
             cd {PATH_TOOLS}/fimtyper
             perl fimtyper.pl -d fimtyper_db/ -b {PATH_ENV} -i {input.fasta_input} -k 95.00 -l 0.60 -o {output.fimtyper}
             mv {output.fimtyper}/results_tab.txt {output.fimtyper}/{wildcards.sample}_tab.txt
-            cd {PATH_PROJECT}
+            cd {FASTA_SAMPLES_DIR}
 
             echo "Performing ClermonTyping"
             {PATH_TOOLS}/ClermonTyping/clermonTyping.sh --fasta {input.fasta_input}
             
-            if compgen -G "{PATH_PROJECT}/analysis_*" > /dev/null; then
-                mv {PATH_PROJECT}/analysis_* {output.ClermonTyping}
+            if compgen -G "{FASTA_SAMPLES_DIR}/analysis_*" > /dev/null; then
+                mv {FASTA_SAMPLES_DIR}/analysis_* {output.ClermonTyping}
             fi
         else
             touch {output.fimtyper}/skipped.marker
@@ -311,7 +311,7 @@ rule check_genus:
 
 rule check_genus_species:
     input:
-        fasta_input = os.path.join(PATH_PROJECT, "{sample}.fasta"),
+        fasta_input = os.path.join(FASTA_SAMPLES_DIR, "{sample}.fasta"),
         parsed = os.path.join(PATH_OUTPUT, "mlst/{sample}_result.txt"),
         kraken_report = os.path.join(PATH_OUTPUT, "kraken2/{sample}_result.txt")
     output:
@@ -446,7 +446,7 @@ rule check_genus_species:
 
 rule virulencefinder:
     input:
-        fasta_input = os.path.join(PATH_PROJECT, "{sample}.fasta")
+        fasta_input = os.path.join(FASTA_SAMPLES_DIR, "{sample}.fasta")
     output:
         virulencefinder = directory(os.path.join(PATH_OUTPUT, "virulencefinder/{sample}"))
     params:
