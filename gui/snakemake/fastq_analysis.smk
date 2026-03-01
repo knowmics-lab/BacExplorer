@@ -2,8 +2,6 @@ from snakemake import shell
 
 PATH_TRIMGALORE = os.path.join(PATH_SCRIPT, "tools/TrimGalore-master")
 
-FASTQ_DIR = os.path.join(PATH_PROJECT, "fastq")
-
 # for file in os.listdir(PATH_PROJECT):
 #     if file.endswith(".gz"):
 #         source_path = os.path.join(PATH_PROJECT, file)

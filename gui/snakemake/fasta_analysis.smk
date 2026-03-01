@@ -17,8 +17,8 @@ rule all:
         expand(os.path.join(PATH_OUTPUT, "kraken2/{sample}_result.txt"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "mlst/{sample}.txt"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "mlst/{sample}_result.txt"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "amrfinder/{sample}_amrfinder.txt"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "virulencefinder/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "amrfinder/{sample}_amrfinder.txt"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "virulencefinder/{sample}"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "meningotype/{sample}"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "fimtyper/{sample}"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "ngmaster/{sample}"), sample=SAMPLES),
@@ -34,7 +34,10 @@ rule all:
         expand(os.path.join(PATH_OUTPUT, "sccmec/{sample}"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "legsta/{sample}"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "pbptyper/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "hicap/{sample}"), sample=SAMPLES)
+        expand(os.path.join(PATH_OUTPUT, "hicap/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "snippy/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "phylogenetic_tree", "all", "final_phylogenetic_tree.nwk")),
+        expand(os.path.join(PATH_OUTPUT, "phylogenetic_tree", "core"))
     params:
         genomad = "genomad.py",
         post_processing = os.path.join(PATH_SCRIPT, "scripts/post_processing.py")
@@ -48,7 +51,7 @@ rule all:
         PATH_OUTPUT="{PATH_OUTPUT}" python {params.post_processing}
         echo 'Workflow complete'
         ''')
-            
+          
 
 rule mlst:
     input:

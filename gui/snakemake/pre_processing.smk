@@ -7,6 +7,16 @@
 # FASTQ_SAMPLES = os.environ["FASTQ_SAMPLES"]
 
 # remove any spaces in sample name
+def remove_spaces():
+    print(f"Removing spaces")
+    for file in os.listdir(PATH_PROJECT):
+        print(f"file: {file}")
+        filename = os.path.join(PATH_PROJECT, file)
+        if os.path.isfile(filename):
+            new_file = file.replace(' ', '').replace('\t', '')
+            new_filename = os.path.join(PATH_PROJECT, new_file)
+            os.rename(filename, new_filename)
+            print(f"old filename: {filename}, new filename: {new_filename}")
 
 def change_fasta_format():
     formats = [".fa", '.fna', '.fsa']
@@ -80,6 +90,7 @@ def move_samples(src_dir, dest_dir):
                 os.rename(src_path, dest_path)
 
 print(f"Starting preprocessing for type: {type}")
+remove_spaces()
 
 if type == "fasta":
     change_fasta_format()

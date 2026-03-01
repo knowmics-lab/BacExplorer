@@ -9,6 +9,6 @@ COVERAGE: 90
 THREADS_NUMBER: 2
 GENOMAD_ANALYSIS: 'no'
 SNIPPY: 'no'
-PHYLO_TREE: 'no'
-REFERENCE_GENOME: ""
-VBCG: 'yes'
+PHYLO_TREE: 'yes'
+REFERENCE_GENOME: "/home/adriana/bacExplorer_tests/Genomi/OG1RF.fa"
+VBCG: 'no'

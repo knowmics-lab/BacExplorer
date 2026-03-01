@@ -29,7 +29,7 @@ VBCG = config["VBCG"]
 
 # PATH_PROJECT is the input folder provided by the user
 # PATH_ENV = os.path.join(info["envs_dirs"][0], "bacEnv")
-#per test locale usa questo bacEnv
+# per test locale usa questo bacEnv
 PATH_ENV = os.path.join(info["envs_dirs"][0])
 PATH_PROJECT = config["INPUT"]
 PATH_OUTPUT = os.path.join(PATH_PROJECT, "output")
@@ -39,6 +39,7 @@ PATH_VIRULENCE_DB = os.path.join(PATH_SCRIPT, "resources/virulencefinder_db/")
 PATH_KRAKEN_DB = os.path.join(PATH_SCRIPT, "resources/kraken2db")
 PATH_GENOMAD = os.path.join(PATH_SCRIPT, "resources/genomad_db")
 FASTA_SAMPLES_DIR = os.path.join(PATH_PROJECT, "fasta_samples")
+FASTQ_DIR = os.path.join(PATH_PROJECT, "fastq")
 
 SAMPLES = []
 FASTQ_SAMPLES = []
@@ -76,11 +77,11 @@ if type == "fastq":
         f.write("Done\n")
 
 # create "vbcg" folder upon user selection
-if VBCG:
-    os.makedirs(os.path.join(PATH_OUTPUT, "vbcg"), exist_ok=True)
-    done_file = os.path.join(PATH_OUTPUT, d, '.done')
-    with open(done_file, 'w') as f:
-        f.write("Done\n")
+# if VBCG:
+#     os.makedirs(os.path.join(PATH_OUTPUT, "vbcg"), exist_ok=True)
+#     done_file = os.path.join(PATH_OUTPUT, d, '.done')
+#     with open(done_file, 'w') as f:
+#         f.write("Done\n")
 
 include: "pre_processing.smk"
 
@@ -98,10 +99,10 @@ else:
 # capisci perché la lancia più di una volta
 
 # launch optional analyses
-if VBCG == "yes":
-    include: "core_tree.smk"
+if VBCG == "yes" or PHYLO_TREE == "yes":
+    include: "trees.smk"
 
-if PHYLO_TREE == "yes":
-    include: "phylo_tree.smk"
+if SNIPPY == "yes":
+    include: "snippy.smk"
 
 fasta_checkpoint = os.path.join(PATH_OUTPUT, "fasta_analysis_checkpoint.txt")
