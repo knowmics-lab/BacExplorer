@@ -31,12 +31,14 @@ VBCG = config["VBCG"]
 # PATH_ENV = os.path.join(info["envs_dirs"][0], "bacEnv")
 # per test locale usa questo bacEnv
 PATH_ENV = os.path.join(info["envs_dirs"][0])
+PATH_BAKTA_ENV = os.path.join(info["envs_dirs"][1])
 PATH_PROJECT = config["INPUT"]
 PATH_OUTPUT = os.path.join(PATH_PROJECT, "output")
 PATH_SCRIPT = workflow.basedir
 PATH_TOOLS = "/project/tools"
 PATH_VIRULENCE_DB = os.path.join(PATH_SCRIPT, "resources/virulencefinder_db/")
 PATH_KRAKEN_DB = os.path.join(PATH_SCRIPT, "resources/kraken2db")
+PATH_BAKTA_DB = os.path.join(PATH_SCRIPT, "resources/bakta_db")
 PATH_GENOMAD = os.path.join(PATH_SCRIPT, "resources/genomad_db")
 FASTA_SAMPLES_DIR = os.path.join(PATH_PROJECT, "fasta_samples")
 FASTQ_DIR = os.path.join(PATH_PROJECT, "fastq")

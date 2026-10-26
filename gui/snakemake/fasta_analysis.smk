@@ -19,6 +19,7 @@ rule all:
         expand(os.path.join(PATH_OUTPUT, "mlst/{sample}_result.txt"), sample=SAMPLES),
         # expand(os.path.join(PATH_OUTPUT, "amrfinder/{sample}_amrfinder.txt"), sample=SAMPLES),
         # expand(os.path.join(PATH_OUTPUT, "virulencefinder/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "integronfinder/{sample}"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "meningotype/{sample}"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "fimtyper/{sample}"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "ngmaster/{sample}"), sample=SAMPLES),
@@ -163,6 +164,57 @@ def process_kraken2_output(input_file, output_file):
         elif result == "KRAKEN NOT PERFORMED: INSUFFICIENT RAM":
             out.write(f"KRAKEN NOT PERFORMED: INSUFFICIENT RAM")
 
+rule abricate:
+    input:
+        fasta_input = os.path.join(FASTA_SAMPLES_DIR, "{sample}.fasta")
+    output:
+        abricate = directory(os.path.join(PATH_OUTPUT, "abricate/{sample}"))
+    shell:
+        """
+        echo "Abricate"
+        mkdir -p {output.abricate}
+        abricate {input.fasta_input} --db ncbi > {output.abricate}/{wildcards.sample}_ncbi.txt
+        abricate {input.fasta_input} --db vfdb > {output.abricate}/{wildcards.sample}_vfdb.txt
+        abricate {input.fasta_input} --db card > {output.abricate}/{wildcards.sample}_card.txt
+        abricate {input.fasta_input} --db argannot > {output.abricate}/{wildcards.sample}_argannot.txt
+        abricate {input.fasta_input} --db resfinder > {output.abricate}/{wildcards.sample}_resfinder.txt
+        abricate {input.fasta_input} --db plasmidfinder > {output.abricate}/{wildcards.sample}_plasmidfinder.txt
+        abricate {input.fasta_input} --db megares > {output.abricate}/{wildcards.sample}_megares.txt
+        """
+
+rule virulencefinder:
+    input:
+        fasta_input = os.path.join(FASTA_SAMPLES_DIR, "{sample}.fasta")
+    output:
+        virulencefinder = directory(os.path.join(PATH_OUTPUT, "virulencefinder/{sample}"))
+    params:
+        path_db = PATH_VIRULENCE_DB
+    shell:
+        """
+        echo "Virulence finder"
+        mkdir -p {output.virulencefinder}
+        virulencefinder.py -i {input.fasta_input} -o {output.virulencefinder} -p {params.path_db} -x        
+        mv {output.virulencefinder}/Virulence_genes.fsa {output.virulencefinder}/{wildcards.sample}_Virulence_genes.fsa
+        mv {output.virulencefinder}/results_tab.tsv {output.virulencefinder}/{wildcards.sample}_results_tab.tsv
+        mv {output.virulencefinder}/results.txt {output.virulencefinder}/{wildcards.sample}_results.txt
+        mv {output.virulencefinder}/Hit_in_genome_seq.fsa {output.virulencefinder}/{wildcards.sample}_Hit_in_genome_seq.fsa
+        mv {output.virulencefinder}/data.json {output.virulencefinder}/{wildcards.sample}_data.json
+        """
+
+rule integronfinder:
+    input:
+        fasta_input = os.path.join(FASTA_SAMPLES_DIR, "{sample}.fasta")
+    output:
+        integronfinder = directory(os.path.join(PATH_OUTPUT, "integronfinder/{sample}"))
+    params:
+        cpu = 2
+    shell:
+        """
+        echo "Integron finder"
+        mkdir -p {output.integronfinder}
+        integron_finder --local-max --func-annot {input.fasta_input} --outdir {output.integronfinder} --cpu {params.cpu} --mute --pdf
+        """
+
 rule AMRfinder:
     input:
         organism = os.path.join(PATH_OUTPUT, "mlst/{sample}_result.txt"),
@@ -206,22 +258,37 @@ rule AMRfinder:
         fi
         """
 
-rule abricate:
+rule bakta_macsyfinder:
     input:
-        fasta_input = os.path.join(FASTA_SAMPLES_DIR, "{sample}.fasta")
+        fasta_input = os.path.join(FASTA_SAMPLES_DIR, "{sample}.fasta"),
+        organism = os.path.join(PATH_OUTPUT, "mlst/{sample}_result.txt"),
+        kraken_report = os.path.join(PATH_OUTPUT, "kraken2/{sample}_result.txt")
     output:
-        abricate = directory(os.path.join(PATH_OUTPUT, "abricate/{sample}"))
+        bakta_output = directory(os.path.join(PATH_OUTPUT, "bakta/{sample}")),
+        macsyfinder_output = directory(os.path.join(PATH_OUTPUT, "macsyfinder/{sample}"))
     shell:
         """
-        echo "Abricate"
-        mkdir -p {output.abricate}
-        abricate {input.fasta_input} --db ncbi > {output.abricate}/{wildcards.sample}_ncbi.txt
-        abricate {input.fasta_input} --db vfdb > {output.abricate}/{wildcards.sample}_vfdb.txt
-        abricate {input.fasta_input} --db card > {output.abricate}/{wildcards.sample}_card.txt
-        abricate {input.fasta_input} --db argannot > {output.abricate}/{wildcards.sample}_argannot.txt
-        abricate {input.fasta_input} --db resfinder > {output.abricate}/{wildcards.sample}_resfinder.txt
-        abricate {input.fasta_input} --db plasmidfinder > {output.abricate}/{wildcards.sample}_plasmidfinder.txt
-        abricate {input.fasta_input} --db megares > {output.abricate}/{wildcards.sample}_megares.txt
+        echo "bakta"
+        kraken_output=$(sed -n '1p' {input.kraken_report})
+        
+        genus=""
+        species=""
+
+        if [[ "$kraken_output" != "Check MLST output" ]]; then
+            genus=$(sed -n '1s/_.*//p' {input.kraken_report})
+            species=$(sed -n '1s/^[^_]*_//p' {input.kraken_report})
+        fi
+        if [[ "$kraken_output" == "Check MLST output" ]]; then
+            genus=$(sed -n '1s/_.*//p' {input.parsed})
+            species=$(sed -n '1s/^[^_]*_//p' {input.parsed})
+        fi
+
+        mkdir -p {output.bakta_output}
+        bakta --db {PATH_BAKTA_DB} {input.fasta_input} -o {output.bakta_output} --genus "$genus" --species "$species" -t {THREADS_NUMBER} --force
+
+        echo "Macsyfinder"
+        mkdir -p {output.macsyfinder_output}
+        macsyfinder --sequence-db {input.proteins} -o {output.macsyfinder_output} --models TXSScan all -w {THREADS_NUMBER} --db-type unordered 
         """
 
 rule check_genus:
@@ -445,23 +512,4 @@ rule check_genus_species:
         else
             touch {output.pasty}/skipped.marker
         fi
-        """
-
-rule virulencefinder:
-    input:
-        fasta_input = os.path.join(FASTA_SAMPLES_DIR, "{sample}.fasta")
-    output:
-        virulencefinder = directory(os.path.join(PATH_OUTPUT, "virulencefinder/{sample}"))
-    params:
-        path_db = PATH_VIRULENCE_DB
-    shell:
-        """
-        echo "Virulence finder"
-        mkdir -p {output.virulencefinder}
-        virulencefinder.py -i {input.fasta_input} -o {output.virulencefinder} -p {params.path_db} -x        
-        mv {output.virulencefinder}/Virulence_genes.fsa {output.virulencefinder}/{wildcards.sample}_Virulence_genes.fsa
-        mv {output.virulencefinder}/results_tab.tsv {output.virulencefinder}/{wildcards.sample}_results_tab.tsv
-        mv {output.virulencefinder}/results.txt {output.virulencefinder}/{wildcards.sample}_results.txt
-        mv {output.virulencefinder}/Hit_in_genome_seq.fsa {output.virulencefinder}/{wildcards.sample}_Hit_in_genome_seq.fsa
-        mv {output.virulencefinder}/data.json {output.virulencefinder}/{wildcards.sample}_data.json
         """
