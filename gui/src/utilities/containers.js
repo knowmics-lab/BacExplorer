@@ -4,7 +4,7 @@ import { spawnSync } from 'child_process';
 import os from 'os';
 import fs from 'fs-extra';
 import { emitProgress, checkDir, isArchitectureARM, demuxStream, downloadFile } from './general_functions';
-import { appVariables } from './global_variables';
+import { appVariables, containerVariables } from './global_variables';
 
 const yaml = require('js-yaml');
 const Docker = require('dockerode');
@@ -29,8 +29,8 @@ docker.ping((err, data) => {
   }
 });
 
-const containerInput = "/project/user-input/";
-const containerOutput = "/project/user-input/output/";
+const containerInput = appVariables.containerInput;
+const containerOutput = appVariables.containerOutput;
 
 // GENERAL-USE FUNCTIONS TO HANDLE OR INSPECT CONTAINERS
 
@@ -351,10 +351,10 @@ async function createContainer(imageName, containerName, snakemakePath) {
   //OLD DIRECTORY FOR amrfinder db:
   //const amrfinderVolume = '/opt/conda/envs/bacEnv/share/amrfinderplus';
 
-  const amrfinderVolume = '/project/tools/amrfinder/data/latest';
+  const amrfinderVolume = appVariables.amrfinderDbDir;
   // volume for abricate and pubmlst databases
   const dbsHostPath = path.join(snakemakePath, "resources", "dbs");
-  const dbsVolume = '/opt/conda/envs/bacEnv/db';
+  const dbsVolume = appVariables.dbsDir;
 
   try {
     console.log("Checking directory...");
@@ -421,7 +421,9 @@ async function startContainer(containerName) {
 async function updateContainer(containerName) {
   emitProgress(`Step 5: Installing databases...`, 0);
   console.log("Installing amrfinder, abricate, pubmlst databases...");
-  const virulencefinderDbDir = "/project/snakemake/resources/virulencefinder_db";
+  const virulencefinderDbDir = path.join(containerVariables.resourcesDir, 'virulencefinder_db');
+  const baktaDbDir = path.join(containerVariables.resourcesDir, 'bakta_db');
+  const pubmlstDbDir = path.join(containerVariables.dbsDir, 'pubmlst');
 
   const container = docker.getContainer(containerName);
   const exec = await container.exec({
@@ -446,6 +448,7 @@ async function updateContainer(containerName) {
       conda activate bacEnv &&
       cd ${virulencefinderDbDir} && 
       python ${virulencefinderDbDir}/INSTALL.py &&
+      bakta_db download --output ${baktaDbDir} --type light &&
       amrfinder --force_update &&
       abricate-get_db --db card --force &&
       abricate-get_db --db argannot --force &&
@@ -454,9 +457,11 @@ async function updateContainer(containerName) {
       abricate-get_db --db vfdb --force &&
       abricate-get_db --db plasmidfinder --force &&
       abricate-get_db --db ecoli_vf --force &&
-      pubmlst_path="/opt/conda/envs/bacEnv/db/pubmlst" &&
-      mlst-download_pub_mlst -d $pubmlst_path &&
-      mlst-make_blast_db
+      mlst-download_pub_mlst -d ${pubmlstDbDir} &&
+      mlst-make_blast_db &&
+      macsydata install --user TXSScan &&
+      macsydata install --user CasFinder &&
+      macsydata install --user CONJscan
     `],
     //   Cmd: ['bash', '-c', `. /opt/conda/etc/profile.d/conda.sh &&
     //   conda activate bacEnv &&
@@ -500,7 +505,7 @@ async function updateContainer(containerName) {
     }
   );
   emitProgress(`Step 5: Installing databases...`, 100);
-  console.log("Amrfinder, abricate, pubmlst databases installed and upgraded");
+  console.log("Virulencefinder, bakta, abricate, pubmlst databases installed and upgraded");
   return;
 }
 

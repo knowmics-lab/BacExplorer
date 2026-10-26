@@ -8,6 +8,10 @@ import { checkDockerInstalled, checkDockerRunning } from './utilities/docker_uti
 import { setupContainer, prepareSnakemakeCommand, runAnalysis, produceReport, checkContainerRunning, stopContainer } from './utilities/containers.js';
 import { isDirEmpty, makeGenusDictionary, outputFolderExists, saveUserInput, validateFormat } from './utilities/general_functions.js';
 import { appVariables, containerVariables, flags, userVariables } from './utilities/global_variables.js';
+import { getDbStatus } from './utilities/dbs_handling/dbUpdateStore.js';
+import { startScheduler } from './utilities/dbs_handling/dbUpdateScheduler.js';
+import { runUpdateScript, ALL_DBS } from './utilities/dbs_handling/dbUpdater.js';
+import store from './utilities/dbs_handling/dbUpdateStore.js';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -153,7 +157,7 @@ const createWindow = () => {
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
 
   // Open the DevTools.
-  // mainWindow.webContents.openDevTools();
+  mainWindow.webContents.openDevTools();
 };
 
 // This method will be called when Electron has finished
@@ -313,15 +317,49 @@ ipcMain.handle('create-container', async (event) => {
   }
 });
 
+let schedulerStarted = false;
+
 ipcMain.handle('check-container', async (event) => {
   try {
     const result = await checkContainerRunning(containerVariables.containerName);
     console.log("Container status: ", result);
+
+    // Avvia lo scheduler solo se il container è running e non è già stato avviato
+    if (result.running && !schedulerStarted) {
+      startScheduler(mainWindow);
+      schedulerStarted = true;
+      console.log('[DB Scheduler] Started.');
+    }
+
     return result;
   } catch (error) {
     throw (error);
   }
-})
+});
+
+// DBs HANDLING FUNCTIONS
+
+// get the status of the databases (last update timestamp and intervalDays)
+ipcMain.handle('db-get-status', () => getDbStatus());
+
+// run the update script for the specified databases (or all if none specified)
+ipcMain.handle('db-update-manual', async (_, dbs) => {
+  return await runUpdateScript(mainWindow, dbs ?? ALL_DBS);
+});
+
+// settings for the database update scheduler
+ipcMain.handle('db-get-settings', () => ({
+  autoUpdate:      store.get('autoUpdate'),
+  intervalDays:    store.get('intervalDays'),
+  updateOnStartup: store.get('updateOnStartup'),
+  vfdbSet:         store.get('vfdbSet'),
+  abricateDb:      store.get('abricateDb'),
+}));
+
+ipcMain.handle('db-save-settings', (_, settings) => {
+  Object.entries(settings).forEach(([k, v]) => store.set(k, v));
+  return true;
+});
 
 // FUNCTIONS TO PREPARE SNAKEMAKE ANALYSIS:
 

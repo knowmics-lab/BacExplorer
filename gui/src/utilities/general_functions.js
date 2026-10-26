@@ -138,7 +138,7 @@ export function checkDir(directory) {
             fs.mkdirSync(directory, { recursive: true });
         }
         else 
-            console.log("Directory: ", directory, " exitst");
+            console.log("Directory: ", directory, " exists");
     } catch (error) {
         throw(error);
     }
@@ -197,6 +197,8 @@ export async function makeGenusDictionary(filePath) {
         throw err;
       }
 }
+
+//I/O and format handling functions
 
 export function saveUserInput(configFile, outputExists) {
   const originalConfig = yaml.load(fs.readFileSync(configFile, 'utf8'));
