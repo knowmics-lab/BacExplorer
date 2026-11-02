@@ -20,25 +20,27 @@ rule all:
         # expand(os.path.join(PATH_OUTPUT, "amrfinder/{sample}_amrfinder.txt"), sample=SAMPLES),
         # expand(os.path.join(PATH_OUTPUT, "virulencefinder/{sample}"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "integronfinder/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "meningotype/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "fimtyper/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "ngmaster/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "shigeifinder/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "pasty/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "ClermonTyping/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "abricate/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "kleborate/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "abricate_ecoli/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "ectyper/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "shigatyper/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "emmtyper/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "sccmec/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "legsta/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "pbptyper/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "hicap/{sample}"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "snippy/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "phylogenetic_tree", "all", "final_phylogenetic_tree.nwk")),
-        expand(os.path.join(PATH_OUTPUT, "phylogenetic_tree", "core"))
+        expand(os.path.join(PATH_OUTPUT, "antismash/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "bakta/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "meningotype/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "fimtyper/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "ngmaster/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "shigeifinder/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "pasty/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "ClermonTyping/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "abricate/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "kleborate/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "abricate_ecoli/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "ectyper/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "shigatyper/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "emmtyper/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "sccmec/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "legsta/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "pbptyper/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "hicap/{sample}"), sample=SAMPLES),
+        # # expand(os.path.join(PATH_OUTPUT, "snippy/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "phylogenetic_tree", "all", "final_phylogenetic_tree.nwk")),
+        # expand(os.path.join(PATH_OUTPUT, "phylogenetic_tree", "core"))
     params:
         genomad = "genomad.py",
         post_processing = os.path.join(PATH_SCRIPT, "scripts/post_processing.py")
@@ -208,11 +210,25 @@ rule integronfinder:
         integronfinder = directory(os.path.join(PATH_OUTPUT, "integronfinder/{sample}"))
     params:
         cpu = 2
+    conda:
+        PATH_INTEGRONENV
     shell:
         """
         echo "Integron finder"
         mkdir -p {output.integronfinder}
         integron_finder --local-max --func-annot {input.fasta_input} --outdir {output.integronfinder} --cpu {params.cpu} --mute --pdf
+        """
+
+rule antismash:
+    input:
+        fasta_input = os.path.join(FASTA_SAMPLES_DIR, "{sample}.fasta")
+    output:
+        antismash = directory(os.path.join(PATH_OUTPUT, "antismash/{sample}"))
+    conda:
+        PATH_ANTISMASHENV
+    shell:
+        """
+        antismash --hmmdetection-strictness strict --taxon bacteria --genefinding-tool prodigal --cb-knownclusters --cb-general --asf --output-dir {output.antismash} {input.fasta_input}
         """
 
 rule AMRfinder:
@@ -266,6 +282,8 @@ rule bakta_macsyfinder:
     output:
         bakta_output = directory(os.path.join(PATH_OUTPUT, "bakta/{sample}")),
         macsyfinder_output = directory(os.path.join(PATH_OUTPUT, "macsyfinder/{sample}"))
+    conda:
+        PATH_BAKTAENV
     shell:
         """
         echo "bakta"
@@ -288,7 +306,12 @@ rule bakta_macsyfinder:
 
         echo "Macsyfinder"
         mkdir -p {output.macsyfinder_output}
-        macsyfinder --sequence-db {input.proteins} -o {output.macsyfinder_output} --models TXSScan all -w {THREADS_NUMBER} --db-type unordered 
+        mkdir -p {output.macsyfinder_output}/TXSScan
+        mkdir -p {output.macsyfinder_output}/CasFinder
+        mkdir -p {output.macsyfinder_output}/CONJscan
+        macsyfinder --sequence-db {input.proteins} -o {output.macsyfinder_output}/TXSScan --models TXSScan all -w {THREADS_NUMBER} --db-type unordered --force
+        macsyfinder --sequence-db {input.proteins} -o {output.macsyfinder_output}/CasFinder --models CasFinder all -w {THREADS_NUMBER} --db-type unordered --force
+        macsyfinder --sequence-db {input.proteins} -o {output.macsyfinder_output}/CONJscan --models CONJscan all -w {THREADS_NUMBER} --db-type unordered --force
         """
 
 rule check_genus:
@@ -361,7 +384,7 @@ rule check_genus:
 
             echo "Performing fimtyper"
             cd {PATH_TOOLS}/fimtyper
-            perl fimtyper.pl -d fimtyper_db/ -b {PATH_ENV} -i {input.fasta_input} -k 95.00 -l 0.60 -o {output.fimtyper}
+            perl fimtyper.pl -d fimtyper_db/ -b {PATH_BACENV} -i {input.fasta_input} -k 95.00 -l 0.60 -o {output.fimtyper}
             mv {output.fimtyper}/results_tab.txt {output.fimtyper}/{wildcards.sample}_tab.txt
             cd {FASTA_SAMPLES_DIR}
 
@@ -508,7 +531,7 @@ rule check_genus_species:
         mkdir -p {output.pasty}
         if [[ "$genus" == "Pseudomonas" && "$species" == "aeruginosa" ]]; then
             echo "Performing pasty"
-            camlhmp-blast-regions --input {input.fasta_input} --outdir {output.pasty} --prefix {wildcards.sample} -y {PATH_ENV}/share/pasty/pa-osa.yaml -t {PATH_ENV}/share/pasty/pa-osa.fasta
+            camlhmp-blast-regions --input {input.fasta_input} --outdir {output.pasty} --prefix {wildcards.sample} -y {PATH_BACENV}/share/pasty/pa-osa.yaml -t {PATH_BACENV}/share/pasty/pa-osa.fasta
         else
             touch {output.pasty}/skipped.marker
         fi

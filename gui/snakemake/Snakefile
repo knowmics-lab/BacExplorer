@@ -30,15 +30,17 @@ VBCG = config["VBCG"]
 # PATH_PROJECT is the input folder provided by the user
 # PATH_ENV = os.path.join(info["envs_dirs"][0], "bacEnv")
 # per test locale usa questo bacEnv
-PATH_ENV = os.path.join(info["envs_dirs"][0])
-PATH_BAKTA_ENV = os.path.join(info["envs_dirs"][1])
+PATH_ANTISMASHENV = os.path.join(info["envs_dirs"][1], "antismashEnv")
+PATH_BACENV = os.path.join(info["envs_dirs"][1], "bacEnv")
+PATH_BAKTAENV = os.path.join(info["envs_dirs"][1], "baktaEnv")
+PATH_INTEGRONENV = os.path.join(info["envs_dirs"][1], "integronEnv")
 PATH_PROJECT = config["INPUT"]
 PATH_OUTPUT = os.path.join(PATH_PROJECT, "output")
 PATH_SCRIPT = workflow.basedir
 PATH_TOOLS = "/project/tools"
 PATH_VIRULENCE_DB = os.path.join(PATH_SCRIPT, "resources/virulencefinder_db/")
 PATH_KRAKEN_DB = os.path.join(PATH_SCRIPT, "resources/kraken2db")
-PATH_BAKTA_DB = os.path.join(PATH_SCRIPT, "resources/bakta_db")
+PATH_BAKTA_DB = os.path.join(PATH_SCRIPT, "resources/bakta_db/db-light")
 PATH_GENOMAD = os.path.join(PATH_SCRIPT, "resources/genomad_db")
 FASTA_SAMPLES_DIR = os.path.join(PATH_PROJECT, "fasta_samples")
 FASTQ_DIR = os.path.join(PATH_PROJECT, "fastq")
@@ -50,7 +52,10 @@ print(f"PATH_SCRIPT: {PATH_SCRIPT}")
 print(f"PATH_PROJECT: {PATH_PROJECT}")
 print(f"FASTA_SAMPLES_DIR: {FASTA_SAMPLES_DIR}")
 print(f"PATH_OUTPUT: {PATH_OUTPUT}")
-print(f"PATH_ENV: {PATH_ENV}")
+print(f"PATH_ANTISMASHENV: {PATH_ANTISMASHENV}")
+print(f"PATH_BACENV: {PATH_BACENV}")
+print(f"PATH_BAKTAENV: {PATH_BAKTAENV}")
+print(f"PATH_INTEGRONENV: {PATH_INTEGRONENV}")
 print(f"PATH_TOOLS: {PATH_TOOLS}")
 print(f"GENOMAD_ANALYSIS: {GENOMAD_ANALYSIS}")
 

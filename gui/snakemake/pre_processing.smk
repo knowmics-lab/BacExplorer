@@ -81,8 +81,9 @@ def check_format(FASTQ_DIR, std_suffix_1, std_suffix_2):
 # move fasta samples to "fasta_samples"
 def move_samples(src_dir, dest_dir):
     os.makedirs(dest_dir, exist_ok = True)
+    print (f"Moving fasta samples from: {src_dir} to: {dest_dir}")
     for sample in os.listdir(src_dir):
-        print(sample)
+        print(f"SAMPLE TO MOVE: {sample}")
         src_path = os.path.join(src_dir, sample)
         dest_path = os.path.join(dest_dir, sample)
         if ".fasta" in sample:
@@ -95,9 +96,8 @@ remove_spaces()
 if type == "fasta":
     change_fasta_format()
     move_samples(PATH_PROJECT, FASTA_SAMPLES_DIR)
-    print(f"FASTA_SAMPLES_DIR: {FASTA_SAMPLES_DIR}")
     SAMPLES = [os.path.splitext(os.path.basename(f))[0] for f in glob.glob(f"{FASTA_SAMPLES_DIR}/*.fasta")]
-    print(f"FASTA_SAMPLES: {SAMPLES}")
+    print(f"PREPROCESSING COMPLETED. FASTA_SAMPLES_DIR: {FASTA_SAMPLES_DIR}\n FASTA_SAMPLES: {SAMPLES}")
  
 elif type == "fastq":
     # SAMPLES = [os.path.splitext(os.path.basename(f))[0] for f in glob.glob(f"{PATH_PROJECT}/fasta_output/*.fasta")]

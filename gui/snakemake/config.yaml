@@ -2,13 +2,13 @@ NAME: prova-container
 GENUS: ''
 SPECIES: ''
 TYPE: fasta
-PAIRED: 'yes'
-INPUT: /home/adriana/bacExplorer_tests/Core_tree_2
+PAIRED: 'no'
+INPUT: /home/adriana/bacExplorer_tests/fasta_samples
 IDENTITY: 90
 COVERAGE: 90
 THREADS_NUMBER: 2
 GENOMAD_ANALYSIS: 'no'
 SNIPPY: 'no'
-PHYLO_TREE: 'yes'
-REFERENCE_GENOME: "/home/adriana/bacExplorer_tests/Genomi/OG1RF.fa"
+PHYLO_TREE: 'no'
+REFERENCE_GENOME: ""
 VBCG: 'no'
