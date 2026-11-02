@@ -71,18 +71,18 @@ export async function stopContainer(containerName) {
 }
 
 async function containerExists(containerName) {
-    const containers = await docker.listContainers({ all: true });
-    const existingContainer = containers.find(container =>
-      container.Names.includes(`/${containerName}`),
-    );
+  const containers = await docker.listContainers({ all: true });
+  const existingContainer = containers.find(container =>
+    container.Names.includes(`/${containerName}`),
+  );
 
-    if (existingContainer) {
-      console.log(`Container ${containerName} already exists: ${existingContainer}`);
-      emitProgress(`Container ${containerName} already exists. Skipping creation.`, 100);
-      return true;
-    }
-    console.log(`Container ${containerName} does not exist. Creating...`);
-    return false;
+  if (existingContainer) {
+    console.log(`Container ${containerName} already exists: ${existingContainer}`);
+    emitProgress(`Container ${containerName} already exists. Skipping creation.`, 100);
+    return true;
+  }
+  console.log(`Container ${containerName} does not exist. Creating...`);
+  return false;
 }
 
 
@@ -170,6 +170,7 @@ async function downloadDatabases(backendPath) {
     await fetchKrakenDB(resourcesDir);
     await fetchVirulenceDB(resourcesDir);
     await fetchGenomadDB(resourcesDir);
+    await fetchMobsuiteDB(resourcesDir);
     emitProgress('Completed step 2/4', 100);
 
   } catch (error) {
@@ -299,6 +300,40 @@ async function fetchGenomadDB(resourcesDir) {
   }
 }
 
+async function fetchMobsuiteDB(resourcesDir) {
+  const mobsuiteDir = path.join(resourcesDir, 'mobsuite_db', 'data');
+  const mobsuiteDB = "data.tar.gz";
+  const mobsuiteDBPath = "https://zenodo.org/records/10304948/files/data.tar.gz?download=1";
+  const tarFilePath = path.join(mobsuiteDir, mobsuiteDB);
+
+  try {
+    checkDir(mobsuiteDir);
+    if (fs.existsSync(tarFilePath)) {
+      console.log(`Mobsuite db: ${mobsuiteDB} found in ${mobsuiteDir}. Skipping download`);
+      emitProgress('Mobsuite db already exists in folder. Skipping download', 50);
+      const files = fs.readdirSync(mobsuiteDir);
+      if (files.length === 1 && files[0] === mobsuiteDB) {
+        console.log('File zipped: unzipping...');
+        emitProgress('Unzipping...', 51);
+        spawnSync('tar', ['-xvf', tarFilePath, '-C', mobsuiteDir, '--strip-components', '1'], { stdio: 'inherit' });
+        emitProgress('Unzipping Mobsuite DB', 100);
+      } else {
+        console.log('Skipping unzip');
+        emitProgress('Mobsuite DB already unzipped', 100);
+      }
+      console.log('Mobsuite done');
+      return;
+    } else {
+      await downloadFile(mobsuiteDBPath, tarFilePath, 'Downloading Mobsuite DB');
+      emitProgress('Unzipping Mobsuite DB', 0);
+      spawnSync('tar', ['-xvf', tarFilePath, '-C', mobsuiteDir, '--strip-components', '1'], { stdio: 'inherit' });
+      emitProgress('Unzipping Mobsuite DB', 100);
+    }
+  } catch (error) {
+    throw ("Error in fetchmobsuitedb: ", error);
+  }
+}
+
 // download TrimGalore into the "tools" directory
 async function fetchTrimGalore(snakemakePath) {
   const toolsPath = path.join(snakemakePath, 'tools');
@@ -400,7 +435,7 @@ async function createContainer(imageName, containerName, snakemakePath) {
       });
       emitProgress('Completed step 3/4: Container created', 100);
     }
-    
+
   } catch (error) {
     throw (error);
   }
@@ -422,31 +457,14 @@ async function updateContainer(containerName) {
   emitProgress(`Step 5: Installing databases...`, 0);
   console.log("Installing amrfinder, abricate, pubmlst databases...");
   const virulencefinderDbDir = "/project/snakemake/resources/virulencefinder_db";
+  const baktaDbDir = "/project/snakemake/resources/bakta_db/db-light";
 
   const container = docker.getContainer(containerName);
   const exec = await container.exec({
-    // old
-    // Cmd: ['bash', '-c', `. /opt/conda/etc/profile.d/conda.sh &&
-    //   conda activate bacEnv &&
-    //   cd ${virulencefinderDbDir} && 
-    //   python ${virulencefinderDbDir}/INSTALL.py &&
-    //   amrfinder -u &&
-    //   abricate-get_db --db card --force &&
-    //   abricate-get_db --db argannot --force &&
-    //   abricate-get_db --db resfinder --force &&
-    //   abricate-get_db --db ecoh --force &&
-    //   abricate-get_db --db vfdb --force &&
-    //   abricate-get_db --db plasmidfinder --force &&
-    //   abricate-get_db --db ecoli_vf --force &&
-    //   pubmlst_path="/opt/conda/envs/bacEnv/db/pubmlst" &&
-    //   mlst-download_pub_mlst -d $pubmlst_path &&
-    //   mlst-make_blast_db
-    // `],
-      Cmd: ['bash', '-c', `. /opt/conda/etc/profile.d/conda.sh &&
+    Cmd: ['bash', '-c', `. /opt/conda/etc/profile.d/conda.sh &&
       conda activate bacEnv &&
       cd ${virulencefinderDbDir} && 
       python ${virulencefinderDbDir}/INSTALL.py &&
-      amrfinder --force_update &&
       abricate-get_db --db card --force &&
       abricate-get_db --db argannot --force &&
       abricate-get_db --db resfinder --force &&
@@ -456,12 +474,21 @@ async function updateContainer(containerName) {
       abricate-get_db --db ecoli_vf --force &&
       pubmlst_path="/opt/conda/envs/bacEnv/db/pubmlst" &&
       mlst-download_pub_mlst -d $pubmlst_path &&
-      mlst-make_blast_db
+      mlst-make_blast_db &&
+      conda activate baktaEnv &&
+      bakta_db download --output ${baktaDbDir} --type light
+      bakta_db update --db ${baktaDbDir}
+      amrfinder --force_update &&
+      macsydata install --user TXSScan &&
+      macsydata install --user CasFinder &&
+      macsydata install --user CONJscan &&
+      conda activate mobsuiteEnv &&
+      makeblastdb -in ncbi_plasmid_full_seqs.fas -dbtype nucl &&
+      makeblastdb -in repetitive.dna.fas -dbtype nucl &&
+      mash sketch -i ncbi_plasmid_full_seqs.fas -o ncbi_plasmid_full_seqs.fas &&
+      conda activate antismashEnv &&
+      dowload-antismash-databases
     `],
-    //   Cmd: ['bash', '-c', `. /opt/conda/etc/profile.d/conda.sh &&
-    //   conda activate bacEnv &&
-    //   amrfinder --force_update
-    // `],
     AttachStdout: true,
     AttachStderr: true,
     AttachStdin: true,
@@ -555,7 +582,7 @@ async function mapIO(containerName, userInput, userConfigPath) {
   const userOutput = path.join(userInput, 'output');
   const containerSnakemakePath = ('/project/snakemake/');
   const amrfinderHost = path.join(path.join(snakemakeDir, "resources", "amrfinder"));
-  const amrfinderVolume = '/opt/conda/envs/bacEnv/share/amrfinderplus';
+  const amrfinderVolume = '/opt/conda/envs/baktaEnv/share/amrfinderplus';
 
   const container = docker.getContainer(containerName);
 
@@ -567,7 +594,7 @@ async function mapIO(containerName, userInput, userConfigPath) {
 
   try {
     await stopContainer(containerName);
-    
+
     const containerInfo = await container.inspect();
 
     // if (containerInfo.State.Status === 'running') {
@@ -626,7 +653,7 @@ export async function runAnalysis(containerName, reply, onError) {
   const containerConfigPath = '/project/snakemake/config.yaml';
   const container = docker.getContainer(containerName);
   const exec = await container.exec({
-    Cmd: ['bash', '-c', `source /opt/conda/etc/profile.d/conda.sh && conda activate bacEnv && snakemake --jobs 1 --configfile ${containerConfigPath} --force all`],
+    Cmd: ['bash', '-c', `source /opt/conda/etc/profile.d/conda.sh && conda activate bacEnv && snakemake --jobs 1 --configfile ${containerConfigPath} --force all --use-conda`],
     AttachStdout: true,
     AttachStderr: true,
     AttachStdin: true,

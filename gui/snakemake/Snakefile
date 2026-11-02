@@ -34,6 +34,11 @@ PATH_ANTISMASHENV = os.path.join(info["envs_dirs"][1], "antismashEnv")
 PATH_BACENV = os.path.join(info["envs_dirs"][1], "bacEnv")
 PATH_BAKTAENV = os.path.join(info["envs_dirs"][1], "baktaEnv")
 PATH_INTEGRONENV = os.path.join(info["envs_dirs"][1], "integronEnv")
+ANTISMASHENV_FILE = "envs/antismashEnv.yml"
+BACENV_FILE = "envs/bacEnv.yml"
+BAKTAENV_FILE = "envs/baktaEnv.yml"
+INTEGRONENV_FILE = "envs/integronEnv.yml"
+MOBSUITEENV_FILE = "envs/mobsuiteEnv.yml"
 PATH_PROJECT = config["INPUT"]
 PATH_OUTPUT = os.path.join(PATH_PROJECT, "output")
 PATH_SCRIPT = workflow.basedir
@@ -41,6 +46,7 @@ PATH_TOOLS = "/project/tools"
 PATH_VIRULENCE_DB = os.path.join(PATH_SCRIPT, "resources/virulencefinder_db/")
 PATH_KRAKEN_DB = os.path.join(PATH_SCRIPT, "resources/kraken2db")
 PATH_BAKTA_DB = os.path.join(PATH_SCRIPT, "resources/bakta_db/db-light")
+PATH_MOBSUITE_DB = os.path.join(PATH_SCRIPT, "resources/mobsuite_db/data")
 PATH_GENOMAD = os.path.join(PATH_SCRIPT, "resources/genomad_db")
 FASTA_SAMPLES_DIR = os.path.join(PATH_PROJECT, "fasta_samples")
 FASTQ_DIR = os.path.join(PATH_PROJECT, "fastq")
@@ -60,9 +66,7 @@ print(f"PATH_TOOLS: {PATH_TOOLS}")
 print(f"GENOMAD_ANALYSIS: {GENOMAD_ANALYSIS}")
 
 # create directories in the output folder
-DIRS_LIST = ["abricate", "abricate_ecoli", "agrvate", "amrfinder", "ectyper", "emmtyper", "genomad", "hicap", "kleborate",
-"kleborate_escherichia", "kraken2", "legsta", "lissero", "mlst", "pbptyper", "shigatyper", "spatyper", "sccmec", "fimtyper",
-"virulencefinder", "shigeifinder", "ngmaster", "ClermonTyping", "pasty", "meningotype", "quality_assessment"]
+DIRS_LIST = ["abricate", "abricate_ecoli", "agrvate", "amrfinder", "antismash", "bakta", "ectyper", "emmtyper", "genomad", "hicap", "kleborate", "kleborate_escherichia", "kraken2", "integronfinder", "legsta", "lissero", "macsyfinder", "mlst", "mobsuite", "pbptyper", "shigatyper", "spatyper", "sccmec", "fimtyper", "virulencefinder", "shigeifinder", "ngmaster", "ClermonTyping", "pasty", "meningotype", "quality_assessment"]
 
 if not os.path.exists(PATH_PROJECT):
     raise ValueError(f"Path {PATH_PROJECT} does not exist!")
@@ -106,10 +110,10 @@ else:
 # capisci perché la lancia più di una volta
 
 # launch optional analyses
-if VBCG == "yes" or PHYLO_TREE == "yes":
-    include: "trees.smk"
+# if VBCG == "yes" or PHYLO_TREE == "yes":
+#     include: "trees.smk"
 
-if SNIPPY == "yes":
-    include: "snippy.smk"
+# if SNIPPY == "yes":
+#     include: "snippy.smk"
 
 fasta_checkpoint = os.path.join(PATH_OUTPUT, "fasta_analysis_checkpoint.txt")

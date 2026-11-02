@@ -132,17 +132,16 @@ export async function downloadFile(source, destination, statusMessage) {
 
 // create directory if not found
 export function checkDir(directory) {
-    try {
-        if (!fs.existsSync(directory)) {
-            console.log("Creating ", directory);
-            fs.mkdirSync(directory, { recursive: true });
-        }
-        else 
-            console.log("Directory: ", directory, " exitst");
-    } catch (error) {
-        throw(error);
+  try {
+    if (!fs.existsSync(directory)) {
+      console.log("Creating ", directory);
+      fs.mkdirSync(directory, { recursive: true });
     }
-  
+    else
+      console.log("Directory: ", directory, " exitst");
+  } catch (error) {
+    throw (error);
+  }
 }
 
 // check host machine architecture
@@ -152,57 +151,57 @@ export function isArchitectureARM() {
 }
 
 export async function makeGenusDictionary(filePath) {
-    try {
-        const data = await fs.promises.readFile(filePath, 'utf8');
-        const dict = {};
-    
-        const lines = data.split('\n');
-    
-        for (let i = 1; i < lines.length; i++) {
-          const line = lines[i].trim();
-          if (!line) continue;
-    
-          const parts = line.split(/\,+/);
-          if (parts.length >= 2) {
-            const [rawGenus, rawSpecies] = parts[1].split('_');
-            const genus = rawGenus.replace(/"/g, '');
-            if (rawSpecies) {
-              const species = rawSpecies.replace(/"/g, '');
-              if (genus && species) {
-                if (!dict[genus]) {
-                  dict[genus] = new Set();
-                }
-                dict[genus].add(species);
-    
-                if (!dict[genus].has(null)) {
-                  dict[genus].add(null);
-                }
-              }
-            } else {
-              if (!dict[genus]) {
-                dict[genus] = new Set();
-              }
-              dict[genus].add("");
+  try {
+    const data = await fs.promises.readFile(filePath, 'utf8');
+    const dict = {};
+
+    const lines = data.split('\n');
+
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+
+      const parts = line.split(/\,+/);
+      if (parts.length >= 2) {
+        const [rawGenus, rawSpecies] = parts[1].split('_');
+        const genus = rawGenus.replace(/"/g, '');
+        if (rawSpecies) {
+          const species = rawSpecies.replace(/"/g, '');
+          if (genus && species) {
+            if (!dict[genus]) {
+              dict[genus] = new Set();
+            }
+            dict[genus].add(species);
+
+            if (!dict[genus].has(null)) {
+              dict[genus].add(null);
             }
           }
+        } else {
+          if (!dict[genus]) {
+            dict[genus] = new Set();
+          }
+          dict[genus].add("");
         }
-    
-        const genusSpeciesMap = {};
-        for (const genus in dict) {
-          genusSpeciesMap[genus] = Array.from(dict[genus]);
-        }
-        return genusSpeciesMap;
-      } catch (err) {
-        console.error('Error reading file:', err);
-        throw err;
       }
+    }
+
+    const genusSpeciesMap = {};
+    for (const genus in dict) {
+      genusSpeciesMap[genus] = Array.from(dict[genus]);
+    }
+    return genusSpeciesMap;
+  } catch (err) {
+    console.error('Error reading file:', err);
+    throw err;
+  }
 }
 
 export function saveUserInput(configFile, outputExists) {
   const originalConfig = yaml.load(fs.readFileSync(configFile, 'utf8'));
   userVariables.originalConfigInput = originalConfig.INPUT;
   userVariables.userAnalysisName = originalConfig.NAME;
-  console.log("Analysis name: ",  userVariables.userAnalysisName);
+  console.log("Analysis name: ", userVariables.userAnalysisName);
   console.log("Input folder: ", userVariables.originalConfigInput);
   console.log("Genomad analysis: ", originalConfig.GENOMAD_ANALYSIS);
   if (outputExists) {
@@ -247,7 +246,7 @@ export function outputFolderExists(files, outputFolder) {
 }
 
 function removeOutputFolder(outputFolder) {
-  fs.rm(outputFolder, {recursive: true, force: true}, err => {
+  fs.rm(outputFolder, { recursive: true, force: true }, err => {
     console.log("Removing output folder...");
     if (err) {
       throw ("Error while removing output folder: ", err);

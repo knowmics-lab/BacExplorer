@@ -1,11 +1,9 @@
 node_modules
 out
 release
-snakemake
-gui/snakemake/tools/TrimGalore-master
-appunti
+resources
+error.log
 .snakemake
 .webpack
 .idea
 .DS_Store
-snakemake/resources

@@ -36,9 +36,17 @@ RUN echo "Creating conda environment..." && \
     conda config --add channels conda-forge && \
     conda config --set channel_priority flexible
 
-COPY bacEnv.yml /tmp/
+COPY bacEnv.yml /tmp/ && \
+    integronEnv.yml /tmp/ && \
+    baktaEnv.yml /tmp/ && \
+    antismashEnv.yml /tmp/ && \
+    mobsuiteEnv.yml /tmp/
 
-RUN mamba env create -f /tmp/bacEnv.yml -y
+RUN mamba env create -f /tmp/bacEnv.yml -y && \
+    mamba env create -f /tmp/integronEnv.yml -y && \
+    mamba env create -f /tmp/baktaEnv.yml -y && \
+    mamba env create -f /tmp/antismashEnv.yml -y && \
+    mamba env create -f /tmp/mobsuiteEnv.yml -y
 
 # Activate conda env
 SHELL ["conda", "run", "-n", "bacEnv", "/bin/bash", "-c"]
@@ -47,20 +55,20 @@ SHELL ["conda", "run", "-n", "bacEnv", "/bin/bash", "-c"]
 # Install AMRFinderPlus 4.2.5 inside bacEnv
 # --------------------------------------------------------
 
-RUN mamba install -c conda-forge patchelf file -y && \
-    mkdir -p /project/tools/amrfinder && \
-    cd /project/tools/amrfinder && \
-    wget https://github.com/ncbi/amr/releases/download/amrfinder_v4.2.5/amrfinder_binaries_v4.2.5.tar.gz && \
-    tar -xzf amrfinder_binaries_v4.2.5.tar.gz && \
-    rm amrfinder_binaries_v4.2.5.tar.gz && \
-    report() { echo "$1"; }; \
-    for bin in $(find . -type f -executable); do \
-        file "$bin" | grep -q "ELF" && patchelf --set-rpath "$CONDA_PREFIX/lib" "$bin" || report "Failed patchelf --set-rpath \"$CONDA_PREFIX/lib\" \"$bin\""; \
-    done && \
-    ./amrfinder --force_update
+# RUN mamba install -c conda-forge patchelf file -y && \
+#     mkdir -p /project/tools/amrfinder && \
+#     cd /project/tools/amrfinder && \
+#     wget https://github.com/ncbi/amr/releases/download/amrfinder_v4.2.5/amrfinder_binaries_v4.2.5.tar.gz && \
+#     tar -xzf amrfinder_binaries_v4.2.5.tar.gz && \
+#     rm amrfinder_binaries_v4.2.5.tar.gz && \
+#     report() { echo "$1"; }; \
+#     for bin in $(find . -type f -executable); do \
+#         file "$bin" | grep -q "ELF" && patchelf --set-rpath "$CONDA_PREFIX/lib" "$bin" || report "Failed patchelf --set-rpath \"$CONDA_PREFIX/lib\" \"$bin\""; \
+#     done && \
+#     ./amrfinder --force_update
 
-# 4) Update AMRfinder database
-RUN /project/tools/amrfinder/amrfinder --force_update
+# # 4) Update AMRfinder database
+# RUN /project/tools/amrfinder/amrfinder --force_update
 
 ENV PATH="/project/tools/amrfinder:$PATH"
 
@@ -104,6 +112,20 @@ RUN echo "Installing packages..." && \
     quit(save='no')"
 
 WORKDIR /project
+
+SHELL ["conda", "run", "-n", "baktaEnv", "/bin/bash", "-c"]
+
+RUN macsydata install --user TXSScan && \
+    macsydata install --user CasFinder && \
+    macsydata install --user CONJscan
+
+SHELL ["conda", "run", "-n", "mobsuiteEnv", "/bin/bash", "-c"]
+
+RUN PYTHONNOUSERSITE=1 /opt/conda/envs/mobsuiteEnv/bin/pip install --no-deps --no-user mob-suite==3.1.9
+    PYTHONNOUSERSITE=1 python -c "import mob_suite, ete3; print(mob_suite.__file__, ete3.__file__)"
+
+WORKDIR /project
+
 
 # to build Docker image, run the following in your terminal:
 # docker build -t bacexplorer .

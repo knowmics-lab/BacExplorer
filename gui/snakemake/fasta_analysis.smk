@@ -1,6 +1,9 @@
 import json
 
 print(f"FASTA ANALYSIS STARTED")
+print(f"SAMPLES TO PROCESS: {SAMPLES}")
+print(f"SAMPLES PATH: {FASTA_SAMPLES_DIR}")
+print(f"PATH_OUTPUT: {PATH_OUTPUT}")
 
 # change FASTA_SAMPLES_DIR for correct evaluation in quality_assessment
 if type == "fastq":
@@ -9,19 +12,17 @@ if type == "fastq":
 
 GENOMAD_ANALYSIS = config["GENOMAD_ANALYSIS"]
 
-
 rule all:
     input:
-        expand(os.path.join(PATH_OUTPUT, "quality_assessment/quast_results/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "kraken2/{sample}_kraken2.txt"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "kraken2/{sample}_result.txt"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "mlst/{sample}.txt"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "mlst/{sample}_result.txt"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "amrfinder/{sample}_amrfinder.txt"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "quality_assessment/quast_results/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "kraken2/{sample}_kraken2.txt"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "kraken2/{sample}_result.txt"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "mlst/{sample}.txt"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "mlst/{sample}_result.txt"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "mobsuite/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "amrfinder/{sample}_amrfinder.txt"), sample=SAMPLES),
         # expand(os.path.join(PATH_OUTPUT, "virulencefinder/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "integronfinder/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "antismash/{sample}"), sample=SAMPLES),
-        expand(os.path.join(PATH_OUTPUT, "bakta/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "integronfinder/{sample}"), sample=SAMPLES),
         # expand(os.path.join(PATH_OUTPUT, "meningotype/{sample}"), sample=SAMPLES),
         # expand(os.path.join(PATH_OUTPUT, "fimtyper/{sample}"), sample=SAMPLES),
         # expand(os.path.join(PATH_OUTPUT, "ngmaster/{sample}"), sample=SAMPLES),
@@ -38,6 +39,8 @@ rule all:
         # expand(os.path.join(PATH_OUTPUT, "legsta/{sample}"), sample=SAMPLES),
         # expand(os.path.join(PATH_OUTPUT, "pbptyper/{sample}"), sample=SAMPLES),
         # expand(os.path.join(PATH_OUTPUT, "hicap/{sample}"), sample=SAMPLES),
+        # # expand(os.path.join(PATH_OUTPUT, "antismash/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "bakta/{sample}"), sample=SAMPLES),
         # # expand(os.path.join(PATH_OUTPUT, "snippy/{sample}"), sample=SAMPLES),
         # expand(os.path.join(PATH_OUTPUT, "phylogenetic_tree", "all", "final_phylogenetic_tree.nwk")),
         # expand(os.path.join(PATH_OUTPUT, "phylogenetic_tree", "core"))
@@ -53,8 +56,7 @@ rule all:
         echo "Execution complete\nPostprocessing..."
         PATH_OUTPUT="{PATH_OUTPUT}" python {params.post_processing}
         echo 'Workflow complete'
-        ''')
-          
+        ''')  
 
 rule mlst:
     input:
@@ -211,12 +213,26 @@ rule integronfinder:
     params:
         cpu = 2
     conda:
-        PATH_INTEGRONENV
+        INTEGRONENV_FILE
     shell:
         """
         echo "Integron finder"
         mkdir -p {output.integronfinder}
         integron_finder --local-max --func-annot {input.fasta_input} --outdir {output.integronfinder} --cpu {params.cpu} --mute --pdf
+        """
+
+rule mobsuite:
+    input:
+        fasta_input = os.path.join(FASTA_SAMPLES_DIR, "{sample}.fasta")
+    output:
+        mobsuite = directory(os.path.join(PATH_OUTPUT, "mobsuite/{sample}"))
+    conda:
+        MOBSUITEENV_FILE
+    shell:
+        """
+        echo "Mobsuite"
+        mkdir -p {output.mobsuite}
+        PYTHONNOUSERSITE=1 mob_recon --infile {input.fasta_input} --outdir {output.mobsuite} --sample_id {wildcards.sample}  --database_directory {PATH_MOBSUITE_DB} --num_threads {THREADS_NUMBER} --force
         """
 
 rule antismash:
@@ -225,9 +241,11 @@ rule antismash:
     output:
         antismash = directory(os.path.join(PATH_OUTPUT, "antismash/{sample}"))
     conda:
-        PATH_ANTISMASHENV
+        ANTISMASHENV_FILE
     shell:
         """
+        echo "Antismash"
+        mkdir -p {output.antismash}
         antismash --hmmdetection-strictness strict --taxon bacteria --genefinding-tool prodigal --cb-knownclusters --cb-general --asf --output-dir {output.antismash} {input.fasta_input}
         """
 
@@ -238,6 +256,8 @@ rule AMRfinder:
         fasta_input = os.path.join(FASTA_SAMPLES_DIR, "{sample}.fasta")
     output:
         amr_output = os.path.join(PATH_OUTPUT, "amrfinder/{sample}_amrfinder.txt")
+    conda:
+        BAKTAENV_FILE
     shell:
         """
         echo "AMRfinder plus"
@@ -278,12 +298,12 @@ rule bakta_macsyfinder:
     input:
         fasta_input = os.path.join(FASTA_SAMPLES_DIR, "{sample}.fasta"),
         organism = os.path.join(PATH_OUTPUT, "mlst/{sample}_result.txt"),
-        kraken_report = os.path.join(PATH_OUTPUT, "kraken2/{sample}_result.txt")
+        kraken_report = os.path.join(PATH_OUTPUT, "kraken2/{sample}_result.txt"),
     output:
         bakta_output = directory(os.path.join(PATH_OUTPUT, "bakta/{sample}")),
         macsyfinder_output = directory(os.path.join(PATH_OUTPUT, "macsyfinder/{sample}"))
     conda:
-        PATH_BAKTAENV
+        BAKTAENV_FILE
     shell:
         """
         echo "bakta"
@@ -297,8 +317,8 @@ rule bakta_macsyfinder:
             species=$(sed -n '1s/^[^_]*_//p' {input.kraken_report})
         fi
         if [[ "$kraken_output" == "Check MLST output" ]]; then
-            genus=$(sed -n '1s/_.*//p' {input.parsed})
-            species=$(sed -n '1s/^[^_]*_//p' {input.parsed})
+            genus=$(sed -n '1s/_.*//p' {input.organism})
+            species=$(sed -n '1s/^[^_]*_//p' {input.organism})
         fi
 
         mkdir -p {output.bakta_output}
@@ -309,9 +329,9 @@ rule bakta_macsyfinder:
         mkdir -p {output.macsyfinder_output}/TXSScan
         mkdir -p {output.macsyfinder_output}/CasFinder
         mkdir -p {output.macsyfinder_output}/CONJscan
-        macsyfinder --sequence-db {input.proteins} -o {output.macsyfinder_output}/TXSScan --models TXSScan all -w {THREADS_NUMBER} --db-type unordered --force
-        macsyfinder --sequence-db {input.proteins} -o {output.macsyfinder_output}/CasFinder --models CasFinder all -w {THREADS_NUMBER} --db-type unordered --force
-        macsyfinder --sequence-db {input.proteins} -o {output.macsyfinder_output}/CONJscan --models CONJscan all -w {THREADS_NUMBER} --db-type unordered --force
+        macsyfinder --sequence-db {output.bakta_output}/{wildcards.sample}.faa -o {output.macsyfinder_output}/TXSScan --models TXSScan all -w {THREADS_NUMBER} --db-type unordered --force
+        macsyfinder --sequence-db {output.bakta_output}/{wildcards.sample}.faa -o {output.macsyfinder_output}/CasFinder --models CasFinder all -w {THREADS_NUMBER} --db-type unordered --force
+        macsyfinder --sequence-db {output.bakta_output}/{wildcards.sample}.faa -o {output.macsyfinder_output}/CONJscan --models CONJscan all -w {THREADS_NUMBER} --db-type unordered --force
         """
 
 rule check_genus:
