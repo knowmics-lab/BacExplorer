@@ -31,6 +31,7 @@ def genomad(SAMPLES, PATH_OUTPUT, PATH_PROJECT, PATH_GENOMAD):
 
 PATH_OUTPUT = os.environ["PATH_OUTPUT"]
 PATH_PROJECT = os.environ["PATH_PROJECT"]
+PATH_PROJECT = os.path.join(PATH_PROJECT, "fasta_samples")
 PATH_GENOMAD = os.environ["PATH_GENOMAD"]
 SAMPLES = json.loads(os.environ["SAMPLES"])
 

@@ -14,34 +14,34 @@ GENOMAD_ANALYSIS = config["GENOMAD_ANALYSIS"]
 
 rule all:
     input:
-        # expand(os.path.join(PATH_OUTPUT, "quality_assessment/quast_results/{sample}"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "kraken2/{sample}_kraken2.txt"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "kraken2/{sample}_result.txt"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "mlst/{sample}.txt"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "mlst/{sample}_result.txt"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "quality_assessment/quast_results/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "kraken2/{sample}_kraken2.txt"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "kraken2/{sample}_result.txt"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "mlst/{sample}.txt"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "mlst/{sample}_result.txt"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "mobsuite/{sample}"), sample=SAMPLES),
         expand(os.path.join(PATH_OUTPUT, "amrfinder/{sample}_amrfinder.txt"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "virulencefinder/{sample}"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "integronfinder/{sample}"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "meningotype/{sample}"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "fimtyper/{sample}"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "ngmaster/{sample}"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "shigeifinder/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "virulencefinder/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "integronfinder/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "meningotype/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "fimtyper/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "ngmaster/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "shigeifinder/{sample}"), sample=SAMPLES),
         # expand(os.path.join(PATH_OUTPUT, "pasty/{sample}"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "ClermonTyping/{sample}"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "abricate/{sample}"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "kleborate/{sample}"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "abricate_ecoli/{sample}"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "ectyper/{sample}"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "shigatyper/{sample}"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "emmtyper/{sample}"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "sccmec/{sample}"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "legsta/{sample}"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "pbptyper/{sample}"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "hicap/{sample}"), sample=SAMPLES),
-        # # expand(os.path.join(PATH_OUTPUT, "antismash/{sample}"), sample=SAMPLES),
-        # expand(os.path.join(PATH_OUTPUT, "bakta/{sample}"), sample=SAMPLES),
-        # # expand(os.path.join(PATH_OUTPUT, "snippy/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "ClermonTyping/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "abricate/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "kleborate/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "abricate_ecoli/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "ectyper/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "shigatyper/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "emmtyper/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "sccmec/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "legsta/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "pbptyper/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "hicap/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "antismash/{sample}"), sample=SAMPLES),
+        expand(os.path.join(PATH_OUTPUT, "bakta/{sample}"), sample=SAMPLES),
+        # expand(os.path.join(PATH_OUTPUT, "snippy/{sample}"), sample=SAMPLES),
         # expand(os.path.join(PATH_OUTPUT, "phylogenetic_tree", "all", "final_phylogenetic_tree.nwk")),
         # expand(os.path.join(PATH_OUTPUT, "phylogenetic_tree", "core"))
     params:
@@ -50,7 +50,7 @@ rule all:
     run:
         if GENOMAD_ANALYSIS == "yes":
             shell(f'''
-            PATH_OUTPUT="{PATH_OUTPUT}" PATH_GENOMAD="{PATH_GENOMAD}" FASTA_SAMPLES_DIR="{FASTA_SAMPLES_DIR}" SAMPLES='{json.dumps(SAMPLES)}' python {params.genomad}
+            PATH_PROJECT="{PATH_PROJECT}" PATH_OUTPUT="{PATH_OUTPUT}" PATH_GENOMAD="{PATH_GENOMAD}" FASTA_SAMPLES_DIR="{FASTA_SAMPLES_DIR}" SAMPLES='{json.dumps(SAMPLES)}' python {params.genomad}
             ''')
         shell(f'''
         echo "Execution complete\nPostprocessing..."
@@ -286,11 +286,11 @@ rule AMRfinder:
         [[ "$organism" == "Streptococcus_agalactiae" ]] || [[ "$organism" == "Streptococcus_pneumoniae" ]] || 
         [[ "$organism" == "Streptococcus_pyogenes" ]] || [[ "$organism" == "Vibrio_cholerae" ]] || 
         [[ "$organism" == "Vibrio_vulfinicus" ]] || [[ "$organism" == "Vibrio_parahaemolyticus" ]]; then
-            amrfinder -n {input.fasta_input} -O $organism --plus > {output.amr_output}
+            amrfinder -d {PATH_AMRFINDER_DB} -n {input.fasta_input} -O $organism --plus > {output.amr_output}
         elif [[ "$genus" == "Escherichia" ]] || [[ "$genus" == "Campylobacter" ]] || [[ "$genus" == "Salmonella" ]]; then
-            amrfinder -n {input.fasta_input} -O $genus --plus > {output.amr_output}
+            amrfinder -d {PATH_AMRFINDER_DB} -n {input.fasta_input} -O $genus --plus > {output.amr_output}
         else
-            amrfinder -n {input.fasta_input} --plus > {output.amr_output}
+            amrfinder -d {PATH_AMRFINDER_DB} -n {input.fasta_input} --plus > {output.amr_output}
         fi
         """
 
@@ -421,7 +421,7 @@ rule check_genus:
         fi
         """
 
-
+# rule without pasty
 rule check_genus_species:
     input:
         fasta_input = os.path.join(FASTA_SAMPLES_DIR, "{sample}.fasta"),
@@ -438,7 +438,6 @@ rule check_genus_species:
         hicap = directory(os.path.join(PATH_OUTPUT, "hicap/{sample}")),
         ngmaster = directory(os.path.join(PATH_OUTPUT, "ngmaster/{sample}")),
         meningotype = directory(os.path.join(PATH_OUTPUT, "meningotype/{sample}")),
-        pasty = directory(os.path.join(PATH_OUTPUT, "pasty/{sample}"))
     shell:
         """
         kraken_output=$(sed -n '1p' {input.kraken_report})
@@ -547,12 +546,139 @@ rule check_genus_species:
             touch {output.ngmaster}/skipped.marker
             touch {output.meningotype}/skipped.marker
         fi
-    
-        mkdir -p {output.pasty}
-        if [[ "$genus" == "Pseudomonas" && "$species" == "aeruginosa" ]]; then
-            echo "Performing pasty"
-            camlhmp-blast-regions --input {input.fasta_input} --outdir {output.pasty} --prefix {wildcards.sample} -y {PATH_BACENV}/share/pasty/pa-osa.yaml -t {PATH_BACENV}/share/pasty/pa-osa.fasta
-        else
-            touch {output.pasty}/skipped.marker
-        fi
         """
+
+# rule check_genus_species:
+#     input:
+#         fasta_input = os.path.join(FASTA_SAMPLES_DIR, "{sample}.fasta"),
+#         parsed = os.path.join(PATH_OUTPUT, "mlst/{sample}_result.txt"),
+#         kraken_report = os.path.join(PATH_OUTPUT, "kraken2/{sample}_result.txt")
+#     output:
+#         kleborate = directory(os.path.join(PATH_OUTPUT, "kleborate/{sample}")),
+#         abricate = directory(os.path.join(PATH_OUTPUT, "abricate_ecoli/{sample}")),
+#         ectyper = directory(os.path.join(PATH_OUTPUT, "ectyper/{sample}")),
+#         emmtyper = directory(os.path.join(PATH_OUTPUT, "emmtyper/{sample}")),
+#         legsta = directory(os.path.join(PATH_OUTPUT, "legsta/{sample}")),
+#         lissero = directory(os.path.join(PATH_OUTPUT, "lissero/{sample}")),
+#         pbptyper = directory(os.path.join(PATH_OUTPUT, "pbptyper/{sample}")),
+#         hicap = directory(os.path.join(PATH_OUTPUT, "hicap/{sample}")),
+#         ngmaster = directory(os.path.join(PATH_OUTPUT, "ngmaster/{sample}")),
+#         meningotype = directory(os.path.join(PATH_OUTPUT, "meningotype/{sample}")),
+#         pasty = directory(os.path.join(PATH_OUTPUT, "pasty/{sample}"))
+#     shell:
+#         """
+#         kraken_output=$(sed -n '1p' {input.kraken_report})
+        
+#         genus=""
+#         species=""
+
+#         if [[ "$kraken_output" != "Check MLST output" ]]; then
+#             genus=$(sed -n '1s/_.*//p' {input.kraken_report})
+#             species=$(sed -n '1s/^[^_]*_//p' {input.kraken_report})
+#         fi
+#         if [[ "$kraken_output" == "Check MLST output" ]]; then
+#             genus=$(sed -n '1s/_.*//p' {input.parsed})
+#             species=$(sed -n '1s/^[^_]*_//p' {input.parsed})
+#         fi
+
+#         echo "DEBUG CHECK_GENUS_SPECIES: genus=$genus, species=$species"
+
+#         mkdir -p {output.kleborate}
+#         if [[ "$genus" == "Klebsiella" ]]; then
+#             echo "Performing Kleborate"
+#             if [[ "$species" == "oxytoca" ]]; then
+#                 kleborate -o {output.kleborate} -a {input.fasta_input} -p kosc
+#             elif [[ "$species" == "" ]] || [[ "$species" == "pneumoniae" ]]; then
+#                 kleborate -o {output.kleborate} -a {input.fasta_input} -p kpsc
+#             fi
+#         else
+#             touch {output.kleborate}/skipped.marker
+#         fi
+
+#         mkdir -p {output.abricate}
+#         mkdir -p {output.ectyper}
+        
+#         if [[ "$genus" == "Escherichia" && "$species" == "coli" ]]; then
+            
+#             echo "Performing Abricate"
+#             abricate {input.fasta_input} --db ecoli_vf > {output.abricate}/{wildcards.sample}_ecoli_vf.txt
+#             abricate {input.fasta_input} --db ecoh > {output.abricate}/{wildcards.sample}_ecoh.txt
+            
+#             echo "Performing Ectyper"
+#             ectyper -i {input.fasta_input} -o {output.ectyper}
+#             mv {output.ectyper}/output.tsv {output.ectyper}/{wildcards.sample}.tsv
+
+#         else
+#             touch {output.ectyper}/skipped.marker
+#             touch {output.abricate}/skipped.marker
+#         fi
+
+#         mkdir -p {output.emmtyper}
+#         mkdir -p {output.pbptyper}
+#         if [[ "$genus" == "Streptococcus" ]]; then
+#             if [[ "$species" == "pyogenes" ]]; then
+#                 echo "Performing Emmtyper"
+#                 emmtyper {input.fasta_input} --output {output.emmtyper}/{wildcards.sample}.txt
+#             fi
+#             if [[ "$species" == "pneumoniae" ]]; then
+#                 echo "Performing pbptyper"
+#                 pbptyper --input {input.fasta_input} --prefix {wildcards.sample} --outdir {output.pbptyper}  
+#             fi
+#         else
+#             touch {output.emmtyper}/skipped.marker
+#             touch {output.pbptyper}/skipped.marker
+#         fi
+
+#         mkdir {output.legsta}
+#         if [[ "$genus" == "Legionella" && "$species" == "pneumophila" ]]; then
+#             echo "Performing Legsta"
+#             legsta {input.fasta_input} > {output.legsta}/{wildcards.sample}.tsv
+#         else
+#             touch {output.legsta}/skipped.marker
+#         fi
+
+#         mkdir -p {output.lissero}
+#         if [[ "$genus" == "Listeria" && "$species" == "monocytogenes" ]]; then
+#             echo "Performing LisSero"
+#             lissero {input.fasta_input} > {output.lissero}/{wildcards.sample}.txt
+#         else
+#             touch {output.lissero}/skipped.marker
+#         fi
+
+#         mkdir -p {output.hicap}
+#         if [[ "$genus" == "Haemophilus" && "$species" == "influenzae" ]]; then
+#             echo "Performing Hicap"
+#             {PATH_TOOLS}/hicap/hicap-runner.py --query_fp {input.fasta_input} --output_dir {output.hicap}
+#         else
+#             touch {output.hicap}/skipped.marker
+#         fi
+
+#         mkdir -p {output.ngmaster}
+#         mkdir -p {output.meningotype}
+        
+#         if [[ "$genus" == "Neisseria" ]]; then
+#             if [[ "$species" ==  "" || "$species" == "gonorrhoeae" ]]; then
+#                 echo "Performing ngmaster"
+#                 ngmaster {input.fasta_input} > {output.ngmaster}/{wildcards.sample}.txt
+#             else
+#                 touch {output.ngmaster}/skipped.marker
+#             fi
+#             if [[ "$species" ==  "" || "$species" == "meningitidis" ]]; then
+#                 echo "Performing meningotype"
+#                 meningotype --all {input.fasta_input} > {output.meningotype}/{wildcards.sample}.txt
+#             else
+#                 touch {output.meningotype}/skipped.marker
+#             fi
+#         else
+#             touch {output.ngmaster}/skipped.marker
+#             touch {output.meningotype}/skipped.marker
+#         fi
+    
+#         mkdir -p {output.pasty}
+#         if [[ "$genus" == "Pseudomonas" && "$species" == "aeruginosa" ]]; then
+#             echo "Performing pasty"
+#             camlhmp-blast-regions --input {input.fasta_input} --outdir {output.pasty} --prefix {wildcards.sample} -y {PATH_BACENV}/share/pasty/pa-osa.yaml -t {PATH_BACENV}/share/pasty/pa-osa.fasta
+#         else
+#             touch {output.pasty}/skipped.marker
+#         fi
+#         """
