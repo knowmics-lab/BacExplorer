@@ -138,7 +138,7 @@ export function checkDir(directory) {
       fs.mkdirSync(directory, { recursive: true });
     }
     else
-      console.log("Directory: ", directory, " exitst");
+      console.log("Directory: ", directory, " exists");
   } catch (error) {
     throw (error);
   }

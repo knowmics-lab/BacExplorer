@@ -220,11 +220,11 @@ app.on('before-quit', async (event) => {
     if (mainWindow && !mainWindow.isDestroyed() && mainWindow.webContents) {
       mainWindow.webContents.send('app-closing');
       ipcMain.once('localStorage-cleaned', async () => {
-      console.log("Renderer confirmed localStorage reset");
-      quitting = true;
-      await stopContainer(containerVariables.containerName);
-      app.quit();
-});
+        console.log("Renderer confirmed localStorage reset");
+        quitting = true;
+        await stopContainer(containerVariables.containerName);
+        app.quit();
+      });
     } else {
       quitting = true;
       await stopContainer(containerVariables.containerName);
@@ -300,8 +300,8 @@ ipcMain.handle('docker-running', async function () {
 ipcMain.handle('create-container', async (event) => {
   try {
     console.log(
-      `Creating container with parameters: \nIMAGE NAME: ${containerVariables.imageName}\tFOLDER TO MOUNT: ${appVariables.backendPath}\tCONTAINER NAME: ${containerVariables.containerName}`);
-    const result = await setupContainer(containerVariables.imageName, appVariables.backendPath, containerVariables.containerName);
+      `Creating container with parameters: \nIMAGE NAME: ${containerVariables.imageName}\tFOLDER TO MOUNT: ${appVariables.snakemakePath}\tCONTAINER NAME: ${containerVariables.containerName}`);
+    const result = await setupContainer(containerVariables.imageName, appVariables.snakemakePath, containerVariables.containerName);
     console.log('Result:', result);
     return result;
   } catch (error) {
@@ -327,7 +327,7 @@ ipcMain.handle('check-container', async (event) => {
 
 // 1) dinamically handle mapping of genus and species for the Select in frontend
 ipcMain.handle('get-genus-species', async () => {
-  const filePath = path.join(appVariables.backendPath, 'resources', 'Lista_mlst.csv');
+  const filePath = path.join(appVariables.snakemakePath, 'resources', 'Lista_mlst.csv');
   try {
     return makeGenusDictionary(filePath);
   } catch (error) {
@@ -358,11 +358,11 @@ ipcMain.handle('validate-folder', async (event, inputFolder, type) => {
       response.message = message;
       return response;
     }
-    
+
     // check if any file in folder does not match the input type
     let invalidFiles = [];
     invalidFiles = validateFormat(files, invalidFiles, type);
-    
+
     // check if output folder already exists
     outputFolderExists(invalidFiles, "output");
     if (flags.outputExists) {
@@ -393,7 +393,7 @@ ipcMain.handle('validate-folder', async (event, inputFolder, type) => {
 
 // 4) config file saving
 ipcMain.handle('save-file', async (event, yamlData) => {
-  // const configFile = path.join(appVariables.backendPath, 'config.yaml');
+  // const configFile = path.join(appVariables.snakemakePath, 'config.yaml');
   try {
     fs.writeFileSync(appVariables.configFile, yamlData, 'utf8');
     console.log('File saved as:', appVariables.configFile);
@@ -412,7 +412,7 @@ ipcMain.handle('save-file', async (event, yamlData) => {
 // FUNCTIONS TO RUN SNAKEMAKE ANALYSIS
 ipcMain.handle('run-snakemake', async (event, userInput) => {
   // save in folder userData
- //  const configFile = path.join(appVariables.backendPath, 'config.yaml');
+  //  const configFile = path.join(appVariables.snakemakePath, 'config.yaml');
 
   if (!fs.existsSync(appVariables.configFile)) {
     console.error(`Config file not found in: ${appVariables.configFile}`);
@@ -459,7 +459,7 @@ ipcMain.on('launch-report', async (event) => {
   await produceReport(containerVariables.containerName,
     data => event.reply('report-output', data),
     data => event.reply('report-error', data),
-    appVariables.backendPath,
+    appVariables.snakemakePath,
   );
 })
 

@@ -5,6 +5,7 @@ import os from 'os';
 import fs from 'fs-extra';
 import { emitProgress, checkDir, isArchitectureARM, demuxStream, downloadFile } from './general_functions';
 import { appVariables } from './global_variables';
+import { containerVariables } from './global_variables';
 
 const yaml = require('js-yaml');
 const Docker = require('dockerode');
@@ -91,12 +92,12 @@ async function containerExists(containerName) {
 // TO DO: check if the downloaded image is the latest version. Otherwise produce a message to redirect to setup container
 
 // function for first setup
-export async function setupContainer(imageName, backendPath, containerName) {
+export async function setupContainer(imageName, snakemakePath, containerName) {
   try {
     await pullImage(imageName);
-    await downloadDatabases(backendPath);
-    await fetchTrimGalore(backendPath);
-    await createContainer(imageName, containerName, backendPath);
+    await downloadDatabases(snakemakePath);
+    await fetchTrimGalore(snakemakePath);
+    await createContainer(imageName, containerName, snakemakePath);
     await startContainer(containerName);
     await updateContainer(containerName);
 
@@ -160,9 +161,9 @@ async function pullImage(imageName) {
 }
 
 // download databases into the local machine
-async function downloadDatabases(backendPath) {
+async function downloadDatabases(snakemakePath) {
   emitProgress('Step 2: Preparing to download databases...', 0);
-  const resourcesDir = path.join(backendPath, 'resources');
+  const resourcesDir = path.join(snakemakePath, 'resources');
   try {
     if (!fs.existsSync(resourcesDir)) {
       fs.mkdirSync(resourcesDir, { recursive: true });
@@ -376,24 +377,25 @@ async function createContainer(imageName, containerName, snakemakePath) {
   emitProgress(`Step 3: Creating container ${containerName}...`, 0);
   console.log("Mounting host snakemake path: ", snakemakePath);
   // mount snakemake folder (host machine) in container
+
+  //tools: TrimGalore
   const toolsPath = path.join(snakemakePath, "tools");
-  const containerToolsPath = "/project/snakemake/tools";
   const resourcesPath = path.join(snakemakePath, "resources");
-  const containerResPath = "/project/snakemake/resources";
 
   // mount dbs (container conda env) in host machine
   const amrfinderHostPath = path.join(snakemakePath, "resources", "amrfinder");
   //OLD DIRECTORY FOR amrfinder db:
   //const amrfinderVolume = '/opt/conda/envs/bacEnv/share/amrfinderplus';
 
-  const amrfinderVolume = '/project/tools/amrfinder/data/latest';
   // volume for abricate and pubmlst databases
   const dbsHostPath = path.join(snakemakePath, "resources", "dbs");
-  const dbsVolume = '/opt/conda/envs/bacEnv/db';
 
   try {
     console.log("Checking directory...");
+    checkDir(toolsPath);
+    checkDir(resourcesPath);
     checkDir(amrfinderHostPath);
+    checkDir(dbsHostPath);
 
     const containerCheck = await containerExists(containerName);
 
@@ -405,17 +407,17 @@ async function createContainer(imageName, containerName, snakemakePath) {
         Cmd: ['/bin/bash', '-c', `while true; do sleep 30; done`],
 
         Volumes: {
-          [`${containerToolsPath}`]: {},
-          [`${amrfinderVolume}`]: {},
-          [`${containerResPath}`]: {},
-          [`${dbsVolume}`]: {},
+          [`${containerVariables.containerTools}`]: {},
+          [`${containerVariables.amrfinderVolume}`]: {},
+          [`${containerVariables.containerResources}`]: {},
+          [`${containerVariables.dbsVolume}`]: {},
         },
         HostConfig: {
           Binds: [
-            `${toolsPath}:${containerToolsPath}`,
-            `${amrfinderHostPath}:${amrfinderVolume}`,
-            `${resourcesPath}:${containerResPath}`,
-            `${dbsHostPath}:${dbsVolume}`,
+            `${toolsPath}:${containerVariables.containerTools}`,
+            `${amrfinderHostPath}:${containerVariables.amrfinderVolume}`,
+            `${resourcesPath}:${containerVariables.containerResources}`,
+            `${dbsHostPath}:${containerVariables.dbsVolume}`,
           ],
           RestartPolicy: { Name: 'no' },
         },
@@ -456,38 +458,36 @@ async function startContainer(containerName) {
 async function updateContainer(containerName) {
   emitProgress(`Step 5: Installing databases...`, 0);
   console.log("Installing amrfinder, abricate, pubmlst databases...");
-  const virulencefinderDbDir = "/project/snakemake/resources/virulencefinder_db";
-  const baktaDbDir = "/project/snakemake/resources/bakta_db/db-light";
+  const virulencefinderDbDir = path.join(containerVariables.containerResources, "virulencefinder_db");
+  const baktaDbDir = path.join(containerVariables.containerResources, 'bakta_db');
+  const baktaDbLightDir = path.join(containerVariables.containerResources, 'bakta_db', 'db-light');
+  const pubmlstDbDir = path.join(containerVariables.dbsVolume, 'pubmlst_db');
+  const mobsuiteDbDir = path.join(containerVariables.containerResources, 'mobsuite_db', 'data');
 
   const container = docker.getContainer(containerName);
   const exec = await container.exec({
+    // elimina il commento dopo aver testato tutto
     Cmd: ['bash', '-c', `. /opt/conda/etc/profile.d/conda.sh &&
       conda activate bacEnv &&
-      cd ${virulencefinderDbDir} && 
+      cd ${virulencefinderDbDir} &&
       python ${virulencefinderDbDir}/INSTALL.py &&
       abricate-get_db --db card --force &&
-      abricate-get_db --db argannot --force &&
       abricate-get_db --db resfinder --force &&
       abricate-get_db --db ecoh --force &&
-      abricate-get_db --db vfdb --force &&
       abricate-get_db --db plasmidfinder --force &&
       abricate-get_db --db ecoli_vf --force &&
-      pubmlst_path="/opt/conda/envs/bacEnv/db/pubmlst" &&
-      mlst-download_pub_mlst -d $pubmlst_path &&
+      mlst-download_pub_mlst -d ${pubmlstDbDir} &&
       mlst-make_blast_db &&
       conda activate baktaEnv &&
-      bakta_db download --output ${baktaDbDir} --type light
-      bakta_db update --db ${baktaDbDir}
-      amrfinder --force_update &&
       macsydata install --user TXSScan &&
       macsydata install --user CasFinder &&
       macsydata install --user CONJscan &&
       conda activate mobsuiteEnv &&
-      makeblastdb -in ncbi_plasmid_full_seqs.fas -dbtype nucl &&
-      makeblastdb -in repetitive.dna.fas -dbtype nucl &&
-      mash sketch -i ncbi_plasmid_full_seqs.fas -o ncbi_plasmid_full_seqs.fas &&
+      makeblastdb -in ${mobsuiteDbDir}/ncbi_plasmid_full_seqs.fas -dbtype nucl &&
+      makeblastdb -in ${mobsuiteDbDir}/repetitive.dna.fas -dbtype nucl &&
+      mash sketch -i ${mobsuiteDbDir}/ncbi_plasmid_full_seqs.fas -o ${mobsuiteDbDir}/ncbi_plasmid_full_seqs.fas &&
       conda activate antismashEnv &&
-      dowload-antismash-databases
+      download-antismash-databases
     `],
     AttachStdout: true,
     AttachStderr: true,
@@ -495,6 +495,7 @@ async function updateContainer(containerName) {
   });
   const stream = await exec.start({ hijack: true, stdin: true });
   let progress = 0;
+
   await demuxStream(
     stream,
     (data) => {
@@ -512,20 +513,22 @@ async function updateContainer(containerName) {
       emitProgress(data, progress);
     },
     () => {
-      (async () => {
-        const d = await exec.inspect();
-        const code = (d) ? d.ExitCode : null;
-        console.log(`Process exited with code: ${code}`);
-        if (code !== 0) {
-          throw new Error(`Process exited with code: ${code}`);
-        }
-      })().catch(console.error);
+      console.log("Stream finished.");
     },
     async () => {
       const d = await exec.inspect();
       return !!(d && d.Running);
     }
   );
+
+  const inspection = await exec.inspect();
+  const exitCode = inspection ? inspection.ExitCode : null;
+  console.log(`Process exited with code: ${exitCode}`);
+
+  if (exitCode !== 0) {
+    throw new Error(`Process exited with code: ${exitCode}. Databases installation failed.`);
+  }
+
   emitProgress(`Step 5: Installing databases...`, 100);
   console.log("Amrfinder, abricate, pubmlst databases installed and upgraded");
   return;
