@@ -36,11 +36,7 @@ RUN echo "Creating conda environment..." && \
     conda config --add channels conda-forge && \
     conda config --set channel_priority flexible
 
-COPY bacEnv.yml /tmp/ && \
-    integronEnv.yml /tmp/ && \
-    baktaEnv.yml /tmp/ && \
-    antismashEnv.yml /tmp/ && \
-    mobsuiteEnv.yml /tmp/
+COPY bacEnv.yml integronEnv.yml baktaEnv.yml antismashEnv.yml mobsuiteEnv.yml /tmp/
 
 RUN mamba env create -f /tmp/bacEnv.yml -y && \
     mamba env create -f /tmp/integronEnv.yml -y && \
@@ -71,8 +67,6 @@ SHELL ["conda", "run", "-n", "bacEnv", "/bin/bash", "-c"]
 # RUN /project/tools/amrfinder/amrfinder --force_update
 
 ENV PATH="/project/tools/amrfinder:$PATH"
-
-COPY . /project
 
 # change row 34 from rU to r in ngmaster
 RUN sed -i '34s/rU/r/' \
@@ -111,8 +105,6 @@ RUN echo "Installing packages..." && \
     BiocManager::install('ComplexHeatmap'); \
     quit(save='no')"
 
-WORKDIR /project
-
 SHELL ["conda", "run", "-n", "baktaEnv", "/bin/bash", "-c"]
 
 RUN macsydata install --user TXSScan && \
@@ -121,8 +113,10 @@ RUN macsydata install --user TXSScan && \
 
 SHELL ["conda", "run", "-n", "mobsuiteEnv", "/bin/bash", "-c"]
 
-RUN PYTHONNOUSERSITE=1 /opt/conda/envs/mobsuiteEnv/bin/pip install --no-deps --no-user mob-suite==3.1.9
+RUN PYTHONNOUSERSITE=1 /opt/conda/envs/mobsuiteEnv/bin/pip install --no-deps --no-user mob-suite==3.1.9 && \
     PYTHONNOUSERSITE=1 python -c "import mob_suite, ete3; print(mob_suite.__file__, ete3.__file__)"
+
+COPY . /project
 
 WORKDIR /project
 

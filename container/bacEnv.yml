@@ -642,7 +642,6 @@ dependencies:
       - pyfaidx==0.8.1.3
       - reportlab==4.4.2
       - requests==2.31.0
-      - rgi==6.0.5
       - seaborn==0.13.2
       - soupsieve==2.6
       - toolz==1.0.0
